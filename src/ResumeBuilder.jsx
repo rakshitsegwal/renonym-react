@@ -1081,7 +1081,7 @@ class ResumeBuilder extends React.Component {
             updated.dateRange = [updated.startDate, updated.endDate].filter(Boolean).join(' – ');
             updated.bullets   = (updated.bulletsRaw || '')
                 .split('\n')
-                .map(b => b.trim().replace(/^[•\-*]\s*/, ''))
+                .map(b => b.trim().replace(/^[•·\-*\u2022\u00B7]\s*/, '').trim())
                 .filter(b => b.length > 0);
             updated.initials  = (updated.company || '').trim().slice(0, 2).toUpperCase() || '—';
             return updated;
