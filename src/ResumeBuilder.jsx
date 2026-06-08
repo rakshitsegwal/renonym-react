@@ -1510,6 +1510,10 @@ class ResumeBuilder extends React.Component {
         this.currentUser = null;
         localStorage.removeItem('rn-auth-token');
         localStorage.removeItem('rn-auth-user');
+        // Navigate back to landing page if prop provided
+        if (this.props && this.props.onGoToLanding) {
+            this.props.onGoToLanding();
+        }
     }
 
     handleCreditGateClose() {
@@ -2393,10 +2397,12 @@ class ResumeBuilder extends React.Component {
         {showTopbar ? (<React.Fragment>
             <header className="rp-topbar">
 
-                <div className="rp-brand">
+                <button className="rp-brand rp-brand--btn"
+                    onClick={() => this.props?.onGoToLanding && this.props.onGoToLanding()}
+                    title="Back to home">
                     <div className="rp-brand__mark">R</div>
                     <span className="rp-brand__name">Renonym AI</span>
-                </div>
+                </button>
 
                 
                 {isStepGallery ? (<React.Fragment>

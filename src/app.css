@@ -2979,22 +2979,56 @@ html, body, #root {
 .rb-resume[data-font-size="small"] {
     font-size: 9px;
 }
-
-.rb-resume[data-font-size="small"] .rb-resume__name  { font-size: 19px; }
-.rb-resume[data-font-size="small"] .rb-summary        { font-size: 8.5px; }
-.rb-resume[data-font-size="small"] .rb-exp-bullets li { font-size: 8px; }
+.rb-resume[data-font-size="small"] .rb-resume__name       { font-size: 22px; }
+.rb-resume[data-font-size="small"] .rb-resume__title-line  { font-size: 11px; }
+.rb-resume[data-font-size="small"] .rb-resume__contact-item{ font-size: 9px; }
+.rb-resume[data-font-size="small"] .rb-section-title       { font-size: 10px; }
+.rb-resume[data-font-size="small"] .rb-summary             { font-size: 9px; }
+.rb-resume[data-font-size="small"] .rb-exp-company         { font-size: 10.5px; }
+.rb-resume[data-font-size="small"] .rb-exp-role            { font-size: 9.5px; }
+.rb-resume[data-font-size="small"] .rb-exp-date            { font-size: 9px; }
+.rb-resume[data-font-size="small"] .rb-exp-bullets li      { font-size: 8.5px; }
+.rb-resume[data-font-size="small"] .rb-edu-degree          { font-size: 10.5px; }
+.rb-resume[data-font-size="small"] .rb-edu-school          { font-size: 9px; }
+.rb-resume[data-font-size="small"] .rb-edu-years           { font-size: 9px; }
+.rb-resume[data-font-size="small"] .rb-skill-pill          { font-size: 9px; }
+.rb-resume[data-font-size="small"] .rb-cert                { font-size: 9px; }
 
 .rb-resume[data-font-size="medium"] {
-    font-size: 10px;   /* default — same as base */
+    font-size: 10px;
 }
+.rb-resume[data-font-size="medium"] .rb-resume__name       { font-size: 26px; }
+.rb-resume[data-font-size="medium"] .rb-resume__title-line  { font-size: 13px; }
+.rb-resume[data-font-size="medium"] .rb-resume__contact-item{ font-size: 10.5px; }
+.rb-resume[data-font-size="medium"] .rb-section-title       { font-size: 11.5px; }
+.rb-resume[data-font-size="medium"] .rb-summary             { font-size: 10.5px; }
+.rb-resume[data-font-size="medium"] .rb-exp-company         { font-size: 12px; }
+.rb-resume[data-font-size="medium"] .rb-exp-role            { font-size: 11px; }
+.rb-resume[data-font-size="medium"] .rb-exp-date            { font-size: 10px; }
+.rb-resume[data-font-size="medium"] .rb-exp-bullets li      { font-size: 10px; }
+.rb-resume[data-font-size="medium"] .rb-edu-degree          { font-size: 12px; }
+.rb-resume[data-font-size="medium"] .rb-edu-school          { font-size: 10.5px; }
+.rb-resume[data-font-size="medium"] .rb-edu-years           { font-size: 10px; }
+.rb-resume[data-font-size="medium"] .rb-skill-pill          { font-size: 10.5px; }
+.rb-resume[data-font-size="medium"] .rb-cert                { font-size: 10px; }
 
 .rb-resume[data-font-size="large"] {
     font-size: 11px;
 }
-
-.rb-resume[data-font-size="large"] .rb-resume__name  { font-size: 24px; }
-.rb-resume[data-font-size="large"] .rb-summary        { font-size: 10.5px; }
-.rb-resume[data-font-size="large"] .rb-exp-bullets li { font-size: 10px; }
+.rb-resume[data-font-size="large"] .rb-resume__name        { font-size: 30px; }
+.rb-resume[data-font-size="large"] .rb-resume__title-line   { font-size: 15px; }
+.rb-resume[data-font-size="large"] .rb-resume__contact-item { font-size: 12px; }
+.rb-resume[data-font-size="large"] .rb-section-title        { font-size: 13px; }
+.rb-resume[data-font-size="large"] .rb-summary              { font-size: 12px; }
+.rb-resume[data-font-size="large"] .rb-exp-company          { font-size: 13.5px; }
+.rb-resume[data-font-size="large"] .rb-exp-role             { font-size: 12.5px; }
+.rb-resume[data-font-size="large"] .rb-exp-date             { font-size: 11.5px; }
+.rb-resume[data-font-size="large"] .rb-exp-bullets li       { font-size: 11px; }
+.rb-resume[data-font-size="large"] .rb-edu-degree           { font-size: 13.5px; }
+.rb-resume[data-font-size="large"] .rb-edu-school           { font-size: 12px; }
+.rb-resume[data-font-size="large"] .rb-edu-years            { font-size: 11px; }
+.rb-resume[data-font-size="large"] .rb-skill-pill           { font-size: 11.5px; }
+.rb-resume[data-font-size="large"] .rb-cert                 { font-size: 11px; }
 
 /* ── Resume font-family overrides via data-font ──────────────────────────── */
 
@@ -7100,3 +7134,18 @@ html, body, #root {
     color: var(--rn-mrole) !important;
     font-size: 11px !important;
 }
+
+/* Logo as back-to-home button */
+.rp-brand--btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: inherit;
+    font-family: inherit;
+    color: inherit;
+    transition: opacity 0.15s;
+}
+.rp-brand--btn:hover { opacity: 0.75; }

@@ -3,7 +3,7 @@ import { AuthModal } from './AuthModal.jsx';
 import PaymentButton from './PaymentButton.jsx';
 import './landing.css';
 
-export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onLogin, currentUser }) {
+export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onLogin, onGoToDashboard, currentUser }) {
     const [pricingPeriod, setPricingPeriod] = useState('yearly');
     const [scrolled, setScrolled] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -42,7 +42,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                     </div>
                     <div className="lp-nav__actions">
                         {currentUser
-                            ? <button className="lp-nav__cta" onClick={onGetStarted}>Dashboard →</button>
+                            ? <button className="lp-nav__cta" onClick={onGoToDashboard || onGetStarted}>Dashboard →</button>
                             : <>
                                 <button className="lp-nav__login" onClick={() => setShowLoginModal(true)}>Log in</button>
                                 <button className="lp-nav__cta" onClick={onGetStarted}>Get started free</button>
@@ -318,9 +318,9 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                         </div>
                         <div className="lp-footer__col">
                             <div className="lp-footer__col-hd">Company</div>
-                            <a className="lp-footer__a" href="#">About</a>
-                            <a className="lp-footer__a" href="#">Privacy</a>
-                            <a className="lp-footer__a" href="#">Terms</a>
+                            <a className="lp-footer__a" href="#" onClick={e => e.preventDefault()}>About</a>
+                            <a className="lp-footer__a" href="#" onClick={e => e.preventDefault()}>Privacy</a>
+                            <a className="lp-footer__a" href="#" onClick={e => e.preventDefault()}>Terms</a>
                         </div>
                     </div>
                 </div>
