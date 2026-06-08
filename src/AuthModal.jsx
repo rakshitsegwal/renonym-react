@@ -59,7 +59,7 @@ export function AuthModal({ onAuth, onClose, reason }) {
         if (!email.trim()) { setError('Please enter your email.'); return; }
         setSending(true); setError('');
         try {
-            const r = await fetch(`${RAILWAY_URL}/auth/magic-link`, {
+            const r = await fetch(`${RAILWAY_URL}/auth/magic-link/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email.trim() })

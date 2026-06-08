@@ -6675,3 +6675,35 @@ html, body, #root {
     pointer-events: none;
     z-index: 10;
 }
+
+/* ── Gallery AI generate button ────────────────────────────────────────────── */
+.rp-gallery__ai-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--rp-border);
+    margin-top: 4px;
+}
+.rp-gallery__ai-btn {
+    background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--rp-font);
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(109,40,217,0.3);
+}
+.rp-gallery__ai-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(109,40,217,0.4);
+}
+.rp-gallery__ai-hint {
+    font-size: 12px;
+    color: var(--rp-muted);
+}

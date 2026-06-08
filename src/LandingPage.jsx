@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { AuthModal } from './AuthModal.jsx';
 import PaymentButton from './PaymentButton.jsx';
 import './landing.css';
 
 export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
     const [pricingPeriod, setPricingPeriod] = useState('yearly');
     const [scrolled, setScrolled] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
 
     useEffect(() => {
         const handler = () => setScrolled(window.scrollY > 20);
@@ -16,6 +18,18 @@ export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
 
     return (
         <div className="lp">
+            {showLoginModal && (
+                <AuthModal
+                    onAuth={(token, user) => {
+                        localStorage.setItem('rn-auth-token', token);
+                        localStorage.setItem('rn-auth-user', JSON.stringify(user));
+                        setShowLoginModal(false);
+                        if (onLogin) onLogin();
+                    }}
+                    onClose={() => setShowLoginModal(false)}
+                    reason="general"
+                />
+            )}
 
             {/* ── Navbar ── */}
             <nav className={`lp-nav${scrolled ? ' lp-nav--scrolled' : ''}`}>
@@ -34,7 +48,7 @@ export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
                         {currentUser
                             ? <button className="lp-btn lp-btn--primary" onClick={onGetStarted}>Open Builder →</button>
                             : <>
-                                <button className="lp-btn lp-btn--ghost" onClick={onLogin}>Log in</button>
+                                <button className="lp-btn lp-btn--ghost" onClick={() => setShowLoginModal(true)}>Log in</button>
                                 <button className="lp-btn lp-btn--primary" onClick={onGetStarted}>Get Started Free →</button>
                               </>
                         }

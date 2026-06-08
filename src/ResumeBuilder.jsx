@@ -766,6 +766,15 @@ class ResumeBuilder extends React.Component {
         this.selectedGalleryTemplate = event.currentTarget.dataset.tpl;
     }
 
+
+    handleStartAiFlow() {
+        this.selectedMode = 'ai';
+        this.currentStep  = STEPS.AI_FLOW;
+        this.aiFlowStep   = 1;
+        this.aiFlowMethod = '';
+        this.templatePrompt = '';
+    }
+
     handleGalleryConfirm() {
         if (!this.selectedGalleryTemplate) return;
         this.templateStyle = this.selectedGalleryTemplate;
@@ -1926,11 +1935,15 @@ class ResumeBuilder extends React.Component {
                 ? { resumeData: this.formData, resumeText: this.jmResumeText, jobDescription: this.jobDescription }
                 : { resumeText: this.jmResumeText, jobDescription: this.jobDescription };
             const r = await this.apiFetch(RAILWAY_URL+'/analyze-job-match',{method:'POST',headers:{'Content-Type':'application/json','x-client-id':this.clientId},body:JSON.stringify(analyzeBody)},60000);
-            if(r.status===429){this._setStatus('Too many requests.','error');return;}
-            if(!r.ok) throw new Error('failed');
+            if(r.status===429){this._setStatus('Too many requests. Please wait a minute.','error');return;}
+            if(!r.ok) {
+                const errData = await r.json().catch(() => ({}));
+                this._setStatus(errData.error || 'Analysis failed. Try again.','error');
+                return;
+            }
             this.jobMatchResult = await r.json();
             this._setStatus('Analysis complete!','success');
-        } catch(e){ this._setStatus('Analysis failed. Try again.','error'); }
+        } catch(e){ this._setStatus('Analysis failed. Check your connection and try again.','error'); }
         finally { this.isAnalyzingJob=false; }
     }
 
@@ -2315,7 +2328,7 @@ class ResumeBuilder extends React.Component {
             showAuthModal,
             authReason,
             showCreditGate,
-            creditReason,
+            creditReason
         } = this;
         const LayoutComponent = getLayout(aiGeneratedLayout || 'two-col');
         return (
@@ -2383,7 +2396,7 @@ class ResumeBuilder extends React.Component {
                         <span className="rp-topbar__page-title">Choose a Template</span>
                     </div>
                     <div className="rp-topbar__actions">
-                        <span className="rp-topbar__step-pill">5 Templates</span>
+                        <span className="rp-topbar__step-pill">10 Templates</span>
                     </div>
                 </React.Fragment>) : null}
 
@@ -2557,6 +2570,13 @@ class ResumeBuilder extends React.Component {
                     <button className="rp-gallery__cta-btn" onClick={(e) => this.handleGalleryConfirm(e)}>
                         Use this template →
                     </button>
+                </div>
+
+                <div className="rp-gallery__ai-cta">
+                    <button className="rp-gallery__ai-btn" onClick={(e) => this.handleStartAiFlow(e)}>
+                        ✦ Generate with AI Design
+                    </button>
+                    <span className="rp-gallery__ai-hint">Describe your style — AI builds a unique template</span>
                 </div>
 
             </main>
