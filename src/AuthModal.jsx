@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PaymentButton from './PaymentButton.jsx';
 
 const RAILWAY_URL = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV
     ? '/api'
@@ -175,11 +176,17 @@ export function CreditGateModal({ user, reason, onClose, onProceedFree }) {
                                 <span className="rn-credit-option__label">Free download</span>
                                 <span className="rn-credit-option__desc">PDF with Renonym AI watermark</span>
                             </button>
-                            <button className="rn-credit-option rn-credit-option--pro" disabled>
-                                <span className="rn-credit-option__badge">Coming soon</span>
-                                <span className="rn-credit-option__label">Pro — $9/mo</span>
-                                <span className="rn-credit-option__desc">Unlimited exports · No watermark · AI credits</span>
-                            </button>
+                            <PaymentButton
+                                planId="pro_monthly"
+                                label="Upgrade to Pro — ₹599/mo"
+                                className="rn-credit-option rn-credit-option--pro"
+                                user={user}
+                                onSuccess={() => {
+                                    onClose();
+                                    alert('Welcome to Pro! Refresh the page to activate.');
+                                }}
+                                onError={(msg) => alert('Payment failed: ' + msg)}
+                            />
                         </div>
                     </>
                 )}
@@ -191,11 +198,17 @@ export function CreditGateModal({ user, reason, onClose, onProceedFree }) {
                             Upgrade to Pro for unlimited access.
                         </p>
                         <div className="rn-credit-options">
-                            <button className="rn-credit-option rn-credit-option--pro" disabled>
-                                <span className="rn-credit-option__badge">Coming soon</span>
-                                <span className="rn-credit-option__label">Pro — $9/mo</span>
-                                <span className="rn-credit-option__desc">Unlimited AI · No watermark · Priority support</span>
-                            </button>
+                            <PaymentButton
+                                planId="pro_monthly"
+                                label="Upgrade to Pro — ₹599/mo"
+                                className="rn-credit-option rn-credit-option--pro"
+                                user={user}
+                                onSuccess={() => {
+                                    onClose();
+                                    alert('Welcome to Pro! Refresh the page to activate.');
+                                }}
+                                onError={(msg) => alert('Payment failed: ' + msg)}
+                            />
                             <button className="rn-auth-back" onClick={onClose}>Maybe later</button>
                         </div>
                     </>

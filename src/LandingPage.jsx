@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PaymentButton from './PaymentButton.jsx';
 import './landing.css';
 
 export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
@@ -256,7 +257,16 @@ export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
                                 <li key={i}><span className="lp-plan__check">✓</span>{f}</li>
                             ))}
                         </ul>
-                        <button className="lp-btn lp-btn--primary lp-btn--full" onClick={onGetStarted}>Start 7-Day Free Trial</button>
+                        <PaymentButton
+                            planId={pricingPeriod === 'yearly' ? 'pro_yearly' : 'pro_monthly'}
+                            label="Start 7-Day Free Trial"
+                            className="lp-btn lp-btn--primary lp-btn--full"
+                            user={currentUser}
+                            onSuccess={(result) => {
+                                alert('Payment successful! Welcome to Pro. Refresh to activate your plan.');
+                            }}
+                            onError={(msg) => alert('Payment failed: ' + msg)}
+                        />
                     </div>
                     <div className="lp-plan">
                         <div className="lp-plan__name">Team</div>
@@ -267,7 +277,16 @@ export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
                                 <li key={i}><span className="lp-plan__check">✓</span>{f}</li>
                             ))}
                         </ul>
-                        <button className="lp-btn lp-btn--outline lp-btn--full" onClick={onGetStarted}>Contact Sales</button>
+                        <PaymentButton
+                            planId={pricingPeriod === 'yearly' ? 'team_yearly' : 'team_monthly'}
+                            label="Get Team Plan"
+                            className="lp-btn lp-btn--outline lp-btn--full"
+                            user={currentUser}
+                            onSuccess={(result) => {
+                                alert('Payment successful! Team plan activated.');
+                            }}
+                            onError={(msg) => alert('Payment failed: ' + msg)}
+                        />
                     </div>
                 </div>
             </section>
