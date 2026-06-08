@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import LandingPage from './LandingPage.jsx';
 import ResumeBuilder from './ResumeBuilder.jsx';
+import Dashboard from './Dashboard.jsx';
 import './app.css';
 
 function App() {
-    const [view, setView]         = useState('landing');
+    const [view, setView]           = useState('landing'); // 'landing' | 'builder' | 'dashboard'
     const [entryMode, setEntryMode] = useState('gallery');
     const [currentUser, setCurrentUser] = useState(null);
 
@@ -22,8 +23,43 @@ function App() {
         setView('builder');
     }
 
+    function goToDashboard() {
+        const user = localStorage.getItem('rn-auth-user');
+        if (user) {
+            try { setCurrentUser(JSON.parse(user)); } catch {}
+        }
+        setView('dashboard');
+    }
+
+    function handleLogin() {
+        const user = localStorage.getItem('rn-auth-user');
+        if (user) {
+            try { setCurrentUser(JSON.parse(user)); } catch {}
+        }
+        // After login from landing — go to builder
+        goToBuilder('gallery');
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('rn-auth-token');
+        localStorage.removeItem('rn-auth-user');
+        setCurrentUser(null);
+        setView('landing');
+    }
+
     if (view === 'builder') {
-        return <ResumeBuilder initialMode={entryMode} />;
+        return <ResumeBuilder
+            initialMode={entryMode}
+            onGoToDashboard={goToDashboard}
+        />;
+    }
+
+    if (view === 'dashboard') {
+        return <Dashboard
+            user={currentUser}
+            onOpenBuilder={goToBuilder}
+            onLogout={handleLogout}
+        />;
     }
 
     return (
@@ -31,7 +67,7 @@ function App() {
             onGetStarted={() => goToBuilder('gallery')}
             onStartAi={() => goToBuilder('ai')}
             onOpenJobMatch={() => goToBuilder('jobmatch')}
-            onLogin={() => goToBuilder('gallery')}
+            onLogin={handleLogin}
             currentUser={currentUser}
         />
     );
