@@ -1184,20 +1184,15 @@ class ResumeBuilder extends React.Component {
             if (!response.ok) throw new Error("Template generation failed");
 
             const result = await response.json();
-            if (!result.css) throw new Error('No CSS returned from server');
+            if (!result.tokens && !result.layout) throw new Error('No tokens returned from server');
 
-            // Inject AI CSS into document.head
-            let styleTag = document.getElementById('rp-ai-template-style');
-            if (!styleTag) {
-                styleTag = document.createElement('style');
-                styleTag.id = 'rp-ai-template-style';
-                document.head.appendChild(styleTag);
-            }
-            styleTag.innerHTML = result.css;
+            // Remove any old AI CSS style tag (no longer needed)
+            const oldTag = document.getElementById('rp-ai-template-style');
+            if (oldTag) oldTag.remove();
 
             this.aiGeneratedTokens = result.tokens || null;
             this.aiGeneratedLayout = result.layout || 'two-col';
-            this.aiGeneratedCss    = ''; // no longer used — tokens replace CSS
+            this.aiGeneratedCss    = ''; // cleared — tokens handle everything now
             this.templateStyle     = 'ai-generated';
 
             this._setStatus('AI template applied! 🎨', 'success');
