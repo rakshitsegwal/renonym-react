@@ -1081,8 +1081,8 @@ class ResumeBuilder extends React.Component {
             updated.dateRange = [updated.startDate, updated.endDate].filter(Boolean).join(' – ');
             updated.bullets   = (updated.bulletsRaw || '')
                 .split('\n')
-                .map(l => l.trim().replace(/^[•\-*]\s*/, ''))
-                .filter(Boolean);
+                .map(b => b.trim().replace(/^[•\-*]\s*/, ''))
+                .filter(b => b.length > 0);
             updated.initials  = (updated.company || '').trim().slice(0, 2).toUpperCase() || '—';
             return updated;
         });
@@ -1281,8 +1281,8 @@ class ResumeBuilder extends React.Component {
                     title:      e.title      || '',
                     startDate:  e.startDate  || '',
                     endDate:    e.endDate    || '',
-                    bulletsRaw: (e.bullets || []).join('\n'),
-                    bullets:    e.bullets    || [],
+                    bulletsRaw: (e.bullets || []).filter(b => b && String(b).trim()).join('\n'),
+                    bullets:    (e.bullets || []).filter(b => b && String(b).trim()),
                     dateRange:  [e.startDate, e.endDate].filter(Boolean).join(' – '),
                     initials:   (e.company || '').trim().slice(0, 2).toUpperCase() || '—'
                 }));
@@ -1859,8 +1859,8 @@ class ResumeBuilder extends React.Component {
                     title:      e.title      || '',
                     startDate:  e.startDate  || '',
                     endDate:    e.endDate    || '',
-                    bulletsRaw: (e.bullets || []).join('\n'),
-                    bullets:    e.bullets    || [],
+                    bulletsRaw: (e.bullets || []).filter(b => b && String(b).trim()).join('\n'),
+                    bullets:    (e.bullets || []).filter(b => b && String(b).trim()),
                     dateRange:  [e.startDate, e.endDate].filter(Boolean).join(' – '),
                     initials:   (e.company || '').trim().slice(0, 2).toUpperCase() || '—'
                 }));

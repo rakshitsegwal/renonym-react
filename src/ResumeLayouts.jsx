@@ -73,9 +73,9 @@ function ExperienceSection({ data, hasExperience }) {
                         <span className="rb-exp-date">{exp.dateRange}</span>
                     </div>
                     <div className="rb-exp-role">{exp.title}</div>
-                    {exp.bullets?.length > 0 && (
+                    {exp.bullets?.filter(b => b && String(b).trim()).length > 0 && (
                         <ul className="rb-exp-bullets">
-                            {exp.bullets.map((b, j) => <li key={j}>{b}</li>)}
+                            {exp.bullets.filter(b => b && String(b).trim()).map((b, j) => <li key={j}>{String(b).trim()}</li>)}
                         </ul>
                     )}
                 </div>
