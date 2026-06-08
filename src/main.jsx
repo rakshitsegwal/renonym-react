@@ -5,8 +5,8 @@ import ResumeBuilder from './ResumeBuilder.jsx';
 import './app.css';
 
 function App() {
-    const [view, setView]     = useState('landing'); // 'landing' | 'builder'
-    const [entryMode, setEntryMode] = useState('gallery'); // 'gallery' | 'ai'
+    const [view, setView]         = useState('landing');
+    const [entryMode, setEntryMode] = useState('gallery');
     const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
@@ -30,6 +30,7 @@ function App() {
         <LandingPage
             onGetStarted={() => goToBuilder('gallery')}
             onStartAi={() => goToBuilder('ai')}
+            onOpenJobMatch={() => goToBuilder('jobmatch')}
             onLogin={() => goToBuilder('gallery')}
             currentUser={currentUser}
         />

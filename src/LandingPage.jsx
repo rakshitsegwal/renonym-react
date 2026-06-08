@@ -3,7 +3,7 @@ import { AuthModal } from './AuthModal.jsx';
 import PaymentButton from './PaymentButton.jsx';
 import './landing.css';
 
-export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
+export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onLogin, currentUser }) {
     const [pricingPeriod, setPricingPeriod] = useState('yearly');
     const [scrolled, setScrolled] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -123,22 +123,52 @@ export default function LandingPage({ onGetStarted, onLogin, currentUser }) {
                 </div>
             </section>
 
-            {/* ── Feature strip ── */}
-            <section className="lp-features-strip" id="features">
-                <div className="lp-features-strip__inner">
-                    {[
-                        { icon:'📄', title:'AI Resume Builder',  desc:'Create ATS-friendly resumes in minutes.' },
-                        { icon:'🎯', title:'Job Match',           desc:'Find roles that match your skills.' },
-                        { icon:'📊', title:'ATS Score Checker',  desc:'Get instant feedback on your resume.' },
-                        { icon:'💬', title:'AI Review',          desc:'AI-powered resume feedback instantly.' },
-                        { icon:'✦',  title:'AI Style Generator', desc:'Unique AI-designed resume themes.' },
-                    ].map((f, i) => (
-                        <div key={i} className="lp-feat">
-                            <div className="lp-feat__icon">{f.icon}</div>
-                            <div className="lp-feat__title">{f.title}</div>
-                            <div className="lp-feat__desc">{f.desc}</div>
-                        </div>
-                    ))}
+            {/* ── 3 Hero Feature Cards ── */}
+            <section className="lp-hero-cards" id="features">
+                {/* Card 1: Professional Templates */}
+                <div className="lp-hcard lp-hcard--templates">
+                    <div className="lp-hcard__icon">📄</div>
+                    <h3 className="lp-hcard__title">Professional Templates</h3>
+                    <p className="lp-hcard__desc">
+                        Browse 10 handcrafted, ATS-optimised resume layouts with instant visual previews. Pick your favourite and go.
+                    </p>
+                    <ul className="lp-hcard__list">
+                        <li>✓ 10 premium templates</li>
+                        <li>✓ Visual gallery — see before you pick</li>
+                        <li>✓ ATS-optimised layouts</li>
+                    </ul>
+                    <button className="lp-hcard__cta" onClick={onGetStarted}>Browse templates →</button>
+                </div>
+
+                {/* Card 2: AI Generated Resume — highlighted */}
+                <div className="lp-hcard lp-hcard--ai">
+                    <div className="lp-hcard__badge">AI</div>
+                    <div className="lp-hcard__icon lp-hcard__icon--ai">✦</div>
+                    <h3 className="lp-hcard__title">AI Generated Resume</h3>
+                    <p className="lp-hcard__desc">
+                        Describe your dream resume in plain English. Upload style inspiration. AI creates a completely unique design for you.
+                    </p>
+                    <ul className="lp-hcard__list">
+                        <li>✓ Unique AI-generated design</li>
+                        <li>✓ Plain English design prompts</li>
+                        <li>✓ Upload a style-inspiration image</li>
+                    </ul>
+                    <button className="lp-hcard__cta lp-hcard__cta--ai" onClick={onStartAi}>Try AI design →</button>
+                </div>
+
+                {/* Card 3: Job Match Optimizer */}
+                <div className="lp-hcard lp-hcard--jobmatch">
+                    <div className="lp-hcard__icon">🎯</div>
+                    <h3 className="lp-hcard__title">Job Match Optimizer</h3>
+                    <p className="lp-hcard__desc">
+                        Paste a job description and instantly discover missing keywords, ATS gaps and improvements.
+                    </p>
+                    <ul className="lp-hcard__list">
+                        <li>✓ ATS compatibility scoring</li>
+                        <li>✓ Keyword gap analysis</li>
+                        <li>✓ AI-powered resume optimization</li>
+                    </ul>
+                    <button className="lp-hcard__cta" onClick={onOpenJobMatch}>Open Optimizer →</button>
                 </div>
             </section>
 
