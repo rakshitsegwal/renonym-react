@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { AuthModal } from './AuthModal.jsx';
 
 const RAILWAY_URL = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV
     ? '/api'
     : 'https://salesforce-resume-pdf-server-production.up.railway.app';
 
-// Load Razorpay checkout script once
 function loadRazorpayScript() {
     return new Promise((resolve) => {
         if (window.Razorpay) { resolve(true); return; }
@@ -16,37 +16,28 @@ function loadRazorpayScript() {
     });
 }
 
-// ─── PaymentButton ────────────────────────────────────────────────────────────
-// Props:
-//   planId      — 'pro_monthly' | 'pro_yearly' | 'team_monthly' | 'team_yearly'
-//   label       — button text
-//   className   — css class
-//   user        — { id, name, email } from auth state (optional)
-//   onSuccess   — callback(paymentResult) after verified payment
-//   onError     — callback(errorMessage)
-
 export default function PaymentButton({ planId, label, className, user, onSuccess, onError }) {
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading]         = useState(false);
+    const [showAuth, setShowAuth]       = useState(false);
+    const [authedUser, setAuthedUser]   = useState(user || null);
 
-    async function handleClick() {
+    // Use prop user or locally authed user
+    const currentUser = authedUser || user;
+
+    async function startPayment(loggedInUser) {
         setLoading(true);
         try {
-            // 1. Load Razorpay SDK
             const sdkLoaded = await loadRazorpayScript();
-            if (!sdkLoaded) {
-                throw new Error('Failed to load Razorpay. Check your internet connection.');
-            }
+            if (!sdkLoaded) throw new Error('Failed to load Razorpay. Check your internet connection.');
 
-            // 2. Create order on our server
             const orderRes = await fetch(`${RAILWAY_URL}/create-order`, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ planId, userId: user?.id || null })
+                body:    JSON.stringify({ planId, userId: loggedInUser?.id || null })
             });
             const orderData = await orderRes.json();
             if (!orderRes.ok) throw new Error(orderData.error || 'Order creation failed');
 
-            // 3. Open Razorpay checkout modal
             await new Promise((resolve, reject) => {
                 const options = {
                     key:         orderData.key_id,
@@ -57,14 +48,13 @@ export default function PaymentButton({ planId, label, className, user, onSucces
                     description: label,
                     image:       'https://renonym.com/favicon.ico',
                     prefill: {
-                        name:  user?.name  || '',
-                        email: user?.email || '',
+                        name:  loggedInUser?.name  || '',
+                        email: loggedInUser?.email || '',
                     },
-                    theme:       { color: '#6d28d9' },
+                    theme: { color: '#6d28d9' },
 
                     handler: async (response) => {
                         try {
-                            // 4. Verify signature on our server
                             const verifyRes = await fetch(`${RAILWAY_URL}/verify-payment`, {
                                 method:  'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -73,21 +63,16 @@ export default function PaymentButton({ planId, label, className, user, onSucces
                                     razorpay_payment_id: response.razorpay_payment_id,
                                     razorpay_signature:  response.razorpay_signature,
                                     planId,
-                                    userId: user?.id || null
+                                    userId: loggedInUser?.id || null
                                 })
                             });
                             const verifyData = await verifyRes.json();
                             if (!verifyRes.ok) throw new Error(verifyData.error || 'Payment verification failed');
-
                             resolve(verifyData);
-                        } catch (err) {
-                            reject(err);
-                        }
+                        } catch (err) { reject(err); }
                     },
 
-                    modal: {
-                        ondismiss: () => reject(new Error('CANCELLED'))
-                    }
+                    modal: { ondismiss: () => reject(new Error('CANCELLED')) }
                 };
 
                 const rzp = new window.Razorpay(options);
@@ -97,7 +82,7 @@ export default function PaymentButton({ planId, label, className, user, onSucces
                 rzp.open();
             });
 
-            if (onSuccess) onSuccess({ planId });
+            if (onSuccess) onSuccess({ planId, user: loggedInUser });
 
         } catch (err) {
             if (err.message !== 'CANCELLED') {
@@ -108,13 +93,41 @@ export default function PaymentButton({ planId, label, className, user, onSucces
         }
     }
 
+    function handleClick() {
+        // Gate: must be logged in before paying
+        if (!currentUser) {
+            setShowAuth(true);
+            return;
+        }
+        startPayment(currentUser);
+    }
+
+    function handleAuthSuccess(token, user) {
+        // Store auth token
+        localStorage.setItem('rn-auth-token', token);
+        localStorage.setItem('rn-auth-user', JSON.stringify(user));
+        setAuthedUser(user);
+        setShowAuth(false);
+        // Proceed straight to payment after login
+        startPayment(user);
+    }
+
     return (
-        <button
-            className={className}
-            onClick={handleClick}
-            disabled={loading}
-        >
-            {loading ? 'Processing…' : label}
-        </button>
+        <>
+            {showAuth && (
+                <AuthModal
+                    onAuth={handleAuthSuccess}
+                    onClose={() => setShowAuth(false)}
+                    reason="payment"
+                />
+            )}
+            <button
+                className={className}
+                onClick={handleClick}
+                disabled={loading}
+            >
+                {loading ? 'Processing…' : label}
+            </button>
+        </>
     );
 }

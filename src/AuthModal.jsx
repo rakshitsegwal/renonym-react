@@ -81,11 +81,13 @@ export function AuthModal({ onAuth, onClose, reason }) {
 
                 <div className="rn-auth-modal__icon">✦</div>
                 <h2 className="rn-auth-modal__title">
-                    {reason === 'export' ? 'Sign in to export' : 'Sign in to continue'}
+                    {reason === 'export' ? 'Sign in to export' : reason === 'payment' ? 'Sign in to upgrade' : 'Sign in to continue'}
                 </h2>
                 <p className="rn-auth-modal__sub">
                     {reason === 'export'
                         ? 'Create a free account to download your resume PDF.'
+                        : reason === 'payment'
+                        ? 'Create a free account first, then complete your upgrade to Pro.'
                         : 'Sign in to save your work and access all features.'}
                 </p>
 
