@@ -2110,7 +2110,18 @@ class ResumeBuilder extends React.Component {
         const controller = new AbortController();
         const timeout    = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const response = await fetch(url, { ...options, signal: controller.signal });
+            // Inject shared API secret on every request — Layer 1 security
+            const secret = typeof import.meta !== 'undefined' && import.meta.env
+                ? import.meta.env.VITE_API_SECRET
+                : undefined;
+            const securedOptions = {
+                ...options,
+                headers: {
+                    ...(options.headers || {}),
+                    ...(secret ? { 'x-api-secret': secret } : {})
+                }
+            };
+            const response = await fetch(url, { ...securedOptions, signal: controller.signal });
             return response;
         } finally {
             clearTimeout(timeout);

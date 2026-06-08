@@ -5,6 +5,16 @@ const RAILWAY_URL = typeof import.meta !== 'undefined' && import.meta.env && imp
     ? '/api'
     : 'https://salesforce-resume-pdf-server-production.up.railway.app';
 
+const API_SECRET = typeof import.meta !== 'undefined' && import.meta.env
+    ? import.meta.env.VITE_API_SECRET
+    : undefined;
+
+const secureHeaders = (extra = {}) => ({
+    'Content-Type': 'application/json',
+    ...(API_SECRET ? { 'x-api-secret': API_SECRET } : {}),
+    ...extra
+});
+
 function loadRazorpayScript() {
     return new Promise((resolve) => {
         if (window.Razorpay) { resolve(true); return; }
@@ -32,7 +42,7 @@ export default function PaymentButton({ planId, label, className, user, onSucces
 
             const orderRes = await fetch(`${RAILWAY_URL}/create-order`, {
                 method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: secureHeaders(),
                 body:    JSON.stringify({ planId, userId: loggedInUser?.id || null })
             });
             const orderData = await orderRes.json();
