@@ -1,5 +1,58 @@
 import React from 'react';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// TOKEN SYSTEM — AI sets COLORS only. Structure is 100% hardcoded.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// The 16 CSS variables we expose. AI returns JSON with these keys.
+// We apply them as inline CSS vars on the root element.
+// CSS rules in app.css use var(--rn-*) — completely replacing AI-generated CSS.
+
+export const DEFAULT_TOKENS = {
+    headerBg:    '#2d1b69',
+    headerText:  '#ffffff',
+    headerSub:   'rgba(255,255,255,0.72)',
+    sidebarBg:   '#f0ebff',
+    sidebarText: '#1a1a2e',
+    sidebarTitle:'#6d28d9',
+    accent:      '#6d28d9',
+    mainBg:      '#ffffff',
+    mainText:    '#1a1a2e',
+    mainTitle:   '#1a1a2e',
+    mainRole:    '#6d28d9',
+    skillBg:     '#6d28d9',
+    skillText:   '#ffffff',
+    certBg:      '#ede9fe',
+    certText:    '#4c1d95',
+    fontBody:    'system-ui,-apple-system,sans-serif',
+    fontHeading: 'system-ui,-apple-system,sans-serif',
+};
+
+// Convert token object → CSS custom property map (applied via style={{...}})
+export function tokensToVars(tokens) {
+    const t = { ...DEFAULT_TOKENS, ...tokens };
+    return {
+        '--rn-hbg':      t.headerBg,
+        '--rn-htx':      t.headerText,
+        '--rn-hsub':     t.headerSub,
+        '--rn-sbg':      t.sidebarBg,
+        '--rn-stx':      t.sidebarText,
+        '--rn-stitle':   t.sidebarTitle,
+        '--rn-accent':   t.accent,
+        '--rn-mbg':      t.mainBg,
+        '--rn-mtx':      t.mainText,
+        '--rn-mtitle':   t.mainTitle,
+        '--rn-mrole':    t.mainRole,
+        '--rn-skillbg':  t.skillBg,
+        '--rn-skilltx':  t.skillText,
+        '--rn-certbg':   t.certBg,
+        '--rn-certtx':   t.certText,
+        '--rn-font':     t.fontBody,
+        '--rn-font-h':   t.fontHeading,
+    };
+}
+
+
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
 function ResumeHeader({ data, hasPhoto, initials, displayName, displayTitle }) {
@@ -111,10 +164,16 @@ function EducationSection({ data, hasEducation }) {
 export function TwoColLayout(props) {
     const { data, resumeClass, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
-            hasSkills, hasCertifications, hasExperience, hasEducation } = props;
+            hasSkills, hasCertifications, hasExperience, hasEducation,
+            tokens } = props;
+    const tokenVars = tokens ? tokensToVars(tokens) : {};
+    const cls = tokens
+        ? `${resumeClass} rb-resume--ai-tokens rb-resume--layout-two-col-ai`
+        : resumeClass;
     return (
-        <div className={resumeClass} data-id="resume-preview"
-             data-font={resumeFont} data-font-size={resumeFontSize}>
+        <div className={cls} data-id="resume-preview"
+             data-font={resumeFont} data-font-size={resumeFontSize}
+             style={tokenVars}>
             <div className="rb-resume__top-deco"></div>
             <ResumeHeader data={data} hasPhoto={hasPhoto} initials={initials}
                           displayName={displayName} displayTitle={displayTitle} />
@@ -139,10 +198,12 @@ export function TwoColLayout(props) {
 export function SingleLayout(props) {
     const { data, resumeClass, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
-            hasSkills, hasCertifications, hasExperience, hasEducation } = props;
+            hasSkills, hasCertifications, hasExperience, hasEducation,
+            tokens } = props;
+    const tokenVars = tokens ? tokensToVars(tokens) : {};
     return (
-        <div className={`${resumeClass} rb-resume--layout-single`}
-             data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize}>
+        <div className={tokens ? `${resumeClass} rb-resume--ai-tokens rb-resume--layout-single-ai` : `${resumeClass} rb-resume--layout-single`}
+             data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize} style={tokenVars}>
             <div className="rb-resume__top-deco"></div>
             <ResumeHeader data={data} hasPhoto={hasPhoto} initials={initials}
                           displayName={displayName} displayTitle={displayTitle} />
@@ -164,10 +225,12 @@ export function SingleLayout(props) {
 export function TopBannerLayout(props) {
     const { data, resumeClass, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
-            hasSkills, hasCertifications, hasExperience, hasEducation } = props;
+            hasSkills, hasCertifications, hasExperience, hasEducation,
+            tokens } = props;
+    const tokenVars = tokens ? tokensToVars(tokens) : {};
     return (
-        <div className={`${resumeClass} rb-resume--layout-banner`}
-             data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize}>
+        <div className={tokens ? `${resumeClass} rb-resume--ai-tokens rb-resume--layout-banner-ai` : `${resumeClass} rb-resume--layout-banner`}
+             data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize} style={tokenVars}>
             {/* Full-width banner header */}
             <div className="rb-resume__banner">
                 <div className="rb-resume__banner-photo">
@@ -213,7 +276,9 @@ export function TopBannerLayout(props) {
 export function AsymmetricLayout(props) {
     const { data, resumeClass, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
-            hasSkills, hasCertifications, hasExperience, hasEducation } = props;
+            hasSkills, hasCertifications, hasExperience, hasEducation,
+            tokens } = props;
+    const tokenVars = tokens ? tokensToVars(tokens) : {};
     return (
         <div className={`${resumeClass} rb-resume--layout-asymmetric`}
              data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize}>

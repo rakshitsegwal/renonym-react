@@ -120,7 +120,7 @@ class ResumeBuilder extends React.Component {
         this._isMounted  = false;
         this._root       = null;
         this._statusTimer = null;
-        const _state = makeReactive(this, ['defaultTemplate', 'clientId', 'formData', 'currentStep', 'activeSection', 'selectedGalleryTemplate', 'galleryFilter', 'inspirationBase64', 'inspirationMimeType', 'inspirationFileName', 'newSkill', 'newCert', 'templateStyle', 'templatePrompt', 'aiGeneratedCss', 'fontFamily', 'fontSize', 'jobDescription', 'foodImageBase64', 'foodImageMimeType', 'foodImagePreview', 'isAnalyzingFood', 'foodResult', 'foodError', 'hasLoadedResume', 'isAnalyzingJob', 'isOptimizingJob', 'isExporting', 'jobMatchResult', 'optimizedResume', 'showOptimizeModal', 'isApplyingOptimization', 'aiStyleMethod', 'isSaving', 'isGeneratingAi', 'isParsingResume', 'statusMessage', 'statusKind', 'analysisFeedback', 'showAnalysisModal', 'pdfLibInitialized', 'pdfLibLoaded', 'mammothLibLoaded', 'selectedMode', 'aiFlowStep', 'aiFlowMethod', 'jmResumeText', 'jmResumeFileName', 'jmIsParsingResume', 'aiGeneratedLayout', 'currentUser', 'authToken', 'showAuthModal', 'authReason', 'showCreditGate', 'creditReason']);
+        const _state = makeReactive(this, ['defaultTemplate', 'clientId', 'formData', 'currentStep', 'activeSection', 'selectedGalleryTemplate', 'galleryFilter', 'inspirationBase64', 'inspirationMimeType', 'inspirationFileName', 'newSkill', 'newCert', 'templateStyle', 'templatePrompt', 'aiGeneratedCss', 'fontFamily', 'fontSize', 'jobDescription', 'foodImageBase64', 'foodImageMimeType', 'foodImagePreview', 'isAnalyzingFood', 'foodResult', 'foodError', 'hasLoadedResume', 'isAnalyzingJob', 'isOptimizingJob', 'isExporting', 'jobMatchResult', 'optimizedResume', 'showOptimizeModal', 'isApplyingOptimization', 'aiStyleMethod', 'isSaving', 'isGeneratingAi', 'isParsingResume', 'statusMessage', 'statusKind', 'analysisFeedback', 'showAnalysisModal', 'pdfLibInitialized', 'pdfLibLoaded', 'mammothLibLoaded', 'selectedMode', 'aiFlowStep', 'aiFlowMethod', 'jmResumeText', 'jmResumeFileName', 'jmIsParsingResume', 'aiGeneratedLayout', 'aiGeneratedTokens', 'currentUser', 'authToken', 'showAuthModal', 'authReason', 'showCreditGate', 'creditReason']);
         Object.assign(_state, {
             defaultTemplate: 'sf-classic',
             clientId: '',
@@ -172,6 +172,7 @@ class ResumeBuilder extends React.Component {
             jmResumeFileName: '',
             jmIsParsingResume: false,
             aiGeneratedLayout: 'two-col',
+            aiGeneratedTokens: null,
             currentUser: null,
             authToken: null,
             showAuthModal: false,
@@ -252,8 +253,9 @@ class ResumeBuilder extends React.Component {
     // ── Template ──────────────────────────────────────────────────────────
     templateStyle  = 'sf-classic';
     templatePrompt = '';
-    aiGeneratedCss    = '';
+    aiGeneratedCss    = '';    // kept for backward compat
     aiGeneratedLayout = 'two-col';
+    aiGeneratedTokens = null;  // new: JSON token object
 
     // ── Font customization ────────────────────────────────────────────────
     fontFamily = 'Inter';
@@ -416,7 +418,7 @@ class ResumeBuilder extends React.Component {
     get showTopbar() { return this.currentStep !== STEPS.CALORIE_CALC; }
 
     get isAiMode()   { return this.selectedMode === 'ai'; }
-    get hasAiCss()   { return !!this.aiGeneratedCss; }
+    get hasAiCss()   { return !!(this.aiGeneratedCss || this.aiGeneratedTokens); }
 
     // ── Gallery computed ──────────────────────────────────────────────────
     get galleryClass() {
@@ -1193,8 +1195,9 @@ class ResumeBuilder extends React.Component {
             }
             styleTag.innerHTML = result.css;
 
-            this.aiGeneratedCss    = result.css;
+            this.aiGeneratedTokens = result.tokens || null;
             this.aiGeneratedLayout = result.layout || 'two-col';
+            this.aiGeneratedCss    = ''; // no longer used — tokens replace CSS
             this.templateStyle     = 'ai-generated';
 
             this._setStatus('AI template applied! 🎨', 'success');
@@ -1717,9 +1720,8 @@ class ResumeBuilder extends React.Component {
             }
         });
 
-        if (this.aiGeneratedCss) {
-            css += '\n' + this.aiGeneratedCss;
-        }
+        // aiGeneratedTokens are applied as CSS vars inline on the element
+        // they're included in resumeEl.outerHTML — no need to append to css string
 
         return css;
     }
@@ -2334,6 +2336,7 @@ class ResumeBuilder extends React.Component {
             jmResumeFileName,
             jmIsParsingResume,
             aiGeneratedLayout,
+            aiGeneratedTokens,
             currentUser,
             authToken,
             showAuthModal,
@@ -3289,6 +3292,7 @@ class ResumeBuilder extends React.Component {
                                 hasCertifications={hasCertifications}
                                 hasExperience={hasExperience}
                                 hasEducation={hasEducation}
+                                tokens={aiGeneratedTokens}
                             />
                         </div>
                     </div>
