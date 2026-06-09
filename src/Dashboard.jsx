@@ -4,7 +4,7 @@ export default function Dashboard({ user, onOpenBuilder, onLogout }) {
     const [activeSection, setActiveSection] = useState('resumes');
 
     const nav = [
-        { id:'resumes',  icon:'📄', label:'Resume Builder', action: 'builder' },
+        { id:'resumes',  icon:'📄', label:'Resume Builder' },
         { id:'ats',      icon:'📊', label:'ATS Analysis' },
         { id:'jobmatch', icon:'🎯', label:'Job Match' },
         { id:'rewrite',  icon:'✦',  label:'AI Rewrite', pro: true },
@@ -21,16 +21,7 @@ export default function Dashboard({ user, onOpenBuilder, onLogout }) {
                         <button
                             key={n.id}
                             className={`db-nav-item${activeSection===n.id?' db-nav-item--active':''}`}
-                            onClick={() => {
-                            if (n.soon) return;
-                            if (n.id === 'ats' || n.id === 'jobmatch') {
-                                onOpenBuilder(n.id === 'ats' ? 'gallery' : 'jobmatch');
-                            } else if (n.id === 'rewrite') {
-                                onOpenBuilder('gallery');
-                            } else {
-                                setActiveSection(n.id);
-                            }
-                        }}
+                            onClick={() => !n.soon && setActiveSection(n.id)}
                         >
                             <span className="db-nav-item__icon">{n.icon}</span>
                             <span className="db-nav-item__label">{n.label}</span>

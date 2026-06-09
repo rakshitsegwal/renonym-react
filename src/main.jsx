@@ -51,7 +51,6 @@ function App() {
         return <ResumeBuilder
             initialMode={entryMode}
             onGoToDashboard={goToDashboard}
-            onGoToLanding={() => setView('landing')}
         />;
     }
 
@@ -69,7 +68,6 @@ function App() {
             onStartAi={() => goToBuilder('ai')}
             onOpenJobMatch={() => goToBuilder('jobmatch')}
             onLogin={handleLogin}
-            onGoToDashboard={goToDashboard}
             currentUser={currentUser}
         />
     );
