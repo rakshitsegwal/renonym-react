@@ -255,6 +255,7 @@ class ResumeBuilder extends React.Component {
     templatePrompt = '';
     aiGeneratedCss    = '';
     aiGeneratedLayout = 'two-col';
+    aiGeneratedTokens = null;
 
     // ── Font customization ────────────────────────────────────────────────
     fontFamily = 'Inter';
@@ -841,10 +842,8 @@ class ResumeBuilder extends React.Component {
             this.currentStep   = STEPS.BUILD;
             this.activeSection = SECTIONS.PROFILE;
         }
-        // Generate AI theme (tokens) — navigate to build regardless of success
         await this.generateAiTemplate();
-        // Always move to build step — if generation failed, user sees status message
-        // and can retry from the AI Style section
+        // Always land in BUILD step so user sees the result (or the error message)
         this.currentStep   = STEPS.BUILD;
         this.activeSection = SECTIONS.AI;
     }
@@ -950,17 +949,12 @@ class ResumeBuilder extends React.Component {
         if (this.currentStep === STEPS.METHOD) {
             this.currentStep = STEPS.GALLERY;
         } else if (this.currentStep === STEPS.GALLERY) {
-            // Back from gallery → return to landing page
-            if (this.props && this.props.onGoToLanding) {
-                this.props.onGoToLanding();
-            }
+            if (this.props && this.props.onGoToLanding) this.props.onGoToLanding();
         } else if (this.currentStep === STEPS.AI_FLOW) {
             this.handleAiFlowBack();
         } else if (this.currentStep === STEPS.BUILD) {
-            // Back from build → go to gallery if template mode, else ai flow
             if (this.selectedMode === 'ai') {
-                this.currentStep = STEPS.AI_FLOW;
-                this.aiFlowStep  = 2;
+                this.currentStep = STEPS.AI_FLOW; this.aiFlowStep = 2;
             } else {
                 this.currentStep = STEPS.METHOD;
             }
@@ -1140,11 +1134,10 @@ class ResumeBuilder extends React.Component {
     async generateAiTemplate() {
         const hasInspiration = !!(this.inspirationBase64 && this.inspirationMimeType);
 
-        // If inspiration file uploaded but no prompt, auto-fill a smart default
-        // so user can generate from image alone without typing
+        // Allow generation from inspiration image alone — no text prompt required
         if (!this.templatePrompt?.trim()) {
             if (hasInspiration) {
-                this.templatePrompt = 'Create a professional resume style inspired by the uploaded reference. Match its color palette, typography, and layout aesthetic.';
+                this.templatePrompt = 'Create a professional resume style inspired by the uploaded reference. Match its color palette, typography, and overall aesthetic.';
             } else {
                 this._setStatus('Please describe your ideal style — or pick one of the examples above.', 'error');
                 return;
@@ -1154,67 +1147,59 @@ class ResumeBuilder extends React.Component {
         this.isGeneratingAi = true;
 
         try {
-            this._setStatus('Generating AI template…', 'info');
+            this._setStatus(hasInspiration ? 'Analysing inspiration image… (up to 60s)' : 'Generating AI theme…', 'info');
 
             const body = {
-                prompt:   this.templatePrompt,
+                prompt:     this.templatePrompt,
                 resumeData: this.formData,
                 metadata: {
-                    hasPhoto:          this.hasPhoto,
-                    experienceCount:   this.formData.experiences?.length || 0,
-                    skillCount:        this.formData.skills?.length || 0,
+                    hasPhoto:           this.hasPhoto,
+                    experienceCount:    this.formData.experiences?.length || 0,
+                    skillCount:         this.formData.skills?.length || 0,
                     certificationCount: this.formData.certifications?.length || 0,
-                    educationCount:    this.formData.education?.length || 0,
-                    summaryLength:     this.formData.summary?.length || 0,
-                    totalBullets:      (this.formData.experiences || [])
+                    educationCount:     this.formData.education?.length || 0,
+                    summaryLength:      this.formData.summary?.length || 0,
+                    totalBullets:       (this.formData.experiences || [])
                         .reduce((sum, e) => sum + (e.bullets?.length || 0), 0)
                 }
             };
 
-            // Include inspiration image if provided
-            if (this.inspirationBase64 && this.inspirationMimeType) {
+            if (hasInspiration) {
                 body.inspirationBase64   = this.inspirationBase64;
                 body.inspirationMimeType = this.inspirationMimeType;
             }
 
-            // Two OpenAI calls when inspiration present (vision + CSS gen) → 90s timeout.
-            // Single CSS call otherwise → 45s is sufficient.
-            const timeoutMs = (this.inspirationBase64 && this.inspirationMimeType) ? 90000 : 45000;
-
-            if (this.inspirationBase64) {
-                this._setStatus("Analysing inspiration + generating CSS... (up to 60s)", "info");
-            }
+            const timeoutMs = hasInspiration ? 90000 : 45000;
 
             const response = await this.apiFetch(`${RAILWAY_URL}/generate-template`, {
-                method:  "POST",
-                headers: { "Content-Type": "application/json", "x-client-id": this.clientId },
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'x-client-id': this.clientId },
                 body:    JSON.stringify(body)
             }, timeoutMs);
 
             if (response.status === 429) {
-                this._setStatus("Too many AI requests. Please wait a few minutes.", "error");
+                this._setStatus('Too many AI requests. Please wait a few minutes.', 'error');
                 return;
             }
-
-            if (!response.ok) throw new Error("Template generation failed");
+            if (!response.ok) throw new Error('Template generation failed');
 
             const result = await response.json();
-            if (!result.tokens && !result.layout) throw new Error('No tokens returned from server');
+            if (!result.tokens && !result.layout) throw new Error('Invalid response from server');
 
-            // Remove any old AI CSS style tag (tokens replace CSS entirely)
+            // Remove any leftover old-style CSS tag
             const oldTag = document.getElementById('rp-ai-template-style');
             if (oldTag) oldTag.remove();
 
             this.aiGeneratedTokens = result.tokens || null;
             this.aiGeneratedLayout = result.layout  || 'two-col';
-            this.aiGeneratedCss    = ''; // no longer used
+            this.aiGeneratedCss    = '';
             this.templateStyle     = 'ai-generated';
 
-            this._setStatus('AI theme applied! 🎨 Colours and layout updated.', 'success');
+            this._setStatus('AI theme applied! 🎨', 'success');
 
         } catch (e) {
             console.error('AI template generation failed:', e);
-            this._setStatus('Failed to generate AI template. Try again.', 'error');
+            this._setStatus('AI generation failed. Check your connection and try again.', 'error');
         } finally {
             this.isGeneratingAi = false;
         }
@@ -1228,13 +1213,13 @@ class ResumeBuilder extends React.Component {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        // Validate file type
-        const allowed = ['application/pdf',
+        const allowed = [
+            'application/pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'text/plain'];
-        const isAllowed = allowed.includes(file.type) || file.name.endsWith('.docx') || file.name.endsWith('.pdf') || file.name.endsWith('.txt');
-        if (!isAllowed) {
-            this._setStatus('Unsupported file type. Please upload a PDF, DOCX, or TXT file.', 'error');
+            'text/plain'
+        ];
+        if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|docx|txt)$/i)) {
+            this._setStatus('Please upload a PDF, DOCX, or TXT file. Images are not supported here.', 'error');
             return;
         }
 
@@ -1535,9 +1520,7 @@ class ResumeBuilder extends React.Component {
         this.currentUser = null;
         localStorage.removeItem('rn-auth-token');
         localStorage.removeItem('rn-auth-user');
-        if (this.props && this.props.onGoToLanding) {
-            this.props.onGoToLanding();
-        }
+        if (this.props && this.props.onGoToLanding) this.props.onGoToLanding();
     }
 
     handleCreditGateClose() {
@@ -1743,21 +1726,32 @@ class ResumeBuilder extends React.Component {
             }
         });
 
-        // If AI tokens are set, inject them as CSS variables for PDF rendering
+        // Inject AI token CSS variables for PDF rendering
+        // (tokens are applied as inline style vars on the element in React,
+        //  but we also inject them as explicit CSS so Puppeteer renders correctly)
         if (this.aiGeneratedTokens) {
             const t = this.aiGeneratedTokens;
-            const vars = [
-                ['--rn-hbg',    t.headerBg],   ['--rn-htx',    t.headerText],
-                ['--rn-hsub',   t.headerSub],   ['--rn-sbg',    t.sidebarBg],
-                ['--rn-stx',    t.sidebarText], ['--rn-stitle', t.sidebarTitle],
-                ['--rn-accent', t.accent],      ['--rn-mbg',    t.mainBg],
-                ['--rn-mtx',    t.mainText],    ['--rn-mtitle', t.mainTitle],
-                ['--rn-mrole',  t.mainRole],    ['--rn-skillbg',t.skillBg],
-                ['--rn-skilltx',t.skillText],   ['--rn-certbg', t.certBg],
-                ['--rn-certtx', t.certText],    ['--rn-font',   t.fontBody],
-                ['--rn-font-h', t.fontHeading],
-            ].filter(([,v]) => v).map(([k,v]) => `  ${k}: ${v};`).join('\n');
-            css += `\n[data-id="resume-preview"].rb-resume--ai-tokens {\n${vars}\n}\n`;
+            const pairs = [
+                ['--rn-hbg',     t.headerBg],
+                ['--rn-htx',     t.headerText],
+                ['--rn-hsub',    t.headerSub],
+                ['--rn-sbg',     t.sidebarBg],
+                ['--rn-stx',     t.sidebarText],
+                ['--rn-stitle',  t.sidebarTitle],
+                ['--rn-accent',  t.accent],
+                ['--rn-mbg',     t.mainBg],
+                ['--rn-mtx',     t.mainText],
+                ['--rn-mtitle',  t.mainTitle],
+                ['--rn-mrole',   t.mainRole],
+                ['--rn-skillbg', t.skillBg],
+                ['--rn-skilltx', t.skillText],
+                ['--rn-certbg',  t.certBg],
+                ['--rn-certtx',  t.certText],
+                ['--rn-font',    t.fontBody],
+                ['--rn-font-h',  t.fontHeading],
+            ];
+            const vars = pairs.filter(([,v]) => v).map(([k,v]) => `  ${k}: ${v};`).join('\n');
+            css += `\n.rb-resume--ai-tokens {\n${vars}\n}\n`;
         }
 
         return css;
@@ -3413,7 +3407,6 @@ class ResumeBuilder extends React.Component {
                                 <textarea
                                     className="rp-jm-jd-textarea"
                                     placeholder="Paste the full job description here...&#10;&#10;e.g. from LinkedIn, Indeed, or a company careers page"
-                                    value={jobDescription}
                                     onChange={(e) => this.handleJobDescriptionInput(e)}
                                 ></textarea>
                                 {jdIsReady ? (<React.Fragment>
