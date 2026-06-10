@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Lock, ShieldCheck, Check } from 'lucide-react';
 import { Badge } from './primitives.jsx';
 import { AuthModal } from '../AuthModal.jsx';
-import { payAndVerify, createSession, loadDraft, clearDraft, getUser } from './api.js';
+import { payAndVerify, createSession, coachMe, loadDraft, clearDraft, getUser } from './api.js';
 
 // S6 — Coach Checkout (recreated from designs/screens/06-payment.html).
 // The design shows Stripe card fields as placeholders; we use the existing
@@ -27,7 +27,19 @@ export default function CoachCheckout({ nav }) {
         try {
             setStatus('Confirming your payment…');
             await payAndVerify(p.id, user);                 // Razorpay → grants Coach entitlement
-            console.log('[coach] payment verified; entitlement granted');
+            console.log('[coach] payment verified');
+
+            // Confirm the entitlement actually saved (authoritative source) — never
+            // silently loop back to checkout if the grant didn't land.
+            setStatus('Activating your access…');
+            let me = null;
+            try { me = await coachMe(); } catch (e) { /* keep me=null */ }
+            console.log('[coach] entitlement after pay:', me);
+            if (!me || !me.has) {
+                setError('Your payment went through, but access didn\'t activate. Please reload this page in a moment — if it still says this, contact support (don\'t pay again).');
+                setBusy(false);
+                return;
+            }
 
             const draft = loadDraft();
             const ready = draft && draft.jobDescription && draft.jobDescription.trim().length >= 30;

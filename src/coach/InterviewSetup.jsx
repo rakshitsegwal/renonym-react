@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
-import { Upload, MessageSquare } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, MessageSquare, FileText, Check } from 'lucide-react';
 import { VoiceOrb, Badge } from './primitives.jsx';
-import { saveDraft, coachMe, createSession } from './api.js';
+import { saveDraft, coachMe, createSession, parseResumeFile } from './api.js';
+
+function loadSavedResume() {
+    try { const d = JSON.parse(localStorage.getItem('rb-draft') || '{}'); return d && d.fullName ? d : null; } catch { return null; }
+}
 
 // S5 — Interview Setup (recreated from designs/screens/05-interview-setup.html)
 // Phase-3 mock: interactive config; "Continue to checkout" routes to /coach/checkout.
@@ -9,15 +13,34 @@ const TYPES   = ['Behavioral', 'Technical', 'Mixed', 'System design', 'Case'];
 const LENGTHS = [{ q: 5, label: '5 Q' }, { q: 6, label: '6 Q · ~15 min' }, { q: 10, label: '10 Q' }];
 
 export default function InterviewSetup({ nav }) {
-    const [company, setCompany] = useState('Stripe');
-    const [title, setTitle]     = useState('Senior Product Manager');
-    const [jd, setJd]           = useState("You'll own the roadmap for our payments platform, partnering with engineering and design to ship 0→1 products. 6+ years in product, experience with payments or fintech preferred…");
+    const [company, setCompany] = useState('');
+    const [title, setTitle]     = useState('');
+    const [jd, setJd]           = useState('');
     const [type, setType]       = useState('Behavioral');
     const [length, setLength]   = useState(6);
     const [mode, setMode]       = useState('voice');
     const [difficulty]          = useState(66);
     const [busy, setBusy]       = useState(false);
     const [err, setErr]         = useState('');
+    const [resume, setResume]   = useState(loadSavedResume);   // user's actual résumé (saved or uploaded)
+    const [resumeBusy, setResumeBusy] = useState(false);
+    const fileRef = useRef(null);
+
+    async function onResumeFile(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setResumeBusy(true); setErr('');
+        try {
+            const data = await parseResumeFile(file);
+            setResume(data);
+            try { localStorage.setItem('rb-draft', JSON.stringify(data)); } catch {}
+        } catch (ex) {
+            setErr(ex.message || 'Could not read that résumé. Try a PDF, DOCX, or TXT.');
+        } finally {
+            setResumeBusy(false);
+            if (e.target) e.target.value = '';
+        }
+    }
 
     const lenLabel = LENGTHS.find(l => l.q === length)?.label || `${length} Q`;
     const estMin   = length <= 5 ? '~12 min' : length <= 6 ? '~15 min' : '~24 min';
@@ -25,9 +48,7 @@ export default function InterviewSetup({ nav }) {
     async function handleContinue() {
         if (jd.trim().length < 30) { setErr('Add a job description (at least 30 characters) so we can tailor the interview.'); return; }
         setBusy(true); setErr('');
-        let resumeData = {};
-        try { resumeData = JSON.parse(localStorage.getItem('rb-draft') || '{}'); } catch {}
-        const cfg = { resumeData, company, jobTitle: title, jobDescription: jd, interviewType: type, difficulty, mode, length };
+        const cfg = { resumeData: resume || {}, company, jobTitle: title, jobDescription: jd, interviewType: type, difficulty, mode, length };
         saveDraft(cfg);
 
         // Check entitlement separately from session creation so a creation error
@@ -78,18 +99,22 @@ export default function InterviewSetup({ nav }) {
 
                     {/* résumé */}
                     <div style={{ marginBottom: 34 }}>
-                        <div className="input-lbl" style={{ marginBottom: 14 }}>Your résumé</div>
-                        <div className="row ac gap-14" style={{ border: '1px solid var(--gold-line)', background: 'var(--gold-soft)', borderRadius: 'var(--r-m)', padding: '16px 18px', marginBottom: 12 }}>
-                            <span style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--gold)', background: 'radial-gradient(circle,var(--gold) 0 5px,transparent 6px)', flex: 'none' }} />
-                            <div style={{ width: 34, height: 42, borderRadius: 5, background: '#F3F1EB', flex: 'none' }} />
-                            <div className="fill"><div className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>Maya_Chen_PM.pdf</div><div className="xs">Saved résumé · tailored to Stripe</div></div>
-                            <Badge variant="green">ATS 94</Badge>
-                        </div>
-                        <div className="row ac gap-18" style={{ border: '1.5px dashed var(--line-3)', borderRadius: 'var(--r-l)', padding: 26 }}>
-                            <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', color: 'var(--gold)', flex: 'none' }}><Upload size={18} /></div>
-                            <div className="fill"><div className="sm" style={{ color: 'var(--text-2)', fontWeight: 600 }}>Upload a different résumé</div><div className="xs">PDF or DOCX, up to 5MB</div></div>
-                            <button className="btn btn-ghost btn-sm">Browse</button>
-                        </div>
+                        <div className="input-lbl" style={{ marginBottom: 14 }}>Your résumé <span className="faint">(optional — sharpens the questions)</span></div>
+                        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt" hidden onChange={onResumeFile} />
+                        {resume && resume.fullName ? (
+                            <div className="row ac gap-14" style={{ border: '1px solid var(--gold-line)', background: 'var(--gold-soft)', borderRadius: 'var(--r-m)', padding: '16px 18px', marginBottom: 12 }}>
+                                <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--gold)', display: 'grid', placeItems: 'center', flex: 'none' }}><Check size={12} color="var(--on-gold)" /></span>
+                                <div className="fill"><div className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>{resume.fullName}{resume.title ? ` · ${resume.title}` : ''}</div><div className="xs">Using this résumé to tailor your interview</div></div>
+                                <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()} disabled={resumeBusy}>Replace</button>
+                            </div>
+                        ) : (
+                            <button className="row ac gap-18" onClick={() => fileRef.current?.click()} disabled={resumeBusy}
+                                    style={{ width: '100%', textAlign: 'left', border: '1.5px dashed var(--line-3)', background: 'transparent', borderRadius: 'var(--r-l)', padding: 26, cursor: 'pointer' }}>
+                                <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', color: 'var(--gold)', flex: 'none' }}>{resumeBusy ? <Upload size={18} className="orb" /> : <Upload size={18} />}</div>
+                                <div className="fill"><div className="sm" style={{ color: 'var(--text-2)', fontWeight: 600 }}>{resumeBusy ? 'Reading your résumé…' : 'Upload your résumé'}</div><div className="xs">PDF, DOCX or TXT · up to 5 MB. Or skip — we'll tailor from the role.</div></div>
+                                <span className="btn btn-ghost btn-sm none">Browse</span>
+                            </button>
+                        )}
                     </div>
 
                     {/* role */}
@@ -102,7 +127,7 @@ export default function InterviewSetup({ nav }) {
                     <div style={{ marginBottom: 34 }}>
                         <label className="input-lbl" style={{ display: 'block', marginBottom: 8 }}>Job description</label>
                         <textarea className="textarea" style={{ minHeight: 130 }} value={jd} onChange={(e) => setJd(e.target.value)} />
-                        <div className="row ac gap-8" style={{ marginTop: 12 }}><Badge variant="gold">✦ Detected: Payments</Badge><Badge>Senior · IC</Badge><Badge>0→1</Badge></div>
+                        <div className="xs" style={{ marginTop: 10 }}>Paste the full job description — the AI builds questions from it.</div>
                     </div>
 
                     {/* type */}
@@ -152,12 +177,12 @@ export default function InterviewSetup({ nav }) {
                     <div style={{ position: 'sticky', top: 40 }}>
                         <div className="label" style={{ marginBottom: 18 }}>Session summary</div>
                         <div className="card" style={{ padding: 22, marginBottom: 20 }}>
-                            <div className="h4" style={{ marginBottom: 4 }}>{title.split(' ').slice(-1)[0] === 'Manager' ? 'Senior PM' : title} · {company}</div>
+                            <div className="h4" style={{ marginBottom: 4 }}>{[title, company].filter(Boolean).join(' · ') || 'Your interview'}</div>
                             <div className="xs" style={{ marginBottom: 18 }}>{type} · Realistic · {length} questions</div>
                             <div className="col gap-12">
                                 <Row k="Mode" v={mode === 'voice' ? 'Voice' : 'Text'} />
                                 <Row k="Est. length" v={estMin} />
-                                <Row k="Résumé" v="Maya_Chen_PM" />
+                                <Row k="Résumé" v={resume?.fullName ? resume.fullName : 'From the role'} />
                                 <Row k="Report" v="Full scored" />
                             </div>
                         </div>

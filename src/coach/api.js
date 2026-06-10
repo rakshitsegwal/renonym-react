@@ -60,6 +60,47 @@ export const getSession     = (id) => req(`/coach/sessions/${id}`);
 export const submitAnswer   = (id, questionId, text) => req(`/coach/sessions/${id}/answers`, { method: 'POST', body: { questionId, text } });
 export const scoreSession   = (id) => req(`/coach/sessions/${id}/score`, { method: 'POST', timeoutMs: 120000 });
 
+// ── Résumé upload + parse (reuses the existing /extract-resume endpoint) ─────
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) return resolve();
+        const s = document.createElement('script');
+        s.src = src; s.onload = () => resolve(); s.onerror = () => reject(new Error('load failed'));
+        document.head.appendChild(s);
+    });
+}
+async function fileToText(file) {
+    const name = (file.name || '').toLowerCase();
+    if (name.endsWith('.pdf') || file.type === 'application/pdf') {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+        const pdfjsLib = window.pdfjsLib;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const buf = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(it => it.str).join(' ') + '\n';
+        }
+        return text;
+    }
+    if (name.endsWith('.docx')) {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+        const buf = await file.arrayBuffer();
+        const r = await window.mammoth.extractRawText({ arrayBuffer: buf });
+        return r.value || '';
+    }
+    return await file.text(); // txt / fallback
+}
+// Returns structured résumé data the question generator can use.
+export async function parseResumeFile(file) {
+    if (file.size > 5 * 1024 * 1024) throw new Error('Résumé must be under 5 MB.');
+    const text = await fileToText(file);
+    if (!text || text.trim().length < 30) throw new Error('Could not read that file. Try a PDF, DOCX, or TXT.');
+    return await req('/extract-resume', { method: 'POST', body: { text } });
+}
+
 // ── Setup draft (carries config from Setup → Checkout → session create) ──────
 const DRAFT_KEY = 'coach-draft';
 export function saveDraft(cfg) { try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(cfg)); } catch {} }
