@@ -4,23 +4,53 @@ import LandingPage from './LandingPage.jsx';
 import ResumeBuilder from './ResumeBuilder.jsx';
 import Dashboard from './Dashboard.jsx';
 import LegalPage from './LegalPage.jsx';
+import Showcase from './coach/Showcase.jsx';
+import CoachLanding from './coach/CoachLanding.jsx';
+import InterviewSetup from './coach/InterviewSetup.jsx';
+import CoachCheckout from './coach/CoachCheckout.jsx';
+import InterviewReport from './coach/InterviewReport.jsx';
+import InterviewComplete from './coach/InterviewComplete.jsx';
+import InterviewHistory from './coach/InterviewHistory.jsx';
+import VoiceInterview from './coach/VoiceInterview.jsx';
+import TextInterview from './coach/TextInterview.jsx';
 import './app.css';
+import './coach.css';
 
 // ── Lightweight routing ─────────────────────────────────────────────────────
 // Legal pages get real paths (so they're shareable / SEO-able and survive a
 // hard refresh — see vercel.json rewrites). The app views (landing / builder /
 // dashboard) live at "/" and are driven by history state so the browser Back
 // button works. Section anchors (#features etc.) keep native scroll behaviour.
-const LEGAL_PATHS    = { '/privacy': 'privacy', '/terms': 'terms', '/about': 'about' };
+const LEGAL_PATHS    = { '/privacy': 'privacy', '/terms': 'terms', '/about': 'about', '/coach-preview': 'coach-preview' };
 const PATH_FOR_VIEW  = { privacy: '/privacy', terms: '/terms', about: '/about' };
 const SECTION_HASHES = ['#features', '#templates', '#pricing'];
 
-function viewFromLocation() {
-    return LEGAL_PATHS[window.location.pathname] || 'landing';
+// Interview Coach routes (path-based, with params). Returns null if not a coach path.
+function matchCoach(path) {
+    if (path === '/coach')          return { view: 'coach-landing',  params: {} };
+    if (path === '/coach/new')      return { view: 'coach-setup',    params: {} };
+    if (path === '/coach/checkout') return { view: 'coach-checkout', params: {} };
+    if (path === '/coach/reports')  return { view: 'coach-history',  params: {} };
+    let m;
+    if ((m = path.match(/^\/coach\/session\/([^/]+)\/complete$/))) return { view: 'coach-complete', params: { id: m[1] } };
+    if ((m = path.match(/^\/coach\/session\/([^/]+)$/)))           return { view: 'coach-session',  params: { id: m[1], mode: new URLSearchParams(window.location.search).get('mode') || 'voice' } };
+    if ((m = path.match(/^\/coach\/report\/([^/]+)$/)))           return { view: 'coach-report',   params: { id: m[1] } };
+    return null;
+}
+
+// Resolve the current URL → { view, params }. Path-based routes (legal, coach)
+// are authoritative; everything else is the landing/builder/dashboard app at "/".
+function parseLocation() {
+    const path = window.location.pathname;
+    if (LEGAL_PATHS[path]) return { view: LEGAL_PATHS[path], params: {} };
+    const coach = matchCoach(path);
+    if (coach) return coach;
+    return { view: 'landing', params: {} };
 }
 
 function App() {
-    const [view, setView]           = useState(viewFromLocation);
+    const [view, setView]           = useState(() => parseLocation().view);
+    const [params, setParams]       = useState(() => parseLocation().params);
     const [entryMode, setEntryMode] = useState('gallery');
     const [currentUser, setCurrentUser] = useState(null);
     const viewRef = useRef(view);
@@ -38,9 +68,15 @@ function App() {
     // Browser Back/Forward + section-anchor handling
     useEffect(() => {
         function onPop(e) {
-            const next = (e.state && e.state.view) || viewFromLocation();
+            const loc = parseLocation();
+            // Path-based routes (legal, coach) are authoritative; "/" falls back
+            // to history state so the builder/dashboard views restore correctly.
+            if (loc.view !== 'landing') {
+                setView(loc.view); setParams(loc.params);
+            } else {
+                setView((e.state && e.state.view) || 'landing'); setParams({});
+            }
             if (e.state && e.state.entryMode) setEntryMode(e.state.entryMode);
-            setView(next);
         }
         function onHash() {
             // Clicking a section anchor while inside an app view returns to the
@@ -83,6 +119,14 @@ function App() {
     function goToLanding() { navigate('landing'); }
     function goToLegal(page) { navigate(page); }
 
+    // Path-based navigation for Coach routes (e.g. nav('/coach/new')).
+    function navPath(path) {
+        window.history.pushState({}, '', path);
+        const r = parseLocation();
+        setView(r.view); setParams(r.params);
+        window.scrollTo(0, 0);
+    }
+
     function handleLogin() {
         const user = localStorage.getItem('rn-auth-user');
         if (user) { try { setCurrentUser(JSON.parse(user)); } catch {} }
@@ -97,8 +141,40 @@ function App() {
         navigate('landing');
     }
 
+    if (view === 'coach-preview') {
+        return <Showcase />;
+    }
+
     if (view === 'privacy' || view === 'terms' || view === 'about') {
         return <LegalPage page={view} onHome={goToLanding} />;
+    }
+
+    if (view === 'coach-landing') {
+        return <CoachLanding nav={navPath} onSignIn={() => navPath('/')} currentUser={currentUser} />;
+    }
+    if (view === 'coach-setup') {
+        return <InterviewSetup nav={navPath} />;
+    }
+    if (view === 'coach-checkout') {
+        return <CoachCheckout nav={navPath} />;
+    }
+    if (view === 'coach-session') {
+        return params.mode === 'text'
+            ? <TextInterview nav={navPath} id={params.id} />
+            : <VoiceInterview nav={navPath} id={params.id} />;
+    }
+    if (view === 'coach-report') {
+        return <InterviewReport nav={navPath} />;
+    }
+    if (view === 'coach-complete') {
+        return <InterviewComplete nav={navPath} id={params.id} />;
+    }
+    if (view === 'coach-history') {
+        return <InterviewHistory nav={navPath} currentUser={currentUser} />;
+    }
+    if (view.startsWith('coach-')) {
+        // checkout / session / complete / report / history — built in later phases
+        return <CoachPlaceholder view={view} params={params} nav={navPath} />;
     }
 
     if (view === 'builder') {
@@ -127,6 +203,24 @@ function App() {
             onLogin={handleLogin}
             currentUser={currentUser}
         />
+    );
+}
+
+// Temporary placeholder for Coach screens not yet built (checkout/session/etc.)
+function CoachPlaceholder({ view, nav }) {
+    const name = view.replace('coach-', '');
+    return (
+        <div className="rn-dark" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
+            <div>
+                <span className="eyebrow">Interview Coach</span>
+                <h1 className="h1" style={{ margin: '10px 0 6px', textTransform: 'capitalize' }}>{name}</h1>
+                <p className="lead" style={{ marginBottom: 24 }}>This screen is coming in the next build phase.</p>
+                <div className="row ac jc gap-12">
+                    <button className="btn btn-gold" onClick={() => nav('/coach')}>Coach home</button>
+                    <button className="btn btn-outline" onClick={() => nav('/coach/new')}>New interview</button>
+                </div>
+            </div>
+        </div>
     );
 }
 
