@@ -24,44 +24,38 @@ export default function CoachCheckout({ nav }) {
 
     async function pay(user) {
         setError(''); setBusy(true);
+        let meDbg = 'n/a', grantDbg = 'n/a';
         try {
             setStatus('Confirming your payment…');
-            await payAndVerify(p.id, user);                 // Razorpay → grants Coach entitlement
-            console.log('[coach] payment verified');
+            const v = await payAndVerify(p.id, user);        // Razorpay → grants Coach entitlement
+            grantDbg = v && v.grant ? JSON.stringify(v.grant) : 'no-grant-field';
+            console.log('[coach] verify response:', v);
 
-            // Confirm the entitlement actually saved (authoritative source) — never
-            // silently loop back to checkout if the grant didn't land.
+            // Confirm the entitlement actually saved (authoritative source).
             setStatus('Activating your access…');
             let me = null;
-            try { me = await coachMe(); } catch (e) { /* keep me=null */ }
-            console.log('[coach] entitlement after pay:', me);
+            try { me = await coachMe(); } catch (e) { meDbg = 'me-error:' + e.message + '/' + e.status; }
+            if (me) meDbg = JSON.stringify(me);
+            console.log('[coach] entitlement after pay:', me, 'user.id=', user?.id);
             if (!me || !me.has) {
-                setError('Your payment went through, but access didn\'t activate. Please reload this page in a moment — if it still says this, contact support (don\'t pay again).');
-                setBusy(false);
+                setError(`Payment OK, access not active. [grant=${grantDbg}] [me=${meDbg}] [userId=${user?.id || 'none'}]. Send me this text.`);
+                setBusy(false); setPaid(true);
                 return;
             }
 
             const draft = loadDraft();
             const ready = draft && draft.jobDescription && draft.jobDescription.trim().length >= 30;
-            if (!ready) {
-                // Paid, but no interview configured yet → set it up (now entitled).
-                console.log('[coach] no interview draft → routing to setup');
-                clearDraft();
-                nav('/coach/new');
-                return;
-            }
+            if (!ready) { clearDraft(); nav('/coach/new'); return; }
 
             setStatus('Payment confirmed. Generating your interview…');
             const s = await createSession(draft);           // consumes entitlement, generates questions
-            console.log('[coach] session created', s?.id);
             clearDraft();
             nav(`/coach/session/${s.id}` + (draft.mode === 'text' ? '?mode=text' : ''));
         } catch (e) {
             console.error('[coach] checkout failed:', e);
             setStatus('');
             if (e.message !== 'CANCELLED') {
-                // Payment likely succeeded; the post-payment step failed. Don't leave them stuck.
-                setError((e.message || 'Something went wrong after payment.') + ' — your access is active; tap “Set up interview”.');
+                setError(`After-payment error: "${e.message}" [code=${e.code || '?'} status=${e.status || '?'}] [grant=${grantDbg}] [me=${meDbg}]. Send me this text.`);
                 setPaid(true);
             }
             setBusy(false);
