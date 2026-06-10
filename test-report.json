@@ -1,0 +1,503 @@
+{
+  "timestamp": "2026-06-09T11:37:52.354Z",
+  "score": 0,
+  "results": {
+    "tokens": [
+      {
+        "i": 0,
+        "prompt": "Clean minimal white resume with navy blue accents and serif typography",
+        "ms": 20729,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "minimal"
+      },
+      {
+        "i": 1,
+        "prompt": "Dark professional resume with charcoal header and gold accent lines",
+        "ms": 20164,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "top-banner",
+        "size": "medium"
+      },
+      {
+        "i": 2,
+        "prompt": "Google-inspired clean white resume with blue and green accents",
+        "ms": 22996,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "heavy"
+      },
+      {
+        "i": 3,
+        "prompt": "Apple-style ultra-minimal resume, pure white, thin dividers, grey typography",
+        "ms": 17533,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "minimal"
+      },
+      {
+        "i": 4,
+        "prompt": "Microsoft corporate resume, blue header, clean sans-serif, structured layout",
+        "ms": 23613,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "top-banner",
+        "size": "medium"
+      },
+      {
+        "i": 5,
+        "prompt": "Bold creative designer resume, deep purple sidebar, white main, vibrant accents",
+        "ms": 18437,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "heavy"
+      },
+      {
+        "i": 6,
+        "prompt": "Netflix dark mode resume, black and red, cinematic editorial spacing",
+        "ms": 23034,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "minimal"
+      },
+      {
+        "i": 7,
+        "prompt": "Spotify green and black resume, music industry creative layout",
+        "ms": 21350,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "medium"
+      },
+      {
+        "i": 8,
+        "prompt": "Adobe creative cloud resume, red accent, dark sidebar, modern typography",
+        "ms": 21076,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "heavy"
+      },
+      {
+        "i": 9,
+        "prompt": "Figma-inspired resume, pastel purple, clean whitespace, modern layout",
+        "ms": 20075,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "minimal"
+      },
+      {
+        "i": 10,
+        "prompt": "Conservative banking and finance resume, navy and white, formal serif font",
+        "ms": 19037,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "medium"
+      },
+      {
+        "i": 11,
+        "prompt": "Tech startup engineer resume, dark background, monospace font, terminal vibes",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 107851
+      },
+      {
+        "i": 12,
+        "prompt": "Healthcare professional resume, clean white, soft blue, trustworthy styling",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 944062
+      },
+      {
+        "i": 13,
+        "prompt": "Legal professional resume, dark green, cream background, formal classic design",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 163475
+      },
+      {
+        "i": 14,
+        "prompt": "Marketing creative resume, coral and white, bold typography, energetic feel",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 5004
+      },
+      {
+        "i": 15,
+        "prompt": "Scandinavian minimal resume, white and light grey, clean lines, lots of space",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 619852
+      },
+      {
+        "i": 16,
+        "prompt": "Japanese-inspired clean resume, white space, thin borders, elegant simplicity",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 18745
+      },
+      {
+        "i": 17,
+        "prompt": "European professional resume, dark teal header, white body, classic structure",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 1715928
+      },
+      {
+        "i": 18,
+        "prompt": "Deep burgundy and cream elegant resume with gold accent details",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 309084
+      },
+      {
+        "i": 19,
+        "prompt": "Electric blue and white modern resume with clean geometric borders",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 5009
+      },
+      {
+        "i": 20,
+        "prompt": "Forest green and white resume, nature-inspired, clean professional",
+        "ok": false,
+        "reason": "TIMEOUT",
+        "ms": 2650274
+      },
+      {
+        "i": 21,
+        "prompt": "Rose gold and charcoal luxury resume for senior executive",
+        "ms": 28285,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "minimal"
+      },
+      {
+        "i": 22,
+        "prompt": "Slate grey and orange modern tech resume with bold section headers",
+        "ms": 27184,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "medium"
+      },
+      {
+        "i": 23,
+        "prompt": "Teal and white fresh resume, coastal inspired, airy and spacious",
+        "ms": 24684,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "heavy"
+      },
+      {
+        "i": 24,
+        "prompt": "Emerald green sidebar, white main content, sophisticated professional look",
+        "ms": 26586,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "minimal"
+      },
+      {
+        "i": 25,
+        "prompt": "Single column clean resume, full width sections, no sidebar, plenty whitespace",
+        "ms": 26116,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "medium"
+      },
+      {
+        "i": 26,
+        "prompt": "Top banner layout with prominent name header across full width",
+        "ms": 23314,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "top-banner",
+        "size": "heavy"
+      },
+      {
+        "i": 27,
+        "prompt": "Asymmetric layout with wide left identity column and narrow right experience",
+        "ms": 18509,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "asymmetric",
+        "size": "minimal"
+      },
+      {
+        "i": 28,
+        "prompt": "Two column layout with dark left sidebar for skills and contact info",
+        "ms": 27402,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "medium"
+      },
+      {
+        "i": 29,
+        "prompt": "Confident senior executive resume, powerful dark colours, authoritative typography",
+        "ms": 30471,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "top-banner",
+        "size": "heavy"
+      },
+      {
+        "i": 30,
+        "prompt": "Fresh graduate resume, light and energetic, modern sans-serif, approachable",
+        "ms": 26654,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "minimal"
+      },
+      {
+        "i": 31,
+        "prompt": "Creative director portfolio resume, editorial feel, unconventional spacing",
+        "ms": 31651,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "medium"
+      },
+      {
+        "i": 32,
+        "prompt": "Data scientist resume, clean structured, monochrome with one blue accent",
+        "ms": 21053,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "heavy"
+      },
+      {
+        "i": 33,
+        "prompt": "Product manager resume, clean modern, lots of whitespace, corporate but fresh",
+        "ms": 26375,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "minimal"
+      },
+      {
+        "i": 34,
+        "prompt": "Deep navy and coral resume with clean divider lines",
+        "ms": 26602,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "two-col",
+        "size": "medium"
+      },
+      {
+        "i": 35,
+        "prompt": "Warm amber and brown resume, earthy tones, organic feel",
+        "ms": 29221,
+        "ok": false,
+        "reason": "Missing tokens",
+        "layout": "single",
+        "size": "heavy"
+      },
+      {
+        "i": 36,
+        "prompt": "Black and gold premium resume for senior leadership roles",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 293
+      },
+      {
+        "i": 37,
+        "prompt": "Ice white and arctic blue clean minimal resume",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 704
+      },
+      {
+        "i": 38,
+        "prompt": "Soft lavender and white delicate professional resume",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 302
+      },
+      {
+        "i": 39,
+        "prompt": "Dark forest green and cream classic academic resume",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 290
+      },
+      {
+        "i": 40,
+        "prompt": "Cobalt blue and light grey modern enterprise resume",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 291
+      },
+      {
+        "i": 41,
+        "prompt": "Terracotta and warm white creative professional resume",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 1016
+      },
+      {
+        "i": 42,
+        "prompt": "Indigo and white clean developer resume with modern styling",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 292
+      },
+      {
+        "i": 43,
+        "prompt": "Charcoal and lime green dark mode tech resume",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 291
+      },
+      {
+        "i": 44,
+        "prompt": "Make it red",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 292
+      },
+      {
+        "i": 45,
+        "prompt": "Very dark and moody",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 290
+      },
+      {
+        "i": 46,
+        "prompt": "Bright and colourful",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 293
+      },
+      {
+        "i": 47,
+        "prompt": "Luxury premium gold",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 297
+      },
+      {
+        "i": 48,
+        "prompt": "Simple and clean",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 295
+      },
+      {
+        "i": 49,
+        "prompt": "FC Barcelona style blue and red with yellow accents",
+        "ok": false,
+        "reason": "RATE_LIMITED",
+        "ms": 287
+      }
+    ],
+    "pdf": [
+      {
+        "i": 0,
+        "ms": 296,
+        "label": "Minimal resume — default template",
+        "size": "minimal",
+        "fontSize": "medium",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 1,
+        "ms": 290,
+        "label": "Medium resume — default template",
+        "size": "medium",
+        "fontSize": "medium",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 2,
+        "ms": 290,
+        "label": "Heavy resume — 6 exp, 24 skills",
+        "size": "heavy",
+        "fontSize": "medium",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 3,
+        "ms": 293,
+        "label": "Minimal + custom font Inter",
+        "size": "minimal",
+        "fontSize": "small",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 4,
+        "ms": 287,
+        "label": "Medium + font size small",
+        "size": "medium",
+        "fontSize": "small",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 5,
+        "ms": 292,
+        "label": "Medium + font size medium",
+        "size": "medium",
+        "fontSize": "medium",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 6,
+        "ms": 293,
+        "label": "Medium + font size large",
+        "size": "medium",
+        "fontSize": "large",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 7,
+        "ms": 293,
+        "label": "Heavy + font size small",
+        "size": "heavy",
+        "fontSize": "small",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 8,
+        "ms": 296,
+        "label": "Heavy + font size large",
+        "size": "heavy",
+        "fontSize": "large",
+        "ok": false,
+        "reason": "HTTP 429"
+      },
+      {
+        "i": 9,
+        "ms": 294,
+        "label": "Heavy resume — no sidebar content",
+        "size": "heavy",
+        "fontSize": "medium",
+        "ok": false,
+        "reason": "HTTP 429"
+      }
+    ]
+  },
+  "totalMs": 7224396
+}

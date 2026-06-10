@@ -729,7 +729,44 @@ class ResumeBuilder extends React.Component {
     }
 
     get resumeClass() {
-        return `rb-resume rb-resume--${this.templateStyle || 'sf-classic'}`;
+        const base = `rb-resume rb-resume--${this.templateStyle || 'sf-classic'}`;
+        // When an AI theme is active, add the token-consuming class so the
+        // color-only var(--rn-*) rules in app.css apply. Structure stays hardcoded.
+        return (this.templateStyle === 'ai-generated' && this.aiGeneratedTokens)
+            ? `${base} rb-resume--ai-tokens`
+            : base;
+    }
+
+    // AI design tokens → inline CSS custom properties on the resume root.
+    // These are the ONLY way AI styling reaches the resume: colors/fonts as
+    // data values applied to a fixed layout. The AI never authors CSS, so it
+    // cannot touch grid/position/size — layout is structurally unbreakable.
+    // Inline vars also serialize into outerHTML, so the PDF payload carries them.
+    get resumeTokenStyle() {
+        const t = this.aiGeneratedTokens;
+        if (!t) return {};
+        const pairs = [
+            ['--rn-hbg',     t.headerBg],
+            ['--rn-htx',     t.headerText],
+            ['--rn-hsub',    t.headerSub],
+            ['--rn-sbg',     t.sidebarBg],
+            ['--rn-stx',     t.sidebarText],
+            ['--rn-stitle',  t.sidebarTitle],
+            ['--rn-accent',  t.accent],
+            ['--rn-mbg',     t.mainBg],
+            ['--rn-mtx',     t.mainText],
+            ['--rn-mtitle',  t.mainTitle],
+            ['--rn-mrole',   t.mainRole],
+            ['--rn-skillbg', t.skillBg],
+            ['--rn-skilltx', t.skillText],
+            ['--rn-certbg',  t.certBg],
+            ['--rn-certtx',  t.certText],
+            ['--rn-font',    t.fontBody],
+            ['--rn-font-h',  t.fontHeading],
+        ];
+        const style = {};
+        pairs.forEach(([k, v]) => { if (v) style[k] = v; });
+        return style;
     }
 
     get statusClass() {
@@ -1726,9 +1763,10 @@ class ResumeBuilder extends React.Component {
             }
         });
 
-        // Inject AI token CSS variables for PDF rendering
-        // (tokens are applied as inline style vars on the element in React,
-        //  but we also inject them as explicit CSS so Puppeteer renders correctly)
+        // Inject AI token CSS variables for PDF rendering.
+        // Tokens are already applied as inline style vars on the resume root (see
+        // resumeTokenStyle) and serialize into outerHTML, so the PDF carries them.
+        // This explicit .rb-resume--ai-tokens rule is belt-and-suspenders for Puppeteer.
         if (this.aiGeneratedTokens) {
             const t = this.aiGeneratedTokens;
             const pairs = [
@@ -2291,6 +2329,7 @@ class ResumeBuilder extends React.Component {
             promptIsOptional,
             promptSectionLabel,
             resumeClass,
+            resumeTokenStyle,
             resumeFont,
             resumeFontSize,
             selectedTemplateName,
@@ -3313,6 +3352,7 @@ class ResumeBuilder extends React.Component {
                             <LayoutComponent
                                 data={activeResumeData}
                                 resumeClass={resumeClass}
+                                resumeStyle={resumeTokenStyle}
                                 resumeFont={resumeFont}
                                 resumeFontSize={resumeFontSize}
                                 hasPhoto={hasPhoto}

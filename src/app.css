@@ -5289,6 +5289,44 @@ html, body, #root {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   AI TOKEN THEME — colour/font ONLY
+   These consume the --rn-* custom properties set inline on the resume
+   root from the AI's design tokens. Every rule touches ONLY colour,
+   background, border-colour and font-family — NEVER layout (no grid,
+   width, height, position, float, display). That is what makes AI
+   theming structurally unable to break the layout: the AI supplies
+   data values, never CSS. Every var() has a safe fallback so a missing
+   token degrades to a sane default instead of breaking.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Header */
+.rb-resume--ai-tokens .rb-resume__header     { background: var(--rn-hbg, #032d60); }
+.rb-resume--ai-tokens .rb-resume__name       { color: var(--rn-htx, #ffffff); }
+.rb-resume--ai-tokens .rb-resume__title-line { color: var(--rn-hsub, rgba(255,255,255,0.8)); }
+.rb-resume--ai-tokens .rb-resume__contact-item { color: var(--rn-hsub, rgba(255,255,255,0.72)); }
+.rb-resume--ai-tokens .rb-resume__top-deco   { background: var(--rn-accent, #032d60); }
+
+/* Sidebar */
+.rb-resume--ai-tokens .rb-resume__sidebar    { background: var(--rn-sbg, #f7f8fa); color: var(--rn-stx, #374151); }
+.rb-resume--ai-tokens .rb-resume__sidebar .rb-summary { color: var(--rn-stx, #374151); }
+.rb-resume--ai-tokens .rb-resume__sidebar .rb-section-title { color: var(--rn-stitle, var(--rn-accent, #032d60)); }
+.rb-resume--ai-tokens .rb-resume__sidebar .rb-cert { color: var(--rn-certtx, var(--rn-stx, #374151)); }
+
+/* Main column */
+.rb-resume--ai-tokens .rb-resume__main       { background: var(--rn-mbg, #ffffff); color: var(--rn-mtx, #1f2937); }
+.rb-resume--ai-tokens .rb-resume__main .rb-section-title { color: var(--rn-mtitle, var(--rn-accent, #032d60)); }
+.rb-resume--ai-tokens .rb-exp-role           { color: var(--rn-mrole, var(--rn-accent, #032d60)); }
+
+/* Skill pills + certs */
+.rb-resume--ai-tokens .rb-skill-pill         { background: var(--rn-skillbg, #eef2f7); color: var(--rn-skilltx, #032d60); }
+.rb-resume--ai-tokens .rb-cert               { background: var(--rn-certbg, transparent); color: var(--rn-certtx, #374151); }
+
+/* Fonts — body everywhere, heading font for name + section titles */
+.rb-resume--ai-tokens                        { font-family: var(--rn-font, inherit); }
+.rb-resume--ai-tokens .rb-resume__name,
+.rb-resume--ai-tokens .rb-section-title      { font-family: var(--rn-font-h, var(--rn-font, inherit)); }
+
+/* ══════════════════════════════════════════════════════════════
    CALORIE CALCULATOR
    ══════════════════════════════════════════════════════════════ */
 

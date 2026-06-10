@@ -109,11 +109,11 @@ function EducationSection({ data, hasEducation }) {
 // Right main: Experience + Education
 
 export function TwoColLayout(props) {
-    const { data, resumeClass, resumeFont, resumeFontSize,
+    const { data, resumeClass, resumeStyle, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
             hasSkills, hasCertifications, hasExperience, hasEducation } = props;
     return (
-        <div className={resumeClass} data-id="resume-preview"
+        <div className={resumeClass} data-id="resume-preview" style={resumeStyle}
              data-font={resumeFont} data-font-size={resumeFontSize}>
             <div className="rb-resume__top-deco"></div>
             <ResumeHeader data={data} hasPhoto={hasPhoto} initials={initials}
@@ -137,11 +137,11 @@ export function TwoColLayout(props) {
 // Full-width stacked sections — classic ATS-safe layout
 
 export function SingleLayout(props) {
-    const { data, resumeClass, resumeFont, resumeFontSize,
+    const { data, resumeClass, resumeStyle, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
             hasSkills, hasCertifications, hasExperience, hasEducation } = props;
     return (
-        <div className={`${resumeClass} rb-resume--layout-single`}
+        <div className={`${resumeClass} rb-resume--layout-single`} style={resumeStyle}
              data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize}>
             <div className="rb-resume__top-deco"></div>
             <ResumeHeader data={data} hasPhoto={hasPhoto} initials={initials}
@@ -162,11 +162,11 @@ export function SingleLayout(props) {
 // Skills + Certs shown inline as pills in a 2-col grid below
 
 export function TopBannerLayout(props) {
-    const { data, resumeClass, resumeFont, resumeFontSize,
+    const { data, resumeClass, resumeStyle, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
             hasSkills, hasCertifications, hasExperience, hasEducation } = props;
     return (
-        <div className={`${resumeClass} rb-resume--layout-banner`}
+        <div className={`${resumeClass} rb-resume--layout-banner`} style={resumeStyle}
              data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize}>
             {/* Full-width banner header */}
             <div className="rb-resume__banner">
@@ -211,11 +211,11 @@ export function TopBannerLayout(props) {
 // No separate header row — name lives inside the left column
 
 export function AsymmetricLayout(props) {
-    const { data, resumeClass, resumeFont, resumeFontSize,
+    const { data, resumeClass, resumeStyle, resumeFont, resumeFontSize,
             hasPhoto, initials, displayName, displayTitle,
             hasSkills, hasCertifications, hasExperience, hasEducation } = props;
     return (
-        <div className={`${resumeClass} rb-resume--layout-asymmetric`}
+        <div className={`${resumeClass} rb-resume--layout-asymmetric`} style={resumeStyle}
              data-id="resume-preview" data-font={resumeFont} data-font-size={resumeFontSize}>
             <div className="rb-resume__body rb-resume__body--asymmetric">
                 {/* Left accent column */}
