@@ -16,20 +16,42 @@ const PLANS = {
 export default function CoachCheckout({ nav }) {
     const [plan, setPlan] = useState('unlimited');
     const [busy, setBusy] = useState(false);
+    const [status, setStatus] = useState('');
     const [error, setError] = useState('');
+    const [paid, setPaid] = useState(false);
     const [showAuth, setShowAuth] = useState(false);
     const p = PLANS[plan];
 
     async function pay(user) {
         setError(''); setBusy(true);
         try {
+            setStatus('Confirming your payment…');
             await payAndVerify(p.id, user);                 // Razorpay → grants Coach entitlement
+            console.log('[coach] payment verified; entitlement granted');
+
             const draft = loadDraft();
-            const s = await createSession(draft || {});     // consumes entitlement, generates questions
+            const ready = draft && draft.jobDescription && draft.jobDescription.trim().length >= 30;
+            if (!ready) {
+                // Paid, but no interview configured yet → set it up (now entitled).
+                console.log('[coach] no interview draft → routing to setup');
+                clearDraft();
+                nav('/coach/new');
+                return;
+            }
+
+            setStatus('Payment confirmed. Generating your interview…');
+            const s = await createSession(draft);           // consumes entitlement, generates questions
+            console.log('[coach] session created', s?.id);
             clearDraft();
-            nav(`/coach/session/${s.id}` + (draft?.mode === 'text' ? '?mode=text' : ''));
+            nav(`/coach/session/${s.id}` + (draft.mode === 'text' ? '?mode=text' : ''));
         } catch (e) {
-            if (e.message !== 'CANCELLED') setError(e.message || 'Payment failed. Please try again.');
+            console.error('[coach] checkout failed:', e);
+            setStatus('');
+            if (e.message !== 'CANCELLED') {
+                // Payment likely succeeded; the post-payment step failed. Don't leave them stuck.
+                setError((e.message || 'Something went wrong after payment.') + ' — your access is active; tap “Set up interview”.');
+                setPaid(true);
+            }
             setBusy(false);
         }
     }
@@ -95,10 +117,17 @@ export default function CoachCheckout({ nav }) {
                         </div>
                     </div>
 
-                    <button className="btn btn-gold btn-lg btn-block" onClick={handlePay} disabled={busy}>
-                        {busy ? 'Processing…' : `Pay ${p.price} & start interview`}
-                    </button>
-                    {error && <p className="sm" style={{ color: 'var(--rose)', marginTop: 12, textAlign: 'center' }}>{error}</p>}
+                    {paid
+                        ? <button className="btn btn-gold btn-lg btn-block" onClick={() => nav('/coach/new')}>Set up your interview →</button>
+                        : <button className="btn btn-gold btn-lg btn-block" onClick={handlePay} disabled={busy}>
+                            {busy ? (status || 'Processing…') : `Pay ${p.price} & start interview`}
+                          </button>}
+                    {error && (
+                        <div className="card" style={{ marginTop: 14, padding: '14px 16px', borderColor: 'var(--rose)', background: 'var(--rose-soft)' }}>
+                            <p className="sm" style={{ color: 'var(--rose)' }}>{error}</p>
+                        </div>
+                    )}
+                    {!error && status && <p className="sm" style={{ color: 'var(--gold)', marginTop: 12, textAlign: 'center' }}>{status}</p>}
                     <div className="row ac jc gap-10" style={{ marginTop: 18 }}>
                         <Lock size={14} color="var(--faint)" />
                         <span className="xs">Encrypted &amp; secure · Powered by Razorpay · Cancel anytime</span>

@@ -17,28 +17,34 @@ export default function InterviewSetup({ nav }) {
     const [mode, setMode]       = useState('voice');
     const [difficulty]          = useState(66);
     const [busy, setBusy]       = useState(false);
+    const [err, setErr]         = useState('');
 
     const lenLabel = LENGTHS.find(l => l.q === length)?.label || `${length} Q`;
     const estMin   = length <= 5 ? '~12 min' : length <= 6 ? '~15 min' : '~24 min';
 
     async function handleContinue() {
-        setBusy(true);
+        if (jd.trim().length < 30) { setErr('Add a job description (at least 30 characters) so we can tailor the interview.'); return; }
+        setBusy(true); setErr('');
         let resumeData = {};
         try { resumeData = JSON.parse(localStorage.getItem('rb-draft') || '{}'); } catch {}
         const cfg = { resumeData, company, jobTitle: title, jobDescription: jd, interviewType: type, difficulty, mode, length };
         saveDraft(cfg);
-        // Entitled users (Coach Unlimited / a Session Pass) skip checkout and
-        // start immediately; everyone else goes through payment first.
+
+        // Check entitlement separately from session creation so a creation error
+        // never bounces an already-paid user back to checkout.
+        let entitled = false;
+        try { const me = await coachMe(); entitled = !!(me && me.has); }
+        catch (e) { entitled = false; }   // 401 not-signed-in / 402 no entitlement → pay first
+
+        if (!entitled) { setBusy(false); nav('/coach/checkout'); return; }
+
         try {
-            const me = await coachMe();
-            if (me && me.has) {
-                const s = await createSession(cfg);
-                clearAndGo(s.id);
-                return;
-            }
-        } catch (e) { /* not signed in or no entitlement → checkout handles it */ }
-        setBusy(false);
-        nav('/coach/checkout');
+            const s = await createSession(cfg);
+            clearAndGo(s.id);
+        } catch (e) {
+            setErr(e.message || 'Could not start the interview. Please try again.');
+            setBusy(false);
+        }
     }
     function clearAndGo(id) {
         nav(`/coach/session/${id}` + (mode === 'text' ? '?mode=text' : ''));
@@ -161,6 +167,7 @@ export default function InterviewSetup({ nav }) {
                             <p className="xs" style={{ marginTop: 8 }}>Or unlock unlimited with Coach Unlimited at ₹1,599/mo.</p>
                         </div>
                         <button className="btn btn-gold btn-lg btn-block" onClick={handleContinue} disabled={busy}>{busy ? 'Preparing…' : 'Continue to checkout →'}</button>
+                        {err && <div className="card" style={{ marginTop: 12, padding: '12px 14px', borderColor: 'var(--rose)', background: 'var(--rose-soft)' }}><p className="sm" style={{ color: 'var(--rose)' }}>{err}</p></div>}
                         <p className="xs tc" style={{ marginTop: 14 }}>You won't be charged until the next step.</p>
                     </div>
                 </aside>
