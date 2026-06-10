@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { Badge } from './primitives.jsx';
+import { scoreSession, getUser } from './api.js';
 
 // S9 — Interview Complete (recreated from designs/screens/09-interview-complete.html)
-export default function InterviewComplete({ nav, id = 'demo', name = 'Maya' }) {
+export default function InterviewComplete({ nav, id = 'demo' }) {
     const [generating, setGenerating] = useState(false);
+    const [err, setErr] = useState('');
+    const name = (getUser()?.name || '').split(' ')[0] || 'there';
 
-    function generate() {
-        setGenerating(true);
-        // Phase 5 will call the scoring endpoint; mock the async then route to report.
-        setTimeout(() => nav(`/coach/report/${id}`), 1400);
+    async function generate() {
+        setGenerating(true); setErr('');
+        try {
+            await scoreSession(id);     // runs the AI scoring (idempotent)
+            nav(`/coach/report/${id}`);
+        } catch (e) {
+            setErr(e.message || 'Could not generate the report. Please try again.');
+            setGenerating(false);
+        }
     }
 
     return (
@@ -42,6 +50,7 @@ export default function InterviewComplete({ nav, id = 'demo', name = 'Maya' }) {
                 </div>
 
                 {generating && <p className="xs" style={{ marginTop: 40 }}>Building your scored report across clarity, structure, confidence &amp; role fit…</p>}
+                {err && <p className="sm" style={{ color: 'var(--rose)', marginTop: 24 }}>{err}</p>}
             </div>
         </div>
     );

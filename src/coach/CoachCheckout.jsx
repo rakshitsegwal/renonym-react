@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Lock, ShieldCheck, Check } from 'lucide-react';
 import { Badge } from './primitives.jsx';
+import { AuthModal } from '../AuthModal.jsx';
+import { payAndVerify, createSession, loadDraft, clearDraft, getUser } from './api.js';
 
 // S6 — Coach Checkout (recreated from designs/screens/06-payment.html).
 // The design shows Stripe card fields as placeholders; we use the existing
@@ -11,12 +13,47 @@ const PLANS = {
     session:   { id: 'session_pass',    name: 'Single Session Pass', price: '₹599', per: '', note: 'This one interview + full scored report', tag: '' },
 };
 
-export default function CoachCheckout({ nav, onPay }) {
+export default function CoachCheckout({ nav }) {
     const [plan, setPlan] = useState('unlimited');
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const [showAuth, setShowAuth] = useState(false);
     const p = PLANS[plan];
+
+    async function pay(user) {
+        setError(''); setBusy(true);
+        try {
+            await payAndVerify(p.id, user);                 // Razorpay → grants Coach entitlement
+            const draft = loadDraft();
+            const s = await createSession(draft || {});     // consumes entitlement, generates questions
+            clearDraft();
+            nav(`/coach/session/${s.id}` + (draft?.mode === 'text' ? '?mode=text' : ''));
+        } catch (e) {
+            if (e.message !== 'CANCELLED') setError(e.message || 'Payment failed. Please try again.');
+            setBusy(false);
+        }
+    }
+
+    function handlePay() {
+        const user = getUser();
+        if (!user) { setShowAuth(true); return; }   // Coach requires an account
+        pay(user);
+    }
 
     return (
         <div className="rn-dark" style={{ minHeight: '100vh' }}>
+            {showAuth && (
+                <AuthModal
+                    reason="payment"
+                    onClose={() => setShowAuth(false)}
+                    onAuth={(token, user) => {
+                        localStorage.setItem('rn-auth-token', token);
+                        localStorage.setItem('rn-auth-user', JSON.stringify(user));
+                        setShowAuth(false);
+                        pay(user);
+                    }}
+                />
+            )}
             <div className="row ac jsb" style={{ height: 68, borderBottom: '1px solid var(--line)', padding: '0 36px' }}>
                 <div className="row ac gap-16">
                     <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} onClick={() => nav('/coach/new')}>←</button>
@@ -58,9 +95,10 @@ export default function CoachCheckout({ nav, onPay }) {
                         </div>
                     </div>
 
-                    <button className="btn btn-gold btn-lg btn-block" onClick={() => (onPay ? onPay(p.id) : nav('/coach/session/demo'))}>
-                        Pay {p.price} &amp; start interview
+                    <button className="btn btn-gold btn-lg btn-block" onClick={handlePay} disabled={busy}>
+                        {busy ? 'Processing…' : `Pay ${p.price} & start interview`}
                     </button>
+                    {error && <p className="sm" style={{ color: 'var(--rose)', marginTop: 12, textAlign: 'center' }}>{error}</p>}
                     <div className="row ac jc gap-10" style={{ marginTop: 18 }}>
                         <Lock size={14} color="var(--faint)" />
                         <span className="xs">Encrypted &amp; secure · Powered by Razorpay · Cancel anytime</span>

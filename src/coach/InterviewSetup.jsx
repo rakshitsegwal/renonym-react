@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, MessageSquare } from 'lucide-react';
 import { VoiceOrb, Badge } from './primitives.jsx';
+import { saveDraft, coachMe, createSession } from './api.js';
 
 // S5 — Interview Setup (recreated from designs/screens/05-interview-setup.html)
 // Phase-3 mock: interactive config; "Continue to checkout" routes to /coach/checkout.
@@ -15,9 +16,33 @@ export default function InterviewSetup({ nav }) {
     const [length, setLength]   = useState(6);
     const [mode, setMode]       = useState('voice');
     const [difficulty]          = useState(66);
+    const [busy, setBusy]       = useState(false);
 
     const lenLabel = LENGTHS.find(l => l.q === length)?.label || `${length} Q`;
     const estMin   = length <= 5 ? '~12 min' : length <= 6 ? '~15 min' : '~24 min';
+
+    async function handleContinue() {
+        setBusy(true);
+        let resumeData = {};
+        try { resumeData = JSON.parse(localStorage.getItem('rb-draft') || '{}'); } catch {}
+        const cfg = { resumeData, company, jobTitle: title, jobDescription: jd, interviewType: type, difficulty, mode, length };
+        saveDraft(cfg);
+        // Entitled users (Coach Unlimited / a Session Pass) skip checkout and
+        // start immediately; everyone else goes through payment first.
+        try {
+            const me = await coachMe();
+            if (me && me.has) {
+                const s = await createSession(cfg);
+                clearAndGo(s.id);
+                return;
+            }
+        } catch (e) { /* not signed in or no entitlement → checkout handles it */ }
+        setBusy(false);
+        nav('/coach/checkout');
+    }
+    function clearAndGo(id) {
+        nav(`/coach/session/${id}` + (mode === 'text' ? '?mode=text' : ''));
+    }
 
     return (
         <div className="rn-dark" style={{ minHeight: '100vh' }}>
@@ -135,7 +160,7 @@ export default function InterviewSetup({ nav }) {
                             <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹599</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + report</span></div>
                             <p className="xs" style={{ marginTop: 8 }}>Or unlock unlimited with Coach Unlimited at ₹1,599/mo.</p>
                         </div>
-                        <button className="btn btn-gold btn-lg btn-block" onClick={() => nav('/coach/checkout')}>Continue to checkout →</button>
+                        <button className="btn btn-gold btn-lg btn-block" onClick={handleContinue} disabled={busy}>{busy ? 'Preparing…' : 'Continue to checkout →'}</button>
                         <p className="xs tc" style={{ marginTop: 14 }}>You won't be charged until the next step.</p>
                     </div>
                 </aside>

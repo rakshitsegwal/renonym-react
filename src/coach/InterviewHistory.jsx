@@ -1,21 +1,30 @@
-import React from 'react';
-import { Plus, LayoutGrid, Mic, FileText, AppWindow, History, Search, SlidersHorizontal } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, LayoutGrid, Mic, FileText, AppWindow, History, Search } from 'lucide-react';
 import { Badge } from './primitives.jsx';
+import { listSessions, getUser } from './api.js';
 
-// S11 — Interview History (recreated from designs/screens/11-interview-history.html)
-const ROWS = [
-    { id: 's1', role: 'Senior PM · Stripe', meta: '6 questions · 14 min', type: 'Behavioral', mode: 'Voice', date: 'Today', score: 72, trend: '▲ +14', trendV: 'green', hot: true },
-    { id: 's2', role: 'PM II · Figma', meta: '6 questions · 18 min', type: 'Mixed', mode: 'Voice', date: '2 days ago', score: 69, trend: '▲ +6', trendV: 'green', hot: true },
-    { id: 's3', role: 'Product Lead · Linear', meta: '10 questions · 22 min', type: 'System design', mode: 'Text', date: '4 days ago', score: 63, trend: '▲ +3', trendV: 'default' },
-    { id: 's4', role: 'Senior PM · Stripe', meta: '6 questions · 15 min', type: 'Behavioral', mode: 'Text', date: '5 days ago', score: 58, trend: 'first rep', trendV: 'faint' },
-    { id: 's5', role: 'PM II · Figma', meta: '6 questions · 16 min', type: 'Behavioral', mode: 'Voice', date: '1 week ago', score: 55, trend: '—', trendV: 'faint' },
-];
+// S11 — Interview History. Loads the user's real sessions.
+export default function InterviewHistory({ nav }) {
+    const [sessions, setSessions] = useState(null);
+    const [err, setErr] = useState('');
+    const user = getUser();
 
-export default function InterviewHistory({ nav, currentUser }) {
-    const COLS = '2.2fr 1.4fr 1fr 0.7fr 0.9fr 1.4fr';
+    useEffect(() => {
+        let alive = true;
+        listSessions()
+            .then(r => { if (alive) setSessions(r.sessions || []); })
+            .catch(e => { if (e.status === 401) nav('/coach'); else setErr(e.message || 'Could not load history.'); });
+        return () => { alive = false; };
+    }, []);
+
+    const COLS = '2.2fr 1.4fr 1fr 0.7fr 1.4fr';
+    const scored = (sessions || []).filter(s => s.overall_score != null);
+    const avg = scored.length ? Math.round(scored.reduce((a, s) => a + s.overall_score, 0) / scored.length) : 0;
+    const best = scored.length ? Math.max(...scored.map(s => s.overall_score)) : 0;
+    const roles = new Set((sessions || []).map(s => `${s.job_title}·${s.company}`)).size;
+
     return (
         <div className="rn-dark appshell">
-            {/* sidebar */}
             <aside className="sidebar">
                 <div className="brand" style={{ padding: '6px 8px 18px' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
                 <button className="btn btn-gold btn-block" style={{ marginBottom: 16 }} onClick={() => nav('/coach/new')}><Plus size={16} />Start an interview</button>
@@ -30,65 +39,69 @@ export default function InterviewHistory({ nav, currentUser }) {
                         <p className="xs" style={{ color: 'var(--text-2)' }}>Unlimited interviews &amp; reports.</p>
                         <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/pricing')}>Upgrade · ₹1,599/mo</button>
                     </div>
-                    <div className="navitem"><div className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(currentUser?.name || 'M')[0]}</div>{currentUser?.name || 'Maya Chen'}</div>
+                    <div className="navitem"><div className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || 'M')[0]}</div>{user?.name || 'Your account'}</div>
                 </div>
             </aside>
 
-            {/* main */}
             <div className="fill" style={{ minWidth: 0 }}>
                 <div className="row jsb ac" style={{ height: 68, padding: '0 32px', borderBottom: '1px solid var(--line)' }}>
                     <div className="h4" style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 22 }}>Interview history</div>
                     <div className="row ac gap-14">
                         <div className="input" style={{ width: 260, height: 40, display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface-2)' }}><Search size={15} color="var(--faint)" /><span className="sm" style={{ color: 'var(--faint)' }}>Search interviews</span></div>
-                        <div className="av" style={{ width: 38, height: 38, background: '#3a3320', color: 'var(--gold)' }}>{(currentUser?.name || 'M')[0]}</div>
+                        <div className="av" style={{ width: 38, height: 38, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || 'M')[0]}</div>
                     </div>
                 </div>
 
                 <div style={{ padding: 32 }}>
-                    {/* stats */}
                     <div className="grid gap-20" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 28 }}>
-                        <Stat label="Total interviews" value="9" />
-                        <div className="card" style={{ padding: '20px 24px' }}><div className="label">Average score</div><div className="row ae gap-8" style={{ marginTop: 8 }}><span className="h2" style={{ fontSize: 32 }}>66</span><Badge variant="green" style={{ marginBottom: 5 }}>▲ 23</Badge></div></div>
-                        <div className="card" style={{ padding: '20px 24px' }}><div className="label">Best score</div><div className="h2 gold" style={{ fontSize: 32, marginTop: 8 }}>72</div></div>
-                        <Stat label="Roles practiced" value="3" />
+                        <Stat label="Total interviews" value={sessions ? sessions.length : '—'} />
+                        <Stat label="Average score" value={scored.length ? avg : '—'} gold={false} />
+                        <Stat label="Best score" value={scored.length ? best : '—'} gold />
+                        <Stat label="Roles practiced" value={sessions ? roles : '—'} />
                     </div>
 
-                    {/* toolbar */}
-                    <div className="row ac gap-10" style={{ marginBottom: 20 }}>
-                        <span className="chip on">All</span><span className="chip">Stripe</span><span className="chip">Figma</span><span className="chip">Linear</span>
-                        <div className="fill" />
-                        <button className="btn btn-ghost btn-sm"><SlidersHorizontal size={14} />Sort: Recent</button>
-                        <button className="btn btn-ghost btn-sm">Mode: All</button>
-                    </div>
+                    {err && <p className="sm" style={{ color: 'var(--rose)', marginBottom: 16 }}>{err}</p>}
 
-                    {/* list */}
-                    <div className="card" style={{ padding: '14px 4px' }}>
-                        <div className="grid" style={{ gridTemplateColumns: COLS, padding: '0 16px 14px', gap: 12 }}>
-                            {['Interview', 'Type · mode', 'Date', 'Score', 'Trend', ''].map((h, i) => <span key={i} className="label" style={i === 5 ? { textAlign: 'right' } : undefined}>{h}</span>)}
+                    {sessions && sessions.length === 0 ? (
+                        <div className="card" style={{ padding: 60, textAlign: 'center' }}>
+                            <h3 className="h3" style={{ marginBottom: 8 }}>No interviews yet</h3>
+                            <p className="body-t" style={{ marginBottom: 24 }}>Run your first AI interview and your scored reports will appear here.</p>
+                            <button className="btn btn-gold" onClick={() => nav('/coach/new')}>Start an interview</button>
                         </div>
-                        {ROWS.map((r, idx) => (
-                            <div key={r.id} className="grid ac" style={{ gridTemplateColumns: COLS, gap: 12, padding: '16px', borderTop: '1px solid var(--line)' }}>
-                                <div className="row ac gap-14">
-                                    <div style={{ width: 40, height: 40, borderRadius: 10, display: 'grid', placeItems: 'center', flex: 'none', fontWeight: 600, ...(r.hot ? { background: 'var(--gold-soft)', color: 'var(--gold)', border: '1px solid var(--gold-line)' } : { background: 'var(--surface-3)', color: 'var(--text-2)' }) }}>{r.score}</div>
-                                    <div><div className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>{r.role}</div><div className="xs">{r.meta}</div></div>
-                                </div>
-                                <div className="row ac gap-6 wrap-f"><Badge>{r.type}</Badge>{r.mode === 'Voice' ? <Badge variant="blue">Voice</Badge> : <Badge>Text</Badge>}</div>
-                                <span className="sm">{r.date}</span>
-                                <span className={'h4' + (r.hot ? ' gold' : '')}>{r.score}</span>
-                                <span><Badge variant={r.trendV === 'green' ? 'green' : 'default'} style={r.trendV === 'faint' ? { color: 'var(--faint)' } : undefined}>{r.trend}</Badge></span>
-                                <div className="row gap-8 je">
-                                    <button className="btn btn-ghost btn-sm" onClick={() => nav(`/coach/report/${r.id}`)}>View report</button>
-                                    <button className="btn btn-outline btn-sm" onClick={() => nav('/coach/new')}>Retake</button>
-                                </div>
+                    ) : (
+                        <div className="card" style={{ padding: '14px 4px' }}>
+                            <div className="grid" style={{ gridTemplateColumns: COLS, padding: '0 16px 14px', gap: 12 }}>
+                                {['Interview', 'Type · mode', 'Date', 'Score', ''].map((h, i) => <span key={i} className="label" style={i === 4 ? { textAlign: 'right' } : undefined}>{h}</span>)}
                             </div>
-                        ))}
-                    </div>
+                            {(sessions || []).map(s => {
+                                const hot = s.overall_score >= 70;
+                                return (
+                                    <div key={s.id} className="grid ac" style={{ gridTemplateColumns: COLS, gap: 12, padding: '16px', borderTop: '1px solid var(--line)' }}>
+                                        <div className="row ac gap-14">
+                                            <div style={{ width: 40, height: 40, borderRadius: 10, display: 'grid', placeItems: 'center', flex: 'none', fontWeight: 600, ...(hot ? { background: 'var(--gold-soft)', color: 'var(--gold)', border: '1px solid var(--gold-line)' } : { background: 'var(--surface-3)', color: 'var(--text-2)' }) }}>{s.overall_score ?? '–'}</div>
+                                            <div><div className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>{[s.job_title, s.company].filter(Boolean).join(' · ') || 'Interview'}</div><div className="xs">{s.status === 'scored' ? 'Scored' : 'In progress'}</div></div>
+                                        </div>
+                                        <div className="row ac gap-6 wrap-f"><Badge>{s.interview_type}</Badge>{s.mode === 'voice' ? <Badge variant="blue">Voice</Badge> : <Badge>Text</Badge>}</div>
+                                        <span className="sm">{fmtDate(s.created_at)}</span>
+                                        <span className={'h4' + (hot ? ' gold' : '')}>{s.overall_score ?? '–'}</span>
+                                        <div className="row gap-8 je">
+                                            {s.status === 'scored'
+                                                ? <button className="btn btn-ghost btn-sm" onClick={() => nav(`/coach/report/${s.id}`)}>View report</button>
+                                                : <button className="btn btn-ghost btn-sm" onClick={() => nav(`/coach/session/${s.id}${s.mode === 'text' ? '?mode=text' : ''}`)}>Resume</button>}
+                                            <button className="btn btn-outline btn-sm" onClick={() => nav('/coach/new')}>Retake</button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
 
-function Stat({ label, value }) {
-    return <div className="card" style={{ padding: '20px 24px' }}><div className="label">{label}</div><div className="h2" style={{ fontSize: 32, marginTop: 8 }}>{value}</div></div>;
+function Stat({ label, value, gold }) {
+    return <div className="card" style={{ padding: '20px 24px' }}><div className="label">{label}</div><div className={'h2' + (gold ? ' gold' : '')} style={{ fontSize: 32, marginTop: 8 }}>{value}</div></div>;
 }
+function fmtDate(d) { try { const dt = new Date(d); const days = Math.round((Date.now() - dt) / 86400000); return days <= 0 ? 'Today' : days === 1 ? 'Yesterday' : days < 7 ? `${days} days ago` : dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch { return ''; } }
