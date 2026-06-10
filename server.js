@@ -74,7 +74,7 @@ app.use(
 );
 
 // --- Version marker ---------------------------------------------------------
-const SERVER_VERSION = 'v10-tokens-2026';
+const SERVER_VERSION = 'v10.1-tokens-2026';
 const BOOT_TIME      = Date.now();
 
 // --- Auth config ------------------------------------------------------------
@@ -115,6 +115,9 @@ if (process.env.DATABASE_URL) {
         );
         CREATE INDEX IF NOT EXISTS idx_rn_users_email    ON rn_users(email);
         CREATE INDEX IF NOT EXISTS idx_rn_users_prov     ON rn_users(provider, provider_user_id);
+        -- Shared per-user daily premium-action quota (free tier). Pro = unlimited.
+        ALTER TABLE rn_users ADD COLUMN IF NOT EXISTS daily_premium_count INTEGER DEFAULT 0;
+        ALTER TABLE rn_users ADD COLUMN IF NOT EXISTS daily_premium_date  DATE;
         CREATE TABLE IF NOT EXISTS rn_saved_resumes (
             id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id        UUID         NOT NULL REFERENCES rn_users(id) ON DELETE CASCADE,
@@ -289,6 +292,94 @@ app.use('/improve-summary',     perClientIdLimiter);
 app.use('/generate-pdf',        perClientIdLimiter);
 app.use('/analyze-job-match',   perClientIdLimiter);
 app.use('/optimize-for-job',    perClientIdLimiter);
+
+// ─── Premium gating: login required + shared daily quota (Pro = unlimited) ───
+// Free tier: must be signed in; a single per-user daily allowance is shared
+// across AI Style / Job Match / AI Review. Downloads are Pro-only. This is the
+// server-side source of truth — the frontend gating is UX, this is enforcement.
+const FREE_DAILY_QUOTA = parseInt(process.env.FREE_DAILY_QUOTA || '2', 10);
+
+// Any premium action requires a valid signed-in user (free or pro).
+function requirePremiumAuth(req, res, next) {
+    const header = req.headers['authorization'] || '';
+    const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return res.status(401).json({ error: 'Please sign in to use this feature.', code: 'AUTH_REQUIRED' });
+    try { req.user = jwt.verify(token, JWT_SECRET); return next(); }
+    catch (_) { return res.status(401).json({ error: 'Session expired. Please sign in again.', code: 'AUTH_REQUIRED' }); }
+}
+
+// Shared per-user daily quota across premium AI actions. Pro = unlimited.
+// Checks before the handler (no wasted AI spend); counts only successful
+// responses (a failed/validation-error request does not consume an allowance).
+async function enforceDailyQuota(req, res, next) {
+    if (!db) return next(); // no DB configured (dev) — cannot enforce
+    try {
+        const r = await db.query(
+            `SELECT plan,
+                    CASE WHEN daily_premium_date = CURRENT_DATE THEN daily_premium_count ELSE 0 END AS used
+             FROM rn_users WHERE id = $1`,
+            [req.user.id]
+        );
+        if (!r.rows.length) return res.status(401).json({ error: 'Account not found.', code: 'AUTH_REQUIRED' });
+        const plan  = r.rows[0].plan;
+        const used  = r.rows[0].used;
+        const isPro = plan === 'pro';
+
+        if (!isPro && used >= FREE_DAILY_QUOTA) {
+            return res.status(402).json({
+                error: `You've used your ${FREE_DAILY_QUOTA} free actions for today. Upgrade to Pro for unlimited access.`,
+                code: 'QUOTA_EXCEEDED', plan, used, limit: FREE_DAILY_QUOTA
+            });
+        }
+
+        res.setHeader('X-Quota-Plan',  plan);
+        res.setHeader('X-Quota-Limit', String(FREE_DAILY_QUOTA));
+        res.setHeader('X-Quota-Used',  String(isPro ? used : used + 1));
+
+        if (!isPro) {
+            res.on('finish', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    db.query(
+                        `UPDATE rn_users SET
+                            daily_premium_count = CASE WHEN daily_premium_date = CURRENT_DATE THEN daily_premium_count + 1 ELSE 1 END,
+                            daily_premium_date  = CURRENT_DATE
+                         WHERE id = $1`,
+                        [req.user.id]
+                    ).catch(e => console.error('[QUOTA] increment failed:', e.message));
+                }
+            });
+        }
+        return next();
+    } catch (e) {
+        console.error('[QUOTA] check failed (fail-open):', e.message);
+        return next(); // don't block during a DB hiccup
+    }
+}
+
+// Pro-only — used for downloads. Free users get a watermarked+blurred preview
+// on the client and are blocked here from producing a real file.
+async function requirePro(req, res, next) {
+    if (!db) return next();
+    try {
+        const r = await db.query('SELECT plan FROM rn_users WHERE id = $1', [req.user.id]);
+        const plan = (r.rows[0] && r.rows[0].plan) || 'free';
+        if (plan !== 'pro') {
+            return res.status(402).json({
+                error: 'Downloading is a Pro feature. Upgrade to download your resume without a watermark.',
+                code: 'PRO_REQUIRED', plan
+            });
+        }
+        return next();
+    } catch (e) {
+        console.error('[PRO] check failed (fail-open):', e.message);
+        return next();
+    }
+}
+
+app.use('/generate-template',   requirePremiumAuth, enforceDailyQuota);
+app.use('/analyze-job-match',   requirePremiumAuth, enforceDailyQuota);
+app.use('/review-resume',       requirePremiumAuth, enforceDailyQuota);
+app.use('/generate-pdf',        requirePremiumAuth, requirePro);
 
 // Payment endpoints - rate limited + session validated
 app.use('/create-order',        paymentLimiter);
@@ -477,11 +568,13 @@ html, body {
 }
 
 /* -- 9. Sections and content: all visible, auto height ------------------ */
+/* NOTE: .rb-skills is deliberately NOT in this group - forcing display:block
+   on it kills the flex context and the pills wrap mid-word. It gets its own
+   flex rule below (9b). */
 .rb-resume__section,
 .rb-resume .rb-exp-item,
 .rb-resume .rb-edu-item,
 .rb-resume .rb-cert,
-.rb-resume .rb-skills,
 .rb-resume .rb-summary {
     overflow: visible !important;
     height: auto !important;
@@ -489,6 +582,27 @@ html, body {
     position: relative !important;
     display: block !important;
     float: none !important;
+}
+
+/* -- 9b. Skills: keep the pill row as a wrapping flex row, pills intact -- */
+.rb-resume .rb-skills {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    align-content: flex-start !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    position: relative !important;
+    float: none !important;
+}
+.rb-resume .rb-skill-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    height: auto !important;
+    flex: 0 0 auto !important;
 }
 
 /* -- 10. Bullet lists: prevent overlap with list markers ---------------- */
@@ -620,30 +734,29 @@ app.post('/generate-pdf', async (req, res) => {
                 if (node) forceAuto(node);
             });
 
-            // 3. Four measurement strategies - take the MAX
-            // Strategy A: document scrollHeight (reliable for block layouts)
-            const mA = document.documentElement.scrollHeight;
+            // 3. Measure the RESUME ELEMENT's true content height, relative to
+            // its own top. We deliberately do NOT use
+            // document.documentElement.scrollHeight: it is floored at the
+            // viewport height (set to 2000 above), so any resume shorter than
+            // that gets padded out to ~2000px, leaving a long blank tail.
+            const top = el.getBoundingClientRect().top;
 
-            // Strategy B: max getBoundingClientRect().bottom across ALL descendants
-            // Reliable for grid/flex layouts where container height != content height
+            // Strategy B: lowest point of any descendant, relative to the resume
+            // top. Robust for grid/flex where the container's own height reads 0
+            // (child boxes still report correct bottoms, even past the fold).
             let mB = 0;
             el.querySelectorAll('*').forEach(child => {
                 const r = child.getBoundingClientRect();
-                if (r && r.bottom > mB) mB = r.bottom;
+                const bottom = r.bottom - top;
+                if (bottom > mB) mB = bottom;
             });
 
-            // Strategy C: offsetTop + offsetHeight - works when BoundingClientRect clips
-            let mC = 0;
-            el.querySelectorAll('*').forEach(child => {
-                const bot = (child.offsetTop || 0) + (child.offsetHeight || 0);
-                if (bot > mC) mC = bot;
-            });
+            // Strategy D: the resume element's own box height after forcing auto.
+            const mD = Math.max(el.scrollHeight, el.getBoundingClientRect().height);
 
-            // Strategy D: resume element's own scrollHeight after forcing auto
-            const mD = el.scrollHeight;
-
-            const measured = Math.max(mA, mB, mC, mD, 400);
-            console.log('[PDF-HEIGHT] A=' + mA + ' B=' + mB + ' C=' + mC + ' D=' + mD + ' -> ' + measured);
+            // +8px guards against sub-pixel clipping of the final line.
+            const measured = Math.ceil(Math.max(mB, mD, 400)) + 8;
+            console.log('[PDF-HEIGHT] B=' + Math.ceil(mB) + ' D=' + Math.ceil(mD) + ' -> ' + measured);
             return measured;
         });
 

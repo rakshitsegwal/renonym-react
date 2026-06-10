@@ -3,7 +3,7 @@ import { AuthModal } from './AuthModal.jsx';
 import PaymentButton from './PaymentButton.jsx';
 import './landing.css';
 
-export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onLogin, currentUser }) {
+export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigateLegal, onLogin, currentUser }) {
     const [pricingPeriod, setPricingPeriod] = useState('yearly');
     const [scrolled, setScrolled] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -42,7 +42,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                     </div>
                     <div className="lp-nav__actions">
                         {currentUser
-                            ? <button className="lp-nav__cta" onClick={onGetStarted}>Dashboard →</button>
+                            ? <button className="lp-nav__cta" onClick={onGoToDashboard || onGetStarted}>Dashboard →</button>
                             : <>
                                 <button className="lp-nav__login" onClick={() => setShowLoginModal(true)}>Log in</button>
                                 <button className="lp-nav__cta" onClick={onGetStarted}>Get started free</button>
@@ -171,7 +171,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                         <div className="lp-section__tag lp-section__tag--light">AI Analysis</div>
                         <h2 className="lp-section__h2 lp-section__h2--light">See exactly why you're<br />not getting callbacks.</h2>
                         <p className="lp-ats__desc">Most resumes fail before a human reads them. Our AI scores your resume against real ATS criteria and tells you exactly what to fix.</p>
-                        <button className="lp-btn lp-btn--white" onClick={onGetStarted}>Get your ATS score free →</button>
+                        <button className="lp-btn lp-btn--white" onClick={onOpenJobMatch}>Get your ATS score free →</button>
                     </div>
                     <div className="lp-ats__visual">
                         <div className="lp-score-card">
@@ -318,9 +318,9 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                         </div>
                         <div className="lp-footer__col">
                             <div className="lp-footer__col-hd">Company</div>
-                            <a className="lp-footer__a" href="#">About</a>
-                            <a className="lp-footer__a" href="#">Privacy</a>
-                            <a className="lp-footer__a" href="#">Terms</a>
+                            <a className="lp-footer__a" href="/about"   onClick={(e) => { e.preventDefault(); onNavigateLegal && onNavigateLegal('about'); }}>About</a>
+                            <a className="lp-footer__a" href="/privacy" onClick={(e) => { e.preventDefault(); onNavigateLegal && onNavigateLegal('privacy'); }}>Privacy</a>
+                            <a className="lp-footer__a" href="/terms"   onClick={(e) => { e.preventDefault(); onNavigateLegal && onNavigateLegal('terms'); }}>Terms</a>
                         </div>
                     </div>
                 </div>

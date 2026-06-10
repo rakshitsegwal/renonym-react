@@ -30,16 +30,16 @@ const SECTIONS = {
 };
 
 const TEMPLATE_GALLERY = [
-    { key: 'sf-classic',   name: 'Classic Pro',   tag: 'Salesforce Blue',    tagColor: '#032d60' },
-    { key: 'sf-modern',    name: 'Modern Clean',  tag: 'Bold Minimal',       tagColor: '#111827' },
-    { key: 'sf-minimal',   name: 'Minimal ATS',   tag: 'ATS Optimised',      tagColor: '#374151' },
-    { key: 'sf-tech',      name: 'Dark Tech',     tag: 'Dark Sidebar',       tagColor: '#0f172a' },
-    { key: 'sf-executive', name: 'Executive',     tag: 'Serif Luxury',       tagColor: '#b8860b' },
-    { key: 'nordic-clean',  name: 'Nordic Clean',  tag: 'Scandinavian',       tagColor: '#2e7d9a' },
-    { key: 'emerald-pro',   name: 'Emerald Pro',   tag: 'Bold Green',         tagColor: '#065f46' },
-    { key: 'graphite',      name: 'Graphite',      tag: 'Corporate Sharp',    tagColor: '#1f2937' },
-    { key: 'mauve-creative',name: 'Mauve Creative',tag: 'Creative Studio',    tagColor: '#6d28d9' },
-    { key: 'terracotta',    name: 'Terracotta',    tag: 'Warm Agency',        tagColor: '#9a3412' }
+    { key: 'sf-classic',   name: 'Classic Pro',   tag: 'Salesforce Blue',    tagColor: '#032d60', cat: 'executive' },
+    { key: 'sf-modern',    name: 'Modern Clean',  tag: 'Bold Minimal',       tagColor: '#111827', cat: 'minimal' },
+    { key: 'sf-minimal',   name: 'Minimal ATS',   tag: 'ATS Optimised',      tagColor: '#374151', cat: 'minimal' },
+    { key: 'sf-tech',      name: 'Dark Tech',     tag: 'Dark Sidebar',       tagColor: '#0f172a', cat: 'bold' },
+    { key: 'sf-executive', name: 'Executive',     tag: 'Serif Luxury',       tagColor: '#b8860b', cat: 'executive' },
+    { key: 'nordic-clean',  name: 'Nordic Clean',  tag: 'Scandinavian',       tagColor: '#2e7d9a', cat: 'minimal' },
+    { key: 'emerald-pro',   name: 'Emerald Pro',   tag: 'Bold Green',         tagColor: '#065f46', cat: 'bold' },
+    { key: 'graphite',      name: 'Graphite',      tag: 'Corporate Sharp',    tagColor: '#1f2937', cat: 'executive' },
+    { key: 'mauve-creative',name: 'Mauve Creative',tag: 'Creative Studio',    tagColor: '#6d28d9', cat: 'bold' },
+    { key: 'terracotta',    name: 'Terracotta',    tag: 'Warm Agency',        tagColor: '#9a3412', cat: 'bold' }
 ];
 
 const FONT_FAMILIES = [
@@ -178,7 +178,7 @@ class ResumeBuilder extends React.Component {
             showAuthModal: false,
             authReason: 'export',
             showCreditGate: false,
-            creditReason: 'first_export',
+            creditReason: 'pro_required',
         });
     }
 
@@ -191,7 +191,7 @@ class ResumeBuilder extends React.Component {
     showAuthModal   = false;
     authReason      = 'export';
     showCreditGate  = false;
-    creditReason    = 'first_export';
+    creditReason    = 'pro_required';
     formData = DEFAULT_FORM();
     placeholderData = {
         fullName:   'Alex Morgan',
@@ -439,7 +439,10 @@ class ResumeBuilder extends React.Component {
     }
 
     get templateGallery() {
-        return TEMPLATE_GALLERY.map(t => ({
+        const f = this.galleryFilter || 'all';
+        return TEMPLATE_GALLERY
+            .filter(t => f === 'all' || t.cat === f)
+            .map(t => ({
             ...t,
             tileClass: 'rp-tpl-tile' + (this.selectedGalleryTemplate === t.key ? ' rp-tpl-tile--selected' : ''),
             thumbClass: `rp-tpl-tile__thumb rp-tpl-thumb rp-tpl-thumb--${t.key}`,
@@ -1169,6 +1172,7 @@ class ResumeBuilder extends React.Component {
     // ═══════════════════════════════════════════════════════════════════════
 
     async generateAiTemplate() {
+        if (!this._requireLogin('feature')) return;   // premium action — login required
         const hasInspiration = !!(this.inspirationBase64 && this.inspirationMimeType);
 
         // Allow generation from inspiration image alone — no text prompt required
@@ -1214,6 +1218,7 @@ class ResumeBuilder extends React.Component {
                 body:    JSON.stringify(body)
             }, timeoutMs);
 
+            if (await this._isGated(response)) return;   // login / quota gate
             if (response.status === 429) {
                 this._setStatus('Too many AI requests. Please wait a few minutes.', 'error');
                 return;
@@ -1502,6 +1507,7 @@ class ResumeBuilder extends React.Component {
     }
 
     async handleResumeAnalysis() {
+        if (!this._requireLogin('feature')) return;   // premium action — login required
         this._setStatus('Analysing your resume…', 'info');
 
         try {
@@ -1511,6 +1517,7 @@ class ResumeBuilder extends React.Component {
                 body:    JSON.stringify({ formData: this.formData })
             });
 
+            if (await this._isGated(response)) return;   // login / quota gate
             if (response.status === 429) {
                 this._setStatus('Too many AI requests. Please wait a few minutes.', 'error');
                 return;
@@ -1542,9 +1549,10 @@ class ResumeBuilder extends React.Component {
         this.showAuthModal = false;
         localStorage.setItem('rn-auth-token', token);
         localStorage.setItem('rn-auth-user', JSON.stringify(user));
-        // If they were trying to export, proceed
+        // If they were trying to export, re-run the gated flow now that they're
+        // signed in (handleExport applies the Pro check → download or upgrade gate).
         if (this.authReason === 'export') {
-            this._proceedWithExport();
+            this.handleExport();
         }
     }
 
@@ -1564,33 +1572,23 @@ class ResumeBuilder extends React.Component {
         this.showCreditGate = false;
     }
 
-    handleFreeExport() {
+    // Upgrade CTA from the gate → send the user to the pricing section.
+    handleUpgrade() {
         this.showCreditGate = false;
-        this._proceedWithExport(true); // watermarked = true
+        if (this.props && this.props.onGoToLanding) {
+            this.props.onGoToLanding();
+            setTimeout(() => { try { window.location.hash = '#pricing'; } catch (_) {} }, 60);
+        }
     }
 
-    async _proceedWithExport(watermarked = false) {
+    async _proceedWithExport() {
         if (!this.formData.fullName?.trim()) {
             this._setStatus('Please fill in your Full Name before exporting.', 'error');
             return;
         }
         this.isExporting = true;
         try {
-            // If watermarked, temporarily add watermark class
-            const resumeEl = this._root && this._root.querySelector('[data-id="resume-preview"]');
-            if (watermarked && resumeEl) {
-                resumeEl.classList.add('rb-resume--watermark');
-            }
             await this.handleDownload();
-            if (watermarked && resumeEl) {
-                resumeEl.classList.remove('rb-resume--watermark');
-            }
-            // Track export count
-            if (this.authToken) {
-                const count = parseInt(localStorage.getItem('rn-export-count') || '0') + 1;
-                localStorage.setItem('rn-export-count', count);
-                localStorage.setItem('rn-export-date', new Date().toDateString());
-            }
         } finally {
             this.isExporting = false;
         }
@@ -1601,36 +1599,16 @@ class ResumeBuilder extends React.Component {
             this._setStatus('Please fill in your Full Name before exporting.', 'error');
             return;
         }
-
-        // Gate: require login first
-        if (!this.authToken) {
-            this.authReason   = 'export';
-            this.showAuthModal = true;
-            return;
-        }
-
-        // Credit check: 1 free export per day
-        const exportDate  = localStorage.getItem('rn-export-date');
-        const exportCount = parseInt(localStorage.getItem('rn-export-count') || '0');
-        const today       = new Date().toDateString();
-        const usedToday   = exportDate === today ? exportCount : 0;
-
-        if (usedToday === 0) {
-            // First export today → show credit gate (free watermarked or upgrade)
-            this.creditReason  = 'first_export';
+        // Premium action — free tier requires an account.
+        if (!this._requireLogin('export')) return;
+        // Downloads are Pro-only. Free users see a watermarked + blurred preview
+        // and an upgrade prompt — no clean file is ever produced.
+        if (!this.isPro) {
+            this.creditReason   = 'pro_required';
             this.showCreditGate = true;
             return;
         }
-
-        if (usedToday >= 3 && this.currentUser?.plan !== 'pro') {
-            // Limit reached
-            this.creditReason  = 'limit_reached';
-            this.showCreditGate = true;
-            return;
-        }
-
-        // Proceed normally
-        this._proceedWithExport(false);
+        this._proceedWithExport();
     }
 
     async handleDownload() {
@@ -1656,6 +1634,7 @@ class ResumeBuilder extends React.Component {
                 body:    JSON.stringify({ html, css })
             });
 
+            if (await this._isGated(response)) return;   // login / Pro-required gate (defense in depth)
             if (response.status === 429) {
                 this._setStatus('PDF export limit reached. Please try later.', 'error');
                 return;
@@ -1986,6 +1965,7 @@ class ResumeBuilder extends React.Component {
     }
 
     async handleAnalyzeJobMatch() {
+        if (!this._requireLogin('feature')) return;   // premium action — login required
         // Hard guard — button should already be disabled but double-check
         if (!this.jmResumeReady) {
             this._setStatus('Please upload your resume first.', 'error');
@@ -2006,6 +1986,7 @@ class ResumeBuilder extends React.Component {
                 ? { resumeData: this.formData, resumeText: this.jmResumeText, jobDescription: this.jobDescription }
                 : { resumeText: this.jmResumeText, jobDescription: this.jobDescription };
             const r = await this.apiFetch(RAILWAY_URL+'/analyze-job-match',{method:'POST',headers:{'Content-Type':'application/json','x-client-id':this.clientId},body:JSON.stringify(analyzeBody)},60000);
+            if (await this._isGated(r)) { this.isAnalyzingJob = false; return; }   // login / quota gate
             if(r.status===429){this._setStatus('Too many requests. Please wait a minute.','error');return;}
             if(!r.ok) {
                 const errData = await r.json().catch(() => ({}));
@@ -2189,7 +2170,10 @@ class ResumeBuilder extends React.Component {
                 ...options,
                 headers: {
                     ...(options.headers || {}),
-                    ...(secret ? { 'x-api-secret': secret } : {})
+                    ...(secret ? { 'x-api-secret': secret } : {}),
+                    // Identify the signed-in user so the backend can enforce
+                    // plan + daily quota on premium endpoints.
+                    ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {})
                 }
             };
             const response = await fetch(url, { ...securedOptions, signal: controller.signal });
@@ -2197,6 +2181,37 @@ class ResumeBuilder extends React.Component {
         } finally {
             clearTimeout(timeout);
         }
+    }
+
+    // ── Premium gating helpers ──────────────────────────────────────────────
+    // True for Pro accounts only. Free + anonymous users get the gated experience.
+    get isPro() { return this.currentUser?.plan === 'pro'; }
+
+    // Call before any premium action. Returns false (and shows the auth modal)
+    // when the user isn't signed in — the backend requires login for free too.
+    _requireLogin(reason = 'feature') {
+        if (this.authToken) return true;
+        this.authReason   = reason;
+        this.showAuthModal = true;
+        return false;
+    }
+
+    // Inspect a premium API response for the backend's gate codes. Returns true
+    // (and surfaces the right upgrade/login modal) when the request was blocked.
+    async _isGated(response) {
+        if (response.status === 401) {           // not signed in / session expired
+            this.authReason    = 'feature';
+            this.showAuthModal = true;
+            return true;
+        }
+        if (response.status === 402) {           // QUOTA_EXCEEDED or PRO_REQUIRED
+            let code = 'QUOTA_EXCEEDED';
+            try { code = (await response.json()).code || code; } catch (_) {}
+            this.creditReason   = code === 'PRO_REQUIRED' ? 'pro_required' : 'limit_reached';
+            this.showCreditGate = true;
+            return true;
+        }
+        return false;
     }
 
     async postToApi(endpoint, body) {
@@ -2460,7 +2475,7 @@ class ResumeBuilder extends React.Component {
         user={currentUser}
         reason={creditReason}
         onClose={() => this.handleCreditGateClose()}
-        onProceedFree={() => this.handleFreeExport()}
+        onUpgrade={() => this.handleUpgrade()}
     />}
     <div className="rp-app">
 
@@ -2608,10 +2623,10 @@ class ResumeBuilder extends React.Component {
 
                 
                 <div className="rp-gallery__filters">
-                    <button className="rp-gallery__filter rp-gallery__filter--active" data-filter="all" onClick={(e) => this.handleGalleryFilterChange(e)}>All</button>
-                    <button className="rp-gallery__filter" data-filter="minimal" onClick={(e) => this.handleGalleryFilterChange(e)}>Minimal</button>
-                    <button className="rp-gallery__filter" data-filter="bold" onClick={(e) => this.handleGalleryFilterChange(e)}>Bold</button>
-                    <button className="rp-gallery__filter" data-filter="executive" onClick={(e) => this.handleGalleryFilterChange(e)}>Executive</button>
+                    <button className={'rp-gallery__filter' + (galleryFilter === 'all' ? ' rp-gallery__filter--active' : '')} data-filter="all" onClick={(e) => this.handleGalleryFilterChange(e)}>All</button>
+                    <button className={'rp-gallery__filter' + (galleryFilter === 'minimal' ? ' rp-gallery__filter--active' : '')} data-filter="minimal" onClick={(e) => this.handleGalleryFilterChange(e)}>Minimal</button>
+                    <button className={'rp-gallery__filter' + (galleryFilter === 'bold' ? ' rp-gallery__filter--active' : '')} data-filter="bold" onClick={(e) => this.handleGalleryFilterChange(e)}>Bold</button>
+                    <button className={'rp-gallery__filter' + (galleryFilter === 'executive' ? ' rp-gallery__filter--active' : '')} data-filter="executive" onClick={(e) => this.handleGalleryFilterChange(e)}>Executive</button>
                 </div>
 
                 
@@ -3348,7 +3363,7 @@ class ResumeBuilder extends React.Component {
                     </div>
 
                     <div className="rp-preview__body">
-                        <div className="rp-preview__scale-wrap">
+                        <div className={'rp-preview__scale-wrap' + (currentUser?.plan === 'pro' ? '' : ' rp-preview--free')}>
                             <LayoutComponent
                                 data={activeResumeData}
                                 resumeClass={resumeClass}
@@ -3364,6 +3379,11 @@ class ResumeBuilder extends React.Component {
                                 hasExperience={hasExperience}
                                 hasEducation={hasEducation}
                             />
+                            {currentUser?.plan !== 'pro' && (
+                                <button className="rp-preview__lock" onClick={(e) => { e.stopPropagation(); this.creditReason = 'pro_required'; this.showCreditGate = true; }}>
+                                    🔒 Upgrade to download a clean, watermark-free PDF
+                                </button>
+                            )}
                         </div>
                     </div>
 

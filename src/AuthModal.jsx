@@ -154,67 +154,34 @@ export function AuthModal({ onAuth, onClose, reason }) {
 }
 
 // ─── Credit gate modal ────────────────────────────────────────────────────────
-export function CreditGateModal({ user, reason, onClose, onProceedFree }) {
-    const isFreeExport = reason === 'first_export';
+export function CreditGateModal({ reason, onClose, onUpgrade }) {
+    const COPY = {
+        pro_required: {
+            icon: '⬇',
+            title: 'Downloading is a Pro feature',
+            sub: 'Your free preview is watermarked and blurred. Upgrade to Pro to download a clean, full-resolution PDF — plus unlimited AI features.',
+        },
+        limit_reached: {
+            icon: '✦',
+            title: "You've used today's free actions",
+            sub: 'Free accounts get a limited number of AI actions per day. Upgrade to Pro for unlimited AI styling, job-match analysis, reviews, and clean downloads.',
+        },
+    };
+    const c = COPY[reason] || COPY.limit_reached;
     return (
         <div className="rn-auth-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="rn-auth-modal">
                 <button className="rn-auth-modal__close" onClick={onClose}>×</button>
-                <div className="rn-auth-modal__icon">
-                    {isFreeExport ? '⬇' : '✦'}
+                <div className="rn-auth-modal__icon">{c.icon}</div>
+                <h2 className="rn-auth-modal__title">{c.title}</h2>
+                <p className="rn-auth-modal__sub">{c.sub}</p>
+                <div className="rn-credit-options">
+                    <button className="rn-credit-option rn-credit-option--pro" onClick={onUpgrade}>
+                        <span className="rn-credit-option__label">Upgrade to Pro</span>
+                        <span className="rn-credit-option__desc">Unlimited AI + clean, watermark-free downloads</span>
+                    </button>
+                    <button className="rn-auth-back" onClick={onClose}>Maybe later</button>
                 </div>
-                <h2 className="rn-auth-modal__title">
-                    {isFreeExport ? 'Download your resume' : 'You\'ve used your free credits'}
-                </h2>
-
-                {isFreeExport && (
-                    <>
-                        <p className="rn-auth-modal__sub">
-                            You get <strong>1 free PDF download</strong> per day.
-                            Upgrade for unlimited exports and AI features.
-                        </p>
-                        <div className="rn-credit-options">
-                            <button className="rn-credit-option rn-credit-option--free" onClick={onProceedFree}>
-                                <span className="rn-credit-option__label">Free download</span>
-                                <span className="rn-credit-option__desc">PDF with Renonym AI watermark</span>
-                            </button>
-                            <PaymentButton
-                                planId="pro_monthly"
-                                label="Upgrade to Pro — ₹599/mo"
-                                className="rn-credit-option rn-credit-option--pro"
-                                user={user}
-                                onSuccess={() => {
-                                    onClose();
-                                    alert('Welcome to Pro! Refresh the page to activate.');
-                                }}
-                                onError={(msg) => alert('Payment failed: ' + msg)}
-                            />
-                        </div>
-                    </>
-                )}
-
-                {!isFreeExport && (
-                    <>
-                        <p className="rn-auth-modal__sub">
-                            You've used all your free AI credits for today.
-                            Upgrade to Pro for unlimited access.
-                        </p>
-                        <div className="rn-credit-options">
-                            <PaymentButton
-                                planId="pro_monthly"
-                                label="Upgrade to Pro — ₹599/mo"
-                                className="rn-credit-option rn-credit-option--pro"
-                                user={user}
-                                onSuccess={() => {
-                                    onClose();
-                                    alert('Welcome to Pro! Refresh the page to activate.');
-                                }}
-                                onError={(msg) => alert('Payment failed: ' + msg)}
-                            />
-                            <button className="rn-auth-back" onClick={onClose}>Maybe later</button>
-                        </div>
-                    </>
-                )}
             </div>
         </div>
     );
