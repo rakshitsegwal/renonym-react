@@ -199,6 +199,7 @@ function App() {
             onStartAi={() => goToBuilder('ai')}
             onOpenJobMatch={() => goToBuilder('jobmatch')}
             onGoToDashboard={goToDashboard}
+            onNavigate={navPath}
             onNavigateLegal={goToLegal}
             onLogin={handleLogin}
             currentUser={currentUser}

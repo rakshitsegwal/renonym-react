@@ -1,331 +1,261 @@
 import React, { useState, useEffect } from 'react';
 import { AuthModal } from './AuthModal.jsx';
-import PaymentButton from './PaymentButton.jsx';
-import './landing.css';
+import { FileText, Mic, BarChart3, MessageSquare, BarChart2, Check } from 'lucide-react';
+import { VoiceOrb, Waveform, ScoreRing, Meter, Badge } from './coach/primitives.jsx';
+import './coach.css';
 
-export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigateLegal, onLogin, currentUser }) {
-    const [pricingPeriod, setPricingPeriod] = useState('yearly');
-    const [scrolled, setScrolled] = useState(false);
-    const [showLoginModal, setShowLoginModal] = useState(false);
-
-    useEffect(() => {
-        const h = () => setScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', h, { passive: true });
-        return () => window.removeEventListener('scroll', h);
-    }, []);
-
-    const price = { monthly: { pro: 599 }, yearly: { pro: 499 } }[pricingPeriod];
+// S1 — Landing (dark/gold reskin, recreated from designs/screens/01-landing-desktop.html).
+// Coach-led hero; the résumé builder is the free on-ramp. Existing résumé entry
+// points (onGetStarted/onStartAi/onOpenJobMatch) are preserved.
+export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, currentUser }) {
+    const [showLogin, setShowLogin] = useState(false);
+    const go = (p) => () => (onNavigate ? onNavigate(p) : onGetStarted());
+    const scrollTo = (id) => (e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); };
 
     return (
-        <div className="lp">
-            {showLoginModal && (
-                <AuthModal
-                    onAuth={(token, user) => {
-                        localStorage.setItem('rn-auth-token', token);
-                        localStorage.setItem('rn-auth-user', JSON.stringify(user));
-                        setShowLoginModal(false);
-                        if (onLogin) onLogin();
-                    }}
-                    onClose={() => setShowLoginModal(false)}
-                    reason="general"
-                />
-            )}
+        <div className="rn-dark">
+            {showLogin && <AuthModal reason="continue" onClose={() => setShowLogin(false)}
+                onAuth={(token, user) => { localStorage.setItem('rn-auth-token', token); localStorage.setItem('rn-auth-user', JSON.stringify(user)); setShowLogin(false); onLogin && onLogin(); }} />}
 
-            {/* ── NAVBAR ────────────────────────────────────────────────── */}
-            <nav className={`lp-nav${scrolled ? ' lp-nav--scrolled' : ''}`}>
-                <div className="lp-nav__inner">
-                    <div className="lp-nav__logo">Renonym</div>
-                    <div className="lp-nav__links">
-                        <a href="#features" className="lp-nav__link">Features</a>
-                        <a href="#templates" className="lp-nav__link">Templates</a>
-                        <a href="#pricing" className="lp-nav__link">Pricing</a>
+            {/* NAV */}
+            <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,11,13,0.72)', backdropFilter: 'blur(18px)', borderBottom: '1px solid var(--line)' }}>
+                <div className="wrap-wide topnav">
+                    <div className="row ac gap-40">
+                        <div className="brand"><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
+                        <div className="navlinks">
+                            <a href="/coach" onClick={(e) => { e.preventDefault(); go('/coach')(); }} className="on">Interview Coach</a>
+                            <a href="#resume" onClick={scrollTo('resume')}>Résumé Builder</a>
+                            <a href="#pricing" onClick={scrollTo('pricing')}>Pricing</a>
+                            <a href="#how" onClick={scrollTo('how')}>How it works</a>
+                        </div>
                     </div>
-                    <div className="lp-nav__actions">
+                    <div className="row ac gap-16">
                         {currentUser
-                            ? <button className="lp-nav__cta" onClick={onGoToDashboard || onGetStarted}>Dashboard →</button>
+                            ? <button className="btn btn-ghost btn-sm" onClick={onGoToDashboard}>Dashboard →</button>
                             : <>
-                                <button className="lp-nav__login" onClick={() => setShowLoginModal(true)}>Log in</button>
-                                <button className="lp-nav__cta" onClick={onGetStarted}>Get started free</button>
-                              </>
-                        }
+                                <button className="sm t2" style={{ fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => (onLogin ? setShowLogin(true) : onGetStarted())}>Sign in</button>
+                                <button className="btn btn-gold" onClick={onGetStarted}>Get started</button>
+                              </>}
                     </div>
                 </div>
             </nav>
 
-            {/* ── HERO ──────────────────────────────────────────────────── */}
-            <section className="lp-hero">
-                <div className="lp-hero__grid-bg" />
-                <div className="lp-hero__glow" />
-                <div className="lp-hero__inner">
-                    <div className="lp-hero__content">
-                        <div className="lp-hero__tag">AI-Powered Career Platform</div>
-                        <h1 className="lp-hero__h1">
-                            Get hired<br /><span className="lp-hero__accent">faster.</span>
-                        </h1>
-                        <p className="lp-hero__sub">
-                            AI-crafted resumes that pass ATS filters and impress hiring managers.
-                            Used by professionals at top companies worldwide.
-                        </p>
-                        <div className="lp-hero__ctas">
-                            <button className="lp-btn lp-btn--primary" onClick={onGetStarted}>Build your resume free →</button>
-                            <button className="lp-btn lp-btn--ghost" onClick={onStartAi}>✦ Try AI design</button>
-                        </div>
-                        <p className="lp-hero__note">Free to build · No sign-up required · Cancel anytime</p>
-                    </div>
-                    <div className="lp-hero__visual">
-                        <div className="lp-mock-resume">
-                            <div className="lp-mock-resume__header">
-                                <div className="lp-mock-resume__avatar">RS</div>
-                                <div>
-                                    <div className="lp-mock-resume__name">Rakshit Segwal</div>
-                                    <div className="lp-mock-resume__role">Senior Salesforce Developer</div>
-                                </div>
-                            </div>
-                            <div className="lp-mock-resume__lines">
-                                {[100,80,60,90,70,50].map((w,i) => <div key={i} className="lp-mock-resume__line" style={{width:w+'%'}} />)}
-                            </div>
-                            <div className="lp-mock-resume__ats-badge">
-                                <div className="lp-ats-badge">
-                                    <div className="lp-ats-badge__score">92</div>
-                                    <div className="lp-ats-badge__label">ATS Score</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── TRUST BAR ─────────────────────────────────────────────── */}
-            <div className="lp-trust">
-                <div className="lp-trust__inner">
-                    <span className="lp-trust__label">Trusted by professionals at</span>
-                    {['Google','Amazon','Infosys','Microsoft','TCS','Accenture'].map(c => (
-                        <span key={c} className="lp-trust__co">{c}</span>
-                    ))}
-                </div>
-            </div>
-
-            {/* ── FEATURES ──────────────────────────────────────────────── */}
-            <section className="lp-features" id="features">
-                <div className="lp-section">
-                    <div className="lp-section__tag">Everything you need</div>
-                    <h2 className="lp-section__h2">One platform.<br />Three powerful tools.</h2>
-                    <div className="lp-feat-grid">
-                        <div className="lp-feat-card">
-                            <div className="lp-feat-card__icon">📄</div>
-                            <h3 className="lp-feat-card__h3">Professional Templates</h3>
-                            <p className="lp-feat-card__p">10 handcrafted, ATS-optimised layouts. Visual gallery — see exactly what you get before you pick.</p>
-                            <ul className="lp-feat-card__ul">
-                                <li>10 premium templates</li><li>ATS-optimised layouts</li><li>Live preview as you type</li>
-                            </ul>
-                            <button className="lp-feat-card__link" onClick={onGetStarted}>Browse templates →</button>
-                        </div>
-                        <div className="lp-feat-card lp-feat-card--ai">
-                            <div className="lp-feat-card__badge">AI</div>
-                            <div className="lp-feat-card__icon lp-feat-card__icon--ai">✦</div>
-                            <h3 className="lp-feat-card__h3">AI Generated Resume</h3>
-                            <p className="lp-feat-card__p">Describe your style in plain English. Upload style inspiration. AI creates a completely unique design.</p>
-                            <ul className="lp-feat-card__ul">
-                                <li>Unique AI-generated design</li><li>Plain English prompts</li><li>Upload style inspiration</li>
-                            </ul>
-                            <button className="lp-feat-card__link lp-feat-card__link--ai" onClick={onStartAi}>Try AI design →</button>
-                        </div>
-                        <div className="lp-feat-card">
-                            <div className="lp-feat-card__icon">🎯</div>
-                            <h3 className="lp-feat-card__h3">Job Match Optimizer</h3>
-                            <p className="lp-feat-card__p">Paste a job description. Instantly see missing keywords, ATS gaps, and exactly what to change.</p>
-                            <ul className="lp-feat-card__ul">
-                                <li>ATS compatibility scoring</li><li>Keyword gap analysis</li><li>AI-powered suggestions</li>
-                            </ul>
-                            <button className="lp-feat-card__link" onClick={onOpenJobMatch}>Open optimizer →</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── HOW IT WORKS ──────────────────────────────────────────── */}
-            <section className="lp-how" id="how">
-                <div className="lp-section">
-                    <div className="lp-section__tag">Simple process</div>
-                    <h2 className="lp-section__h2">From blank page to<br />interview in minutes.</h2>
-                    <div className="lp-how__steps">
-                        {[
-                            { n:'01', t:'Build or upload', d:'Start from scratch, upload your existing resume, or let AI generate one from your description.' },
-                            { n:'02', t:'AI analyses and improves', d:'Get your ATS score, see which keywords are missing, and get specific improvement suggestions.' },
-                            { n:'03', t:'Download and apply', d:'Export a pixel-perfect PDF. No watermarks, no formatting issues. Ready for any ATS or hiring portal.' },
-                        ].map(s => (
-                            <div key={s.n} className="lp-how__step">
-                                <div className="lp-how__step-n">{s.n}</div>
-                                <h3 className="lp-how__step-t">{s.t}</h3>
-                                <p className="lp-how__step-d">{s.d}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── ATS SHOWCASE ──────────────────────────────────────────── */}
-            <section className="lp-ats">
-                <div className="lp-section lp-ats__inner">
-                    <div className="lp-ats__content">
-                        <div className="lp-section__tag lp-section__tag--light">AI Analysis</div>
-                        <h2 className="lp-section__h2 lp-section__h2--light">See exactly why you're<br />not getting callbacks.</h2>
-                        <p className="lp-ats__desc">Most resumes fail before a human reads them. Our AI scores your resume against real ATS criteria and tells you exactly what to fix.</p>
-                        <button className="lp-btn lp-btn--white" onClick={onOpenJobMatch}>Get your ATS score free →</button>
-                    </div>
-                    <div className="lp-ats__visual">
-                        <div className="lp-score-card">
-                            <div className="lp-score-card__dial">
-                                <svg viewBox="0 0 80 80">
-                                    <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="7"/>
-                                    <circle cx="40" cy="40" r="32" fill="none" stroke="#7c3aed" strokeWidth="7"
-                                        strokeDasharray="201" strokeDashoffset="41"
-                                        strokeLinecap="round" transform="rotate(-90 40 40)"/>
-                                </svg>
-                                <div className="lp-score-card__num">79</div>
-                            </div>
-                            <div className="lp-score-card__title">ATS Score</div>
-                            <div className="lp-score-card__subtitle">Good — room to improve</div>
-                            <div className="lp-score-card__gaps">
-                                <div className="lp-score-card__gap">Missing: "Salesforce CPQ"</div>
-                                <div className="lp-score-card__gap">Missing: "REST APIs"</div>
-                                <div className="lp-score-card__gap lp-score-card__gap--blur">+ 6 more keywords...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── TEMPLATES ─────────────────────────────────────────────── */}
-            <section className="lp-templates" id="templates">
-                <div className="lp-section">
-                    <div className="lp-section__tag">Templates</div>
-                    <h2 className="lp-section__h2">10 premium templates.<br />All ATS-ready.</h2>
-                    <div className="lp-tmpl-grid">
-                        {[
-                            { n:'Classic Pro', c:'#6d28d9' },
-                            { n:'Modern Clean', c:'#0ea5e9' },
-                            { n:'Minimal ATS', c:'#374151' },
-                            { n:'Dark Tech', c:'#1e293b' },
-                            { n:'Nordic Clean', c:'#0891b2' },
-                            { n:'Emerald Pro', c:'#059669' },
-                        ].map((t, i) => (
-                            <div key={t.n} className={`lp-tmpl${i===0?' lp-tmpl--active':''}`} onClick={onGetStarted}>
-                                <div className="lp-tmpl__preview" style={{'--tc': t.c}}>
-                                    <div className="lp-tmpl__preview-hdr" />
-                                    <div className="lp-tmpl__preview-lines">
-                                        {[85,65,90,50,75].map((w,j) => <div key={j} className="lp-tmpl__preview-line" style={{width:w+'%'}} />)}
-                                    </div>
-                                </div>
-                                <div className="lp-tmpl__name">{t.n}</div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="lp-section__center">
-                        <button className="lp-btn lp-btn--outline" onClick={onGetStarted}>Browse all 10 templates →</button>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── STATS ─────────────────────────────────────────────────── */}
-            <div className="lp-stats">
-                <div className="lp-stats__inner">
-                    {[{n:'250K+',l:'Professionals'},{n:'95%',l:'ATS pass rate'},{n:'10+',l:'Templates'},{n:'3 min',l:'Average build time'}].map(s => (
-                        <div key={s.l} className="lp-stat">
-                            <div className="lp-stat__n">{s.n}</div>
-                            <div className="lp-stat__l">{s.l}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* ── PRICING ───────────────────────────────────────────────── */}
-            <section className="lp-pricing" id="pricing">
-                <div className="lp-section">
-                    <div className="lp-section__tag">Pricing</div>
-                    <h2 className="lp-section__h2">Simple, transparent pricing.<br />No hidden fees.</h2>
-                    <div className="lp-pricing__toggle">
-                        <button className={`lp-ptoggle${pricingPeriod==='monthly'?' lp-ptoggle--on':''}`} onClick={() => setPricingPeriod('monthly')}>Monthly</button>
-                        <button className={`lp-ptoggle${pricingPeriod==='yearly'?' lp-ptoggle--on':''}`} onClick={() => setPricingPeriod('yearly')}>
-                            Yearly <span className="lp-ptoggle__save">Save 16%</span>
-                        </button>
-                    </div>
-                    <div className="lp-plans">
-                        <div className="lp-plan">
-                            <div className="lp-plan__name">Free</div>
-                            <div className="lp-plan__price">₹0</div>
-                            <div className="lp-plan__desc">Build and preview. See your ATS score.</div>
-                            <ul className="lp-plan__feats">
-                                {['Unlimited building & editing','Live resume preview','1 ATS analysis','1 job match','Watermarked PDF preview'].map(f =>
-                                    <li key={f} className="lp-plan__feat"><span className="lp-plan__ck">✓</span>{f}</li>
-                                )}
-                                {['PDF/DOCX download','AI style generator','AI resume rewrite','Priority support'].map(f =>
-                                    <li key={f} className="lp-plan__feat lp-plan__feat--off"><span className="lp-plan__x">×</span>{f}</li>
-                                )}
-                            </ul>
-                            <button className="lp-plan__btn lp-plan__btn--outline" onClick={onGetStarted}>Get started free</button>
-                        </div>
-                        <div className="lp-plan lp-plan--pro">
-                            <div className="lp-plan__popular">Most popular</div>
-                            <div className="lp-plan__name">Pro</div>
-                            <div className="lp-plan__price">₹{price.pro}<span className="lp-plan__per">/{pricingPeriod==='yearly'?'yr':'mo'}</span></div>
-                            {pricingPeriod==='yearly' && <div className="lp-plan__equiv">That's just ₹41/month</div>}
-                            <div className="lp-plan__desc">Everything you need to land your next job.</div>
-                            <ul className="lp-plan__feats">
-                                {['Everything in Free','Unlimited PDF & DOCX export','No watermarks','AI style generator','AI resume rewrite','Job match optimizer','Priority support','All future features'].map(f =>
-                                    <li key={f} className="lp-plan__feat"><span className="lp-plan__ck">✓</span>{f}</li>
-                                )}
-                            </ul>
-                            <PaymentButton
-                                planId={pricingPeriod==='yearly'?'pro_yearly':'pro_monthly'}
-                                label={`Start Pro — ₹${price.pro}/${pricingPeriod==='yearly'?'yr':'mo'}`}
-                                className="lp-plan__btn lp-plan__btn--pro"
-                                user={currentUser}
-                                onSuccess={() => alert('Welcome to Pro! Refresh to activate your plan.')}
-                                onError={msg => alert('Payment failed: '+msg)}
-                            />
-                            <div className="lp-plan__trust">7-day money-back · Cancel anytime · Secured by Razorpay</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── CTA BANNER ────────────────────────────────────────────── */}
-            <section className="lp-cta-banner">
-                <div className="lp-section lp-cta-banner__inner">
-                    <h2 className="lp-cta-banner__h2">Start building your<br />career today.</h2>
-                    <p className="lp-cta-banner__sub">Free to build. No sign-up until you're ready. Takes 3 minutes.</p>
-                    <div className="lp-hero__ctas lp-cta-banner__ctas">
-                        <button className="lp-btn lp-btn--primary" onClick={onGetStarted}>Build your resume free →</button>
-                        <button className="lp-btn lp-btn--ghost-light" onClick={onStartAi}>✦ Generate with AI</button>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── FOOTER ────────────────────────────────────────────────── */}
-            <footer className="lp-footer">
-                <div className="lp-footer__inner">
+            {/* HERO */}
+            <header className="rel" style={{ overflow: 'hidden' }}>
+                <div className="glow-gold" style={{ width: 700, height: 520, right: -120, top: -180 }} />
+                <div className="wrap-wide grid" style={{ gridTemplateColumns: '1.05fr 0.95fr', gap: 56, alignItems: 'center', padding: '80px 48px 70px' }}>
                     <div>
-                        <div className="lp-footer__logo">Renonym</div>
-                        <div className="lp-footer__tagline">AI-powered career platform</div>
-                    </div>
-                    <div className="lp-footer__links">
-                        <div className="lp-footer__col">
-                            <div className="lp-footer__col-hd">Product</div>
-                            <a className="lp-footer__a" href="#features">Features</a>
-                            <a className="lp-footer__a" href="#templates">Templates</a>
-                            <a className="lp-footer__a" href="#pricing">Pricing</a>
+                        <div className="pill" style={{ marginBottom: 26 }}><span className="dot" />Your AI job-preparation platform</div>
+                        <h1 className="display">Build your résumé.<br /><span className="italic gold">Practice</span> your interview.<br />Get hired.</h1>
+                        <p className="lead" style={{ marginTop: 26, maxWidth: '34ch' }}>Renonym tailors your résumé to the role, then puts you through the exact interview it earns you — with an AI coach that scores every answer.</p>
+                        <div className="row ac gap-16 wrap-f" style={{ marginTop: 36 }}>
+                            <button className="btn btn-gold btn-lg" onClick={go('/coach/new')}>Practice an interview</button>
+                            <button className="btn btn-outline btn-lg" onClick={onGetStarted}>Build a résumé free</button>
                         </div>
-                        <div className="lp-footer__col">
-                            <div className="lp-footer__col-hd">Company</div>
-                            <a className="lp-footer__a" href="/about"   onClick={(e) => { e.preventDefault(); onNavigateLegal && onNavigateLegal('about'); }}>About</a>
-                            <a className="lp-footer__a" href="/privacy" onClick={(e) => { e.preventDefault(); onNavigateLegal && onNavigateLegal('privacy'); }}>Privacy</a>
-                            <a className="lp-footer__a" href="/terms"   onClick={(e) => { e.preventDefault(); onNavigateLegal && onNavigateLegal('terms'); }}>Terms</a>
+                        <div className="row ac gap-24 wrap-f" style={{ marginTop: 34 }}>
+                            <div className="row ac gap-8">
+                                <div className="row" style={{ marginRight: 2 }}>
+                                    {[['M', '#3a3320', 'var(--gold)'], ['J', '#23303a', 'var(--blue)'], ['A', '#26352b', 'var(--green)']].map(([l, b, c], i) => (
+                                        <div key={l} className="av" style={{ width: 30, height: 30, fontSize: 12, background: b, color: c, border: '2px solid var(--bg)', marginLeft: i ? -9 : 0 }}>{l}</div>
+                                    ))}
+                                </div>
+                                <span className="sm"><b style={{ color: 'var(--text)' }}>12,400+</b> candidates prepping</span>
+                            </div>
+                            <div className="row ac gap-6"><span className="gold" style={{ letterSpacing: 1 }}>★★★★★</span><span className="sm">4.9 average</span></div>
+                        </div>
+                    </div>
+
+                    {/* product demo: voice session */}
+                    <div className="card rel" style={{ borderRadius: 'var(--r-xl)', overflow: 'hidden', boxShadow: 'var(--shadow-l)' }}>
+                        <div className="row ac jsb" style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', background: 'var(--bg-1)' }}>
+                            <div className="row ac gap-10"><Badge variant="gold" dot>Live session</Badge><span className="label">Behavioral · Stripe</span></div>
+                            <Badge variant="blue">Voice</Badge>
+                        </div>
+                        <div style={{ padding: 30 }}>
+                            <div className="label" style={{ marginBottom: 10 }}>Coach asks · Q2 of 6</div>
+                            <p className="h4" style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 25, lineHeight: 1.3 }}>“Tell me about a time you shipped a product with incomplete data.”</p>
+                            <div className="col ac" style={{ margin: '34px 0 26px' }}>
+                                <VoiceOrb size={104} state="listening" />
+                                <Waveform bars={11} live height={42} style={{ marginTop: 24 }} />
+                                <div className="pill" style={{ marginTop: 22 }}><span className="dot" />Listening — speak naturally</div>
+                            </div>
+                            <div className="divider" style={{ marginBottom: 16 }} />
+                            <div className="row ac jsb">
+                                <span className="xs">Answer 2 / 6 · 12:30 remaining</span>
+                                <div className="row gap-8"><Badge variant="green">Clarity 84</Badge><Badge variant="amber">Add a metric</Badge></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="lp-footer__bottom">© 2026 Renonym AI. All rights reserved.</div>
+            </header>
+
+            {/* TRUST MARQUEE */}
+            <div className="wrap-wide" style={{ padding: '8px 48px 40px' }}>
+                <div className="label tc" style={{ marginBottom: 24 }}>Candidates have landed roles at</div>
+                <div className="row jc wrap-f gap-40" style={{ opacity: 0.6 }}>
+                    {['Stripe', 'Figma', 'Linear', 'Notion', 'Vercel', 'Ramp', 'Airbnb', 'Datadog'].map(b => (
+                        <span key={b} className="h5" style={{ color: 'var(--muted)' }}>{b}</span>
+                    ))}
+                </div>
+            </div>
+
+            {/* INTERVIEW COACH — premium hero */}
+            <section id="coach" style={{ padding: '96px 0' }}>
+                <div className="wrap-wide">
+                    <div className="card-gold rel" style={{ borderRadius: 'var(--r-2xl)', overflow: 'hidden' }}>
+                        <div className="glow-gold" style={{ width: 520, height: 520, right: -120, top: -160 }} />
+                        <div className="grid rel" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                            <div style={{ padding: 64 }}>
+                                <Badge variant="gold" dot>Premium · The Interview Coach</Badge>
+                                <h2 className="h1" style={{ marginTop: 24 }}>The interview is where<br />offers are <span className="italic gold">won or lost</span>.</h2>
+                                <p className="lead" style={{ marginTop: 22, maxWidth: '42ch' }}>Most people walk in under-rehearsed. Renonym's AI Coach runs realistic mock interviews drawn from your résumé and the exact job — voice or text — then tells you precisely what to fix.</p>
+                                <div className="col gap-16" style={{ marginTop: 34 }}>
+                                    {['Adaptive follow-ups that probe like a real interviewer', 'Scored report across clarity, structure, confidence & fit', 'Track every session and watch your score climb'].map(t => (
+                                        <div key={t} className="row ac gap-12"><span style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 18, height: 18 }}><Check size={13} color="var(--green)" /></span><span className="body-t" style={{ color: 'var(--text-2)' }}>{t}</span></div>
+                                    ))}
+                                </div>
+                                <div className="row ac gap-16" style={{ marginTop: 38 }}>
+                                    <button className="btn btn-gold btn-lg" onClick={go('/coach')}>Explore the Coach</button>
+                                    <button className="btn btn-outline btn-lg" onClick={scrollTo('pricing')}>From ₹1,599/mo</button>
+                                </div>
+                            </div>
+                            <div style={{ padding: '48px 64px 48px 0', display: 'flex', alignItems: 'center' }}>
+                                <div className="card-2" style={{ width: '100%', borderRadius: 'var(--r-xl)', padding: 28, boxShadow: 'var(--shadow-l)' }}>
+                                    <div className="row ac jsb" style={{ marginBottom: 22 }}>
+                                        <div><div className="label">Session report</div><div className="h4" style={{ marginTop: 4 }}>Senior PM · Stripe</div></div>
+                                        <ScoreRing value={72} size={78} stroke={6} label="" />
+                                    </div>
+                                    <div className="col gap-14">
+                                        {[['Communication', 84], ['Structure', 78], ['Specificity', 54]].map(([k, v]) => (
+                                            <div key={k}><div className="row jsb xs" style={{ marginBottom: 6 }}><span style={{ color: 'var(--text-2)' }}>{k}</span><span className={v < 60 ? 'amber-t' : 'gold'}>{v}</span></div><Meter value={v} /></div>
+                                        ))}
+                                    </div>
+                                    <div className="divider" style={{ margin: '20px 0 16px' }} />
+                                    <div className="row ac jsb"><Badge variant="green">▲ +14 vs last rep</Badge><button className="sm gold" style={{ fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }} onClick={go('/coach')}>Open report →</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* RÉSUMÉ BUILDER (free on-ramp) */}
+            <section id="resume" style={{ padding: '40px 0 96px' }}>
+                <div className="wrap-wide grid" style={{ gridTemplateColumns: '0.92fr 1.08fr', gap: 64, alignItems: 'center' }}>
+                    <div>
+                        <Badge>Free to start</Badge>
+                        <h2 className="h1" style={{ marginTop: 22 }}>A résumé that earns<br />the interview.</h2>
+                        <p className="lead" style={{ marginTop: 20, maxWidth: '40ch' }}>Generate and tailor a recruiter-ready résumé to any job description in minutes. ATS-clean, beautifully typeset, and the on-ramp into your interview prep.</p>
+                        <div className="row gap-32 wrap-f" style={{ marginTop: 34 }}>
+                            {[['94%', 'avg ATS score'], ['4 min', 'blank page to draft'], ['40+', 'tailored templates']].map(([v, l]) => (
+                                <div key={l}><div className="h2" style={{ fontSize: 34 }}>{v}</div><div className="sm" style={{ marginTop: 4 }}>{l}</div></div>
+                            ))}
+                        </div>
+                        <div className="row gap-12 wrap-f" style={{ marginTop: 34 }}>
+                            <button className="btn btn-ghost btn-lg" onClick={onGetStarted}>Build your résumé →</button>
+                            <button className="btn btn-outline btn-lg" onClick={onOpenJobMatch}>Job-match optimizer</button>
+                        </div>
+                    </div>
+                    <div className="card" style={{ padding: 22, borderRadius: 'var(--r-2xl)' }}>
+                        <div className="row ac jsb" style={{ padding: '0 6px 16px' }}>
+                            <span className="label">Live preview · tailored to Stripe</span>
+                            <Badge variant="green" dot>ATS 94</Badge>
+                        </div>
+                        {/* the one light surface — résumé paper */}
+                        <div style={{ background: '#F3F1EB', color: '#1a1a1a', borderRadius: 14, padding: '38px 42px' }}>
+                            <div style={{ fontFamily: 'var(--rn-serif)', fontSize: 30, color: '#111' }}>Maya Chen</div>
+                            <div style={{ fontSize: 13, color: '#666', marginTop: 3, letterSpacing: '.02em' }}>Senior Product Manager · San Francisco · maya@chen.co</div>
+                            <div style={{ height: 1, background: '#d4cfc2', margin: '18px 0' }} />
+                            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#8a8474' }}>Experience</div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginTop: 10 }}>Product Manager · Brex</div>
+                            <div style={{ fontSize: 13, color: '#444', lineHeight: 1.6, marginTop: 5 }}>Led 0→1 launch of a payments product to <b style={{ background: '#e8d9b0', padding: '0 3px', borderRadius: 3 }}>$4M ARR in 3 quarters</b>, partnering across eng, design &amp; risk.</div>
+                            <div style={{ fontSize: 13, color: '#444', lineHeight: 1.6, marginTop: 7 }}>Scaled activation 38% via onboarding redesign and pricing experiments.</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#8a8474', marginTop: 18 }}>Skills</div>
+                            <div style={{ fontSize: 13, color: '#444', marginTop: 6 }}>Payments · 0→1 · Experimentation · SQL · Roadmapping</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* FEATURES */}
+            <section id="how" style={{ padding: '60px 0' }}>
+                <div className="wrap-wide">
+                    <div className="tc" style={{ marginBottom: 54 }}>
+                        <span className="eyebrow">Everything for the hunt</span>
+                        <h2 className="h1" style={{ marginTop: 18 }}>One platform, blank page to signed offer</h2>
+                    </div>
+                    <div className="grid gap-24" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+                        {[
+                            [FileText, 'Résumé tailoring', 'Paste a job description; the AI rewrites and quantifies your bullets to match — keyword-aligned and ATS-safe.', false],
+                            [Mic, 'Voice mock interviews', 'Speak your answers to a coach that listens, follows up, and reacts in real time — the closest thing to the real room.', true],
+                            [BarChart3, 'Scored reports', 'Every session returns a graded breakdown with strengths, gaps, and the specific lines to rewrite before the real thing.', false],
+                            [MessageSquare, 'Text interviews', 'Prefer to type? Run the same adaptive interview in writing to structure your thinking before you say it aloud.', false],
+                            [BarChart2, 'Progress tracking', 'Your score trend, per-role history, and a dashboard that gives you a reason to come back until you land it.', false],
+                            [Check, 'Applications hub', 'Keep every role, résumé version, and interview prep in one place — organized around the jobs you actually want.', false],
+                        ].map(([Icon, title, body, premium]) => (
+                            <div key={title} className="card-glass" style={{ padding: 28, borderRadius: 'var(--r-xl)', borderColor: premium ? 'var(--gold-line)' : 'var(--line-2)' }}>
+                                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--gold-soft)', border: '1px solid var(--gold-line)', display: 'grid', placeItems: 'center', marginBottom: 20 }}><Icon size={20} color="var(--gold)" /></div>
+                                <div className="row ac gap-8"><h3 className="h4">{title}</h3>{premium && <Badge variant="gold">Premium</Badge>}</div>
+                                <p className="body-t" style={{ marginTop: 10 }}>{body}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* PRICING */}
+            <section id="pricing" style={{ padding: '80px 0' }}>
+                <div className="wrap-wide">
+                    <div className="tc" style={{ marginBottom: 48 }}>
+                        <span className="eyebrow">Pricing</span>
+                        <h2 className="h1" style={{ marginTop: 16 }}>Free to build. Pay to practice.</h2>
+                    </div>
+                    <div className="grid gap-24" style={{ gridTemplateColumns: 'repeat(3,1fr)', alignItems: 'stretch' }}>
+                        <PriceCard name="Résumé" price="Free" sub="The on-ramp" feats={['AI résumé builder & tailoring', 'ATS score & job-match optimizer', 'Watermarked preview']} cta="Start building" onClick={onGetStarted} />
+                        <PriceCard featured name="Coach Unlimited" price="₹1,599" per="/mo" sub="Best value · cancel anytime" feats={['Unlimited voice & text interviews', 'Full scored reports + history', 'Everything in Résumé']} cta="Get Coach Unlimited" onClick={go('/coach')} />
+                        <PriceCard name="Session Pass" price="₹599" sub="One-time" feats={['One full interview', 'One scored report', 'No subscription']} cta="Buy a session" onClick={go('/coach/new')} />
+                    </div>
+                    <p className="xs tc" style={{ marginTop: 20 }}>The AI Interview Coach is a premium feature — every interview includes a full scored report.</p>
+                </div>
+            </section>
+
+            {/* FOOTER */}
+            <footer style={{ borderTop: '1px solid var(--line)', padding: '48px 0 40px' }}>
+                <div className="wrap-wide row jsb wrap-f gap-32">
+                    <div style={{ maxWidth: 280 }}>
+                        <div className="brand" style={{ marginBottom: 14 }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
+                        <p className="sm">Build your résumé. Practice your interview. Get hired.</p>
+                    </div>
+                    <div className="row gap-48 wrap-f">
+                        <FootCol head="Product" links={[['Interview Coach', go('/coach')], ['Résumé Builder', onGetStarted], ['Pricing', scrollTo('pricing')]]} />
+                        <FootCol head="Company" links={[['About', () => onNavigateLegal && onNavigateLegal('about')], ['Privacy', () => onNavigateLegal && onNavigateLegal('privacy')], ['Terms', () => onNavigateLegal && onNavigateLegal('terms')]]} />
+                    </div>
+                </div>
+                <div className="wrap-wide xs" style={{ marginTop: 36 }}>© 2026 Renonym AI. All rights reserved.</div>
             </footer>
+        </div>
+    );
+}
+
+function PriceCard({ name, price, per, sub, feats, cta, onClick, featured }) {
+    return (
+        <div className={featured ? 'card-gold' : 'card'} style={{ padding: 32, borderRadius: 'var(--r-xl)', borderColor: featured ? 'var(--gold-line)' : 'var(--line)', display: 'flex', flexDirection: 'column' }}>
+            {featured && <Badge variant="gold" dot style={{ marginBottom: 14 }}>Most popular</Badge>}
+            <div className="h4">{name}</div>
+            <div className="row ae gap-6" style={{ marginTop: 10 }}><span className="h1" style={{ fontSize: 44 }}>{price}</span>{per && <span className="sm" style={{ paddingBottom: 10 }}>{per}</span>}</div>
+            <div className="sm" style={{ marginTop: 4, marginBottom: 22 }}>{sub}</div>
+            <div className="col gap-12" style={{ flex: 1 }}>
+                {feats.map(f => <div key={f} className="row ac gap-10 sm" style={{ color: 'var(--text-2)' }}><Check size={14} color="var(--green)" />{f}</div>)}
+            </div>
+            <button className={'btn ' + (featured ? 'btn-gold' : 'btn-outline') + ' btn-block'} style={{ marginTop: 24 }} onClick={onClick}>{cta}</button>
+        </div>
+    );
+}
+function FootCol({ head, links }) {
+    return (
+        <div className="col gap-10">
+            <div className="label">{head}</div>
+            {links.map(([t, fn]) => <button key={t} className="sm" style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--muted)' }} onClick={fn}>{t}</button>)}
         </div>
     );
 }
