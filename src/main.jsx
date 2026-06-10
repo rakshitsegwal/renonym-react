@@ -190,6 +190,7 @@ function App() {
             user={currentUser}
             onOpenBuilder={goToBuilder}
             onLogout={handleLogout}
+            onNavigate={navPath}
         />;
     }
 
