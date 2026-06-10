@@ -338,6 +338,19 @@ class ResumeBuilder extends React.Component {
 
     connectedCallback() {
 
+        // Restore an in-progress draft. Anonymous users have no account, so this
+        // localStorage draft is the only thing protecting their work against a
+        // refresh or navigating away and back.
+        try {
+            const draft = localStorage.getItem('rb-draft');
+            if (draft) {
+                const parsed = JSON.parse(draft);
+                if (parsed && typeof parsed === 'object') {
+                    this.formData = { ...DEFAULT_FORM(), ...parsed };
+                }
+            }
+        } catch (e) { /* ignore corrupt draft */ }
+
         if (!this.formData.experiences.length) {
             this.formData = {
                 ...this.formData,
@@ -378,6 +391,15 @@ class ResumeBuilder extends React.Component {
             }
         }
         this._syncTextareas();
+        this._saveDraft();
+    }
+
+    // Debounced auto-save of the in-progress resume to localStorage.
+    _saveDraft() {
+        clearTimeout(this._draftTimer);
+        this._draftTimer = setTimeout(() => {
+            try { localStorage.setItem('rb-draft', JSON.stringify(this.formData)); } catch (e) { /* quota/full */ }
+        }, 400);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -708,11 +730,11 @@ class ResumeBuilder extends React.Component {
     get displayTitle() { return this.activeResumeData.title    || ''; }
 
     get initials() {
-        // Always use formData for initials — never the placeholder persona
-        const n = (this.formData?.fullName || '').trim();
-        if (!n) return '';
-        const parts = n.split(/\s+/);
-        return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '';
+        // Always use formData for initials — never the placeholder persona.
+        // Match only Unicode letters so HTML tags, symbols, and emoji never leak
+        // into the avatar (e.g. "<script>…" → no "<", "🚀 Test" → "T").
+        const words = (this.formData?.fullName || '').match(/\p{L}+/gu) || [];
+        return ((words[0]?.[0] || '') + (words[1]?.[0] || '')).toUpperCase();
     }
 
     get hasPhoto()          { return !!this.formData.photoUrl; }
@@ -1032,10 +1054,16 @@ class ResumeBuilder extends React.Component {
     // FORM INPUT HANDLERS
     // ═══════════════════════════════════════════════════════════════════════
 
+    // Per-field length caps — enforced here so oversized values can't slip in
+    // via paste or programmatic input events, not just typing.
+    static FIELD_LIMITS = { fullName: 100, title: 120, email: 254, phone: 40, location: 120, linkedIn: 200, summary: 2000 };
+
     handleInput(event) {
         const field = event.target.dataset.field;
         if (!field) return;
-        this.formData = { ...this.formData, [field]: event.target.value };
+        const cap = ResumeBuilder.FIELD_LIMITS[field];
+        const value = cap ? event.target.value.slice(0, cap) : event.target.value;
+        this.formData = { ...this.formData, [field]: value };
     }
 
     handleTemplateChange(event) {
@@ -1366,6 +1394,9 @@ class ResumeBuilder extends React.Component {
             this._setStatus('Failed to parse resume. Please try again.', 'error');
         } finally {
             this.isParsingResume = false;
+            // Reset the file input so re-selecting the SAME file fires onChange
+            // again, and no stale selection can be re-submitted.
+            try { if (event?.target) event.target.value = ''; } catch (_) {}
         }
     }
 
