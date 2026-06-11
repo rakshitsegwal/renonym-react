@@ -1599,6 +1599,7 @@ class ResumeBuilder extends React.Component {
             this._setStatus('Add your name and some summary text first.', 'error');
             return;
         }
+        if (!this._requireLogin('feature')) return;   // server now requires auth + a credit
 
         this._setStatus('AI is improving your summary…', 'info');
 
@@ -1615,6 +1616,7 @@ class ResumeBuilder extends React.Component {
                 })
             }, 90000);
 
+            if (await this._isGated(response)) { this._setStatus('', 'info'); return; }
             if (response.status === 429) {
                 this._setStatus('Too many AI requests. Please wait a few minutes.', 'error');
                 return;
@@ -2215,6 +2217,7 @@ class ResumeBuilder extends React.Component {
 
     async handleOptimizeForJob() {
         if(!this.jobMatchResult){this._setStatus('Run analysis first.','error');return;}
+        if (!this._requireLogin('feature')) return;   // server now requires auth + a credit
         this.isOptimizingJob=true;
         try {
             this._setStatus('Optimising for this role...','info');
@@ -2223,7 +2226,8 @@ class ResumeBuilder extends React.Component {
             const optimizeBody = hasStructuredDataOpt
                 ? { resumeData: this.formData, resumeText: this.jmResumeText, jobDescription: this.jobDescription }
                 : { resumeText: this.jmResumeText, jobDescription: this.jobDescription };
-            const r = await this.apiFetch(RAILWAY_URL+'/optimize-for-job',{method:'POST',headers:{'Content-Type':'application/json','x-client-id':this.clientId},body:JSON.stringify(optimizeBody)},60000);
+            const r = await this.apiFetch(RAILWAY_URL+'/optimize-for-job',{method:'POST',headers:{'Content-Type':'application/json','x-client-id':this.clientId},body:JSON.stringify(optimizeBody)},90000);
+            if (await this._isGated(r)) { this._setStatus('', 'info'); this.isOptimizingJob=false; return; }
             if(!r.ok) throw new Error('failed');
             const result = await r.json();
             this.optimizedResume=result.optimizedResume; this.showOptimizeModal=true;
