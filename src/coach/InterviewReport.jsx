@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Sparkles } from 'lucide-react';
 import { ScoreRing, Meter, Badge } from './primitives.jsx';
-import { getSession, scoreSession } from './api.js';
+import { getSession, scoreSession, payAndVerify, getUser } from './api.js';
+import PaymentModal from '../PaymentModal.jsx';
 
 // S10 — Interview Report. Loads the scored report for the session (scoring it on
 // the fly if it hasn't been generated yet).
 export default function InterviewReport({ nav, id }) {
     const [data, setData] = useState(null);   // { report, company, jobTitle, type, mode, date }
     const [err, setErr] = useState('');
+    const [unlockBusy, setUnlockBusy] = useState(false);
+    const [unlockErr, setUnlockErr] = useState('');
+    const [showLadder, setShowLadder] = useState(false);
+    const [reloadKey, setReloadKey] = useState(0);
 
     useEffect(() => {
         let alive = true;
@@ -15,7 +20,8 @@ export default function InterviewReport({ nav, id }) {
             try {
                 const s = await getSession(id);
                 let report = s.report;
-                if (!report) { const r = await scoreSession(id); report = r.report; }
+                let locked = !!s.report_locked;
+                if (!report) { const r = await scoreSession(id); report = r.report; locked = !!r.locked; }
                 if (!alive) return;
                 // answered count comes from the session itself (latest real answer per question)
                 const lastByQ = {};
@@ -23,6 +29,7 @@ export default function InterviewReport({ nav, id }) {
                 const answered = Object.values(lastByQ).filter(a => a.text && String(a.text).trim() && !String(a.text).startsWith('[Spoken answer')).length;
                 setData({
                     report,
+                    locked: locked || !!(report && report.locked),
                     answered,
                     totalQ: Array.isArray(s.questions) ? s.questions.length : 0,
                     title: [s.job_title, s.company].filter(Boolean).join(' · ') || 'Interview',
@@ -34,10 +41,29 @@ export default function InterviewReport({ nav, id }) {
             }
         })();
         return () => { alive = false; };
-    }, [id]);
+    }, [id, reloadKey]);
 
     if (err) return <Centered nav={nav} msg={err} />;
     if (!data) return <Centered nav={nav} msg="Generating your report…" spinner />;
+
+    async function unlockReport() {
+        if (unlockBusy) return;
+        const user = getUser();
+        if (!user) { setUnlockErr('Sign in to unlock your report.'); return; }
+        setUnlockBusy(true); setUnlockErr('');
+        try {
+            const v = await payAndVerify('report_unlock_299', user, 'Full Report Unlock', { sessionId: id });
+            if (v && v.grant && v.grant.rows === 0) {
+                setUnlockErr("Payment received but the unlock didn't apply — do NOT pay again; reload in a moment or contact support.");
+                setUnlockBusy(false);
+                return;
+            }
+            setReloadKey(k => k + 1);   // refetch replaces this card — stay busy meanwhile
+        } catch (e) {
+            if (e.message !== 'CANCELLED') setUnlockErr(e.message || 'Could not unlock — try again.');
+            setUnlockBusy(false);
+        }
+    }
 
     const r = data.report || {};
     const dims = r.dimensions || [];
@@ -77,6 +103,7 @@ export default function InterviewReport({ nav, id }) {
                 </div>
 
                 {/* DIMENSIONS */}
+                {dims.length > 0 && (
                 <div className="grid gap-20 g-dims" style={{ gridTemplateColumns: `repeat(${Math.min(4, dims.length) || 4},1fr)`, marginBottom: 40 }}>
                     {dims.map(d => {
                         const amber = d.score < 60;
@@ -89,6 +116,7 @@ export default function InterviewReport({ nav, id }) {
                         );
                     })}
                 </div>
+                )}
 
                 {/* STRENGTHS / WEAKNESSES */}
                 <div className="grid gap-24 g-2" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 40 }}>
@@ -109,6 +137,39 @@ export default function InterviewReport({ nav, id }) {
                         </div>
                     </div>
                 </div>
+
+                {/* LOCKED — the full breakdown is behind the unlock */}
+                {data.locked && (
+                    <div className="card-gold rel" style={{ padding: 36, marginBottom: 40, textAlign: 'center', borderColor: 'var(--gold-line)', overflow: 'hidden' }}>
+                        <div className="glow-gold" style={{ width: 420, height: 320, left: '50%', top: -120, transform: 'translateX(-50%)' }} />
+                        <div className="rel">
+                            <Badge variant="gold" dot style={{ margin: '0 auto 16px' }}>Partial report</Badge>
+                            <h2 className="h3" style={{ marginBottom: 10 }}>Your full report is ready — and locked.</h2>
+                            <p className="body-t" style={{ maxWidth: '52ch', margin: '0 auto 8px' }}>
+                                Waiting for you inside: scores across all four dimensions, your remaining strengths and weaknesses,
+                                your weakest answers <b>quoted with stronger rewrites</b>, and your next steps.
+                            </p>
+                            <div className="row ac jc gap-12 wrap-f" style={{ marginTop: 22 }}>
+                                <button className="btn btn-gold btn-lg" onClick={unlockReport} disabled={unlockBusy}>
+                                    {unlockBusy ? 'Unlocking…' : 'Unlock your full report — ₹299'}
+                                </button>
+                                <button className="btn btn-outline btn-lg" onClick={() => setShowLadder(true)}>
+                                    Or 6 complete interviews — Season Pass ₹1,499
+                                </button>
+                            </div>
+                            {unlockErr && <p className="sm" style={{ color: 'var(--rose)', marginTop: 14 }}>{unlockErr}</p>}
+                            {/* blurred skeleton of what's inside */}
+                            <div className="grid gap-12 g-dims" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginTop: 28, filter: 'blur(5px)', opacity: 0.55, pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
+                                {['Communication', 'Confidence', 'Structure', 'Technical relevance'].map(k => (
+                                    <div key={k} className="card" style={{ padding: 20 }}>
+                                        <div className="row jsb ac" style={{ marginBottom: 12 }}><span className="h5">{k}</span><span className="h3 gold">··</span></div>
+                                        <div className="meter"><span style={{ width: '60%' }} /></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* FIXES */}
                 {(r.fixes || []).length > 0 && (
@@ -141,6 +202,8 @@ export default function InterviewReport({ nav, id }) {
                     </div>
                 )}
             </div>
+            {showLadder && <PaymentModal reason="interview" onClose={() => setShowLadder(false)}
+                onSuccess={() => { setShowLadder(false); setReloadKey(k => k + 1); }} />}
         </div>
     );
 }

@@ -114,8 +114,8 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
                     </div>
                 )}
 
-                <div className="grid gap-12 g-3" style={{ gridTemplateColumns: reason === 'template' ? '1fr 1fr' : '1fr 1fr 1fr', marginBottom: 18, alignItems: 'stretch', paddingTop: 12 }}>
-                    {LADDER.filter(p => reason !== 'template' || p.id !== 'boost_299').map(p => {
+                <div className="grid gap-12 g-3" style={{ gridTemplateColumns: (reason === 'template' || reason === 'interview') ? '1fr 1fr' : '1fr 1fr 1fr', marginBottom: 18, alignItems: 'stretch', paddingTop: 12 }}>
+                    {LADDER.filter(p => (reason !== 'template' && reason !== 'interview') || p.id !== 'boost_299').map(p => {
                         const on = selected === p.id;
                         return (
                             <button key={p.id} onClick={() => setSelected(p.id)}

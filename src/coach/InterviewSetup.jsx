@@ -69,7 +69,7 @@ export default function InterviewSetup({ nav }) {
         try {
             const me = await coachMe();
             // the one free TEXT interview counts — backend enforces it independently
-            entitled = !!(me && (me.has || (mode === 'text' && me.freeInterviewAvailable)));
+            entitled = !!(me && (me.has || (mode === 'text' && me.freeInterviewAvailable && !me.passType)));
         }
         catch (e) {
             if (e.status === 401 || e.status === 402) { setBusy(false); nav('/coach/checkout'); return; }
@@ -205,7 +205,8 @@ export default function InterviewSetup({ nav }) {
                         <div className="input-lbl" style={{ marginBottom: 14 }}>Interview mode</div>
                         <div className="grid gap-12" style={{ gridTemplateColumns: '1fr 1fr' }}>
                             <ModeCard on={mode === 'voice'} onClick={() => setMode('voice')}
-                                      icon={<VoiceOrb size={36} state="idle" />} title="Audio" desc="The AI interviewer speaks — you answer out loud" />
+                                      icon={<VoiceOrb size={36} state="idle" />} title="Audio"
+                                      desc={access && !access.has ? 'Needs a pass or Single Interview (₹499) — your free interview is text' : 'The AI interviewer speaks — you answer out loud'} />
                             <ModeCard on={mode === 'text'} onClick={() => setMode('text')}
                                       icon={<div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', color: 'var(--blue)' }}><MessageSquare size={18} /></div>}
                                       title="Text" desc="Read each question and type your answers" />
@@ -219,7 +220,7 @@ export default function InterviewSetup({ nav }) {
                         <div className="label" style={{ marginBottom: 18 }}>Session summary</div>
                         <div className="card" style={{ padding: 22, marginBottom: 20 }}>
                             <div className="h4" style={{ marginBottom: 4 }}>{[title, company].filter(Boolean).join(' · ') || 'Your interview'}</div>
-                            <div className="xs" style={{ marginBottom: 18 }}>{type} · {difficulty >= 80 ? 'Brutal' : difficulty >= 50 ? 'Realistic' : 'Warm-up'} · {length} questions</div>
+                            <div className="xs" style={{ marginBottom: 18 }}>{type} · {difficulty >= 80 ? 'Brutal' : difficulty >= 50 ? 'Realistic' : 'Warm-up'} · {(access && !access.has && access.freeInterviewAvailable && !access.passType && mode === 'text') ? '5 questions (free)' : `${length} questions`}</div>
                             <div className="col gap-12">
                                 <Row k="Mode" v={mode === 'voice' ? 'Audio' : 'Text'} />
                                 <Row k="Est. length" v={estMin} />
@@ -245,15 +246,23 @@ export default function InterviewSetup({ nav }) {
                                                 : `You have ${access.passes} session pass${access.passes > 1 ? 'es' : ''} — this interview uses one.`}
                                 </p>
                             </div>
-                        ) : (getToken() && access === null) ? null : (
+                        ) : (getToken() && access === null) ? null : (access && access.freeInterviewAvailable && !access.passType && mode === 'text') ? (
+                            <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20, borderColor: 'var(--green-line)' }}>
+                                <div className="row ac jsb"><Badge variant="green" dot>Included</Badge><span className="sm green-t" style={{ fontWeight: 600 }}>First interview FREE</span></div>
+                                <p className="sm" style={{ marginTop: 10, color: 'var(--text-2)' }}>Your first text interview is on us — 5 questions, real scoring, partial report (full report ₹299 or included with a pass).</p>
+                            </div>
+                        ) : (
                             <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20 }}>
+                                {access && access.freeInterviewAvailable && !access.passType && (
+                                    <p className="xs" style={{ marginBottom: 10, color: 'var(--green)' }}>Tip: switch to Text mode and your first interview is free.</p>
+                                )}
                                 <div className="row ac jsb"><Badge variant="gold" dot>Premium</Badge><span className="sm gold" style={{ fontWeight: 600 }}>Single Interview</span></div>
                                 <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹499</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + full report</span></div>
                                 <p className="xs" style={{ marginTop: 8 }}>Or 6 interviews + unlimited AI with the Season Pass — ₹1,499 / 90 days.</p>
                             </div>
                         )}
                         <button className="btn btn-gold btn-lg btn-block" onClick={handleContinue} disabled={busy}>
-                            {busy ? 'Preparing…' : access?.has ? 'Start interview →' : (getToken() && access === null) ? 'Continue →' : 'Continue to checkout →'}
+                            {busy ? 'Preparing…' : access?.has ? 'Start interview →' : (access?.freeInterviewAvailable && !access?.passType && mode === 'text') ? 'Start your free interview →' : (getToken() && access === null) ? 'Continue →' : 'Continue to checkout →'}
                         </button>
                         {err && <div className="card" style={{ marginTop: 12, padding: '12px 14px', borderColor: 'var(--rose)', background: 'var(--rose-soft)' }}><p className="sm" style={{ color: 'var(--rose)' }}>{err}</p></div>}
                         {!access?.has && <p className="xs tc" style={{ marginTop: 14 }}>You won't be charged until the next step.</p>}

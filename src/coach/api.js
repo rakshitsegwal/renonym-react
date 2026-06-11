@@ -165,11 +165,11 @@ function loadRazorpay() {
 }
 
 // Returns the verify-payment result on success; throws Error('CANCELLED') if dismissed.
-export async function payAndVerify(planId, user, description = 'Renonym') {
+export async function payAndVerify(planId, user, description = 'Renonym', extra = {}) {
     const ok = await loadRazorpay();
     if (!ok) throw new Error('Could not load Razorpay. Check your connection.');
 
-    const order = await req('/create-order', { method: 'POST', body: { planId, userId: user?.id || null } });
+    const order = await req('/create-order', { method: 'POST', body: { planId, userId: user?.id || null, ...extra } });
 
     return await new Promise((resolve, reject) => {
         const rzp = new window.Razorpay({
