@@ -1722,6 +1722,11 @@ class ResumeBuilder extends React.Component {
         if (this.authReason === 'export') {
             this._refreshUser().then(() => this.handleExport());
         }
+        if (this.authReason === 'jobmatch') {
+            // signed in from the teaser — fetch the FULL report now
+            this._setStatus('Welcome! New accounts start with 2 free AI credits.', 'success');
+            this._refreshUser().then(() => this.handleAnalyzeJobMatch());
+        }
     }
 
     handleAuthClose() {
@@ -2219,7 +2224,8 @@ class ResumeBuilder extends React.Component {
     }
 
     async handleAnalyzeJobMatch() {
-        if (!this._requireLogin('feature')) return;   // premium action — login required
+        // Anonymous users get a TEASER (scores + top-3 gaps) — the full report
+        // is the signup hook. No login wall here by design.
         // Hard guard — button should already be disabled but double-check
         if (!this.jmResumeReady) {
             this._setStatus('Please upload your resume first.', 'error');
@@ -3821,7 +3827,54 @@ class ResumeBuilder extends React.Component {
                             </React.Fragment>) : null}
 
                             
-                            {hasJobMatchResult ? (<React.Fragment>
+                            {hasJobMatchResult && this.jobMatchResult?.locked ? (
+                                <div className="rp-jm-results-scroll">
+                                    <div className="rp-jm-score-row">
+                                        <div className="rp-jm-score-card">
+                                            <div className="rp-jm-ring" style={jmAtsRingStyle}>
+                                                <div className="rp-jm-ring__inner">
+                                                    <span className="rp-jm-ring__num">{jmAtsScore}</span>
+                                                    <span className="rp-jm-ring__pct">%</span>
+                                                </div>
+                                            </div>
+                                            <div className="rp-jm-score-card__label">ATS Score</div>
+                                        </div>
+                                        <div className="rp-jm-score-card">
+                                            <div className="rp-jm-ring" style={jmJdMatchRingStyle}>
+                                                <div className="rp-jm-ring__inner">
+                                                    <span className="rp-jm-ring__num">{jmJdMatch}</span>
+                                                    <span className="rp-jm-ring__pct">%</span>
+                                                </div>
+                                            </div>
+                                            <div className="rp-jm-score-card__label">JD Match</div>
+                                        </div>
+                                    </div>
+                                    {(this.jobMatchResult.missingKeywords || []).length > 0 && (
+                                        <div className="rp-jm-group" style={{ marginTop: 16 }}>
+                                            <div className="rp-jm-group__header rp-jm-group__header--amber">
+                                                <span className="rp-jm-group__title">Top missing keywords</span>
+                                            </div>
+                                            <div style={{ padding: '10px 16px 16px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                {this.jobMatchResult.missingKeywords.map((k, i) => (
+                                                    <span key={i} className="rp-jm-kw-tag">{k}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="rp-jm-group" style={{ marginTop: 16, padding: 22, textAlign: 'center', border: '1.5px solid var(--rp-accent-bg)' }}>
+                                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--rp-text)', marginBottom: 6 }}>
+                                            That's the teaser — the full report is free.
+                                        </div>
+                                        <p style={{ fontSize: 13, color: 'var(--rp-text-3)', margin: '0 0 14px' }}>
+                                            Sign up to see every missing keyword and skill, your strengths and weaknesses,
+                                            and line-by-line fix suggestions — plus <b style={{ color: 'var(--rp-accent)' }}>2 free AI credits</b> to act on them.
+                                        </p>
+                                        <button className="rp-btn rp-btn--primary" onClick={() => { this.authReason = 'jobmatch'; this.showAuthModal = true; }}>
+                                            Sign up free — see the full report
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : hasJobMatchResult ? (<React.Fragment>
                                 <div className="rp-jm-results-scroll">
 
                                     
