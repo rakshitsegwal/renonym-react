@@ -48,6 +48,16 @@ export default function InterviewHistory({ nav }) {
                                 <p className="xs" style={{ color: 'var(--text-2)' }}>Coach Unlimited — active. Interview as often as you like.</p>
                                 <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/new')}>New interview</button>
                             </>
+                        ) : access?.passType ? (
+                            <>
+                                <p className="xs" style={{ color: 'var(--text-2)' }}>{access.passType === 'season' ? 'Season Pass' : 'Placement Pro'} — {access.passInterviewsRemaining ?? 0} interview{(access.passInterviewsRemaining ?? 0) === 1 ? '' : 's'} left.</p>
+                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/new')}>New interview</button>
+                            </>
+                        ) : access?.interviewCredits > 0 ? (
+                            <>
+                                <p className="xs" style={{ color: 'var(--text-2)' }}>{access.interviewCredits} interview{access.interviewCredits > 1 ? 's' : ''} ready to run.</p>
+                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/new')}>Start one</button>
+                            </>
                         ) : access?.passes > 0 ? (
                             <>
                                 <p className="xs" style={{ color: 'var(--text-2)' }}>{access.passes} session pass{access.passes > 1 ? 'es' : ''} left.</p>
@@ -56,7 +66,7 @@ export default function InterviewHistory({ nav }) {
                         ) : (
                             <>
                                 <p className="xs" style={{ color: 'var(--text-2)' }}>Unlimited interviews &amp; reports.</p>
-                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/checkout')}>Upgrade · ₹1,599/mo</button>
+                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/checkout')}>Season Pass · ₹1,499</button>
                             </>
                         )}
                     </div>

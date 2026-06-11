@@ -66,7 +66,11 @@ export default function InterviewSetup({ nav }) {
         // 401/402 routes to payment — a network blip or 500 must NOT charge a
         // paying user twice, so those show a retry error instead.
         let entitled = false;
-        try { const me = await coachMe(); entitled = !!(me && me.has); }
+        try {
+            const me = await coachMe();
+            // the one free TEXT interview counts — backend enforces it independently
+            entitled = !!(me && (me.has || (mode === 'text' && me.freeInterviewAvailable)));
+        }
         catch (e) {
             if (e.status === 401 || e.status === 402) { setBusy(false); nav('/coach/checkout'); return; }
             setErr('Could not verify your access — check your connection and try again.');
@@ -225,18 +229,27 @@ export default function InterviewSetup({ nav }) {
                         </div>
                         {access?.has ? (
                             <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20 }}>
-                                <div className="row ac jsb"><Badge variant="gold" dot>{access.unlimited ? 'Coach Unlimited' : 'Session Pass'}</Badge><Check size={16} color="var(--green)" /></div>
+                                <div className="row ac jsb"><Badge variant="gold" dot>{
+                                    access.passType === 'season' ? 'Season Pass'
+                                    : access.passType === 'placement_pro' ? 'Placement Pro'
+                                    : access.unlimited ? 'Coach Unlimited'
+                                    : access.interviewCredits > 0 ? 'Single Interview' : 'Session Pass'
+                                }</Badge><Check size={16} color="var(--green)" /></div>
                                 <p className="sm" style={{ marginTop: 10, color: 'var(--text-2)' }}>
-                                    {access.unlimited
-                                        ? 'Your plan is active — this interview is included. No payment needed.'
-                                        : `You have ${access.passes} session pass${access.passes > 1 ? 'es' : ''} — this interview uses one.`}
+                                    {access.passType
+                                        ? `Your pass is active — ${access.passInterviewsRemaining} interview${access.passInterviewsRemaining === 1 ? '' : 's'} left. This one is included.`
+                                        : access.unlimited
+                                            ? 'Your plan is active — this interview is included. No payment needed.'
+                                            : access.interviewCredits > 0
+                                                ? `You have ${access.interviewCredits} interview${access.interviewCredits > 1 ? 's' : ''} ready — this uses one.`
+                                                : `You have ${access.passes} session pass${access.passes > 1 ? 'es' : ''} — this interview uses one.`}
                                 </p>
                             </div>
                         ) : (getToken() && access === null) ? null : (
                             <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20 }}>
-                                <div className="row ac jsb"><Badge variant="gold" dot>Premium</Badge><span className="sm gold" style={{ fontWeight: 600 }}>Session Pass</span></div>
-                                <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹599</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + report</span></div>
-                                <p className="xs" style={{ marginTop: 8 }}>Or unlock unlimited with Coach Unlimited at ₹1,599/mo.</p>
+                                <div className="row ac jsb"><Badge variant="gold" dot>Premium</Badge><span className="sm gold" style={{ fontWeight: 600 }}>Single Interview</span></div>
+                                <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹499</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + full report</span></div>
+                                <p className="xs" style={{ marginTop: 8 }}>Or 6 interviews + unlimited AI with the Season Pass — ₹1,499 / 90 days.</p>
                             </div>
                         )}
                         <button className="btn btn-gold btn-lg btn-block" onClick={handleContinue} disabled={busy}>

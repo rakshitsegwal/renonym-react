@@ -3,7 +3,7 @@ import { VoiceOrb, Waveform, Badge } from './primitives.jsx';
 import { AuthModal } from '../AuthModal.jsx';
 
 // S4 — Interview Coach landing (recreated from designs/screens/04-coach-landing.html)
-// Prices in INR per the Razorpay decision (Coach Unlimited ₹1,599/mo · Session Pass ₹599).
+// v14 ladder pricing: Season Pass ₹1,499/90d (hero) · Single Interview ₹499.
 export default function CoachLanding({ nav, currentUser }) {
     const go = (p) => (e) => { e?.preventDefault?.(); nav(p); };
     const [showAuth, setShowAuth] = useState(false);
@@ -55,9 +55,9 @@ export default function CoachLanding({ nav, currentUser }) {
                     <p className="lead" style={{ maxWidth: '56ch', margin: '26px auto 0' }}>A realistic AI interviewer built from your résumé and the exact role. It asks, follows up, and scores every answer — by voice or by text — so you walk in already warmed up.</p>
                     <div className="row ac jc gap-16" style={{ marginTop: 36 }}>
                         <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold btn-lg">Start an interview</a>
-                        <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-outline btn-lg">See plans · from ₹1,599/mo</a>
+                        <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-outline btn-lg">See plans · from ₹499</a>
                     </div>
-                    <p className="xs" style={{ marginTop: 18 }}>Included with Coach Unlimited · or a single Session Pass</p>
+                    <p className="xs" style={{ marginTop: 18 }}>One-time passes — never a subscription</p>
                 </div>
             </header>
 
@@ -152,10 +152,10 @@ export default function CoachLanding({ nav, currentUser }) {
                         <div className="rel">
                             <Badge variant="gold" dot style={{ margin: '0 auto 22px' }}>Premium</Badge>
                             <h2 className="h1" style={{ maxWidth: '20ch', margin: '0 auto' }}>The cost of one under-prepared interview is the job.</h2>
-                            <p className="lead" style={{ margin: '18px auto 0', maxWidth: '42ch' }}>Unlimited mock interviews and scored reports for less than a coffee a week.</p>
+                            <p className="lead" style={{ margin: '18px auto 0', maxWidth: '42ch' }}>Six full mock interviews, scored reports, and unlimited AI — one payment, ninety days.</p>
                             <div className="row ac jc gap-16" style={{ marginTop: 34 }}>
-                                <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-gold btn-lg">Get Coach Unlimited · ₹1,599/mo</a>
-                                <a href="/coach/checkout?plan=session" onClick={go('/coach/checkout?plan=session')} className="btn btn-outline btn-lg">Single session · ₹599</a>
+                                <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-gold btn-lg">Season Pass · ₹1,499 / 90 days</a>
+                                <a href="/coach/checkout?plan=session" onClick={go('/coach/checkout?plan=session')} className="btn btn-outline btn-lg">Single interview · ₹499</a>
                             </div>
                         </div>
                     </div>

@@ -34,7 +34,7 @@ function PrivacyBody() {
             <h2>2. How we use it</h2>
             <ul>
                 <li>To generate, format, and export your resume, including AI-assisted features.</li>
-                <li>To authenticate you, maintain your account, and process subscriptions.</li>
+                <li>To authenticate you, maintain your account, and process one-time payments (credit packs and passes).</li>
                 <li>To secure the Service (abuse prevention, rate limiting) and to improve it.</li>
             </ul>
 
@@ -73,7 +73,7 @@ function TermsBody() {
             <h2>3. Plans, billing &amp; refunds</h2>
             <ul>
                 <li>Paid plans are billed via Razorpay on the cadence shown at checkout (monthly or yearly).</li>
-                <li>Free-plan usage is subject to limits (including daily quotas and watermarked, non-downloadable previews).</li>
+                <li>Free accounts include starter credits for AI actions and clean PDF export on free templates; premium templates and additional interviews require a one-time credit pack or pass.</li>
                 <li>Refund eligibility, if any, is described at checkout or on request.</li>
             </ul>
 

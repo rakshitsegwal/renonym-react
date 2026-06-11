@@ -121,7 +121,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                                 </div>
                                 <div className="row ac gap-16" style={{ marginTop: 38 }}>
                                     <button className="btn btn-gold btn-lg" onClick={go('/coach')}>Explore the Coach</button>
-                                    <button className="btn btn-outline btn-lg" onClick={scrollTo('pricing')}>From ₹1,599/mo</button>
+                                    <button className="btn btn-outline btn-lg" onClick={scrollTo('pricing')}>From ₹499 — no subscription</button>
                                 </div>
                             </div>
                             <div style={{ padding: '48px 64px 48px 0', display: 'flex', alignItems: 'center' }}>
@@ -216,11 +216,11 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                         <h2 className="h1" style={{ marginTop: 16 }}>Free to build. Pay to practice.</h2>
                     </div>
                     <div className="grid gap-24 g-3" style={{ gridTemplateColumns: 'repeat(3,1fr)', alignItems: 'stretch' }}>
-                        <PriceCard name="Résumé" price="Free" sub="The on-ramp" feats={['AI résumé builder & tailoring', 'ATS score & job-match optimizer', 'Watermarked preview']} cta="Start building" onClick={onGetStarted} />
-                        <PriceCard featured name="Coach Unlimited" price="₹1,599" per="/mo" sub="Best value · cancel anytime" feats={['Unlimited voice & text interviews', 'Full scored reports + history', 'Everything in Résumé']} cta="Get Coach Unlimited" onClick={go('/coach')} />
-                        <PriceCard name="Session Pass" price="₹599" sub="One-time" feats={['One full interview', 'One scored report', 'No subscription']} cta="Buy a session" onClick={go('/coach/new')} />
+                        <PriceCard name="Free" price="₹0" sub="Forever" feats={['Résumé builder + 3 templates', 'Clean PDF export (free templates)', 'Unlimited JD match scores', '2 credits at signup', '1 free text interview', 'Full application tracker']} cta="Start building" onClick={onGetStarted} />
+                        <PriceCard featured name="Season Pass" price="₹1,499" per="/90 days" sub="MOST POPULAR · one-time" feats={['6 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Full scored reports']} cta="Get the Season Pass" onClick={go('/coach/new')} />
+                        <PriceCard name="Placement Pro" price="₹2,999" per="/90 days" sub="For an all-out search" feats={['25 full interviews', 'Everything in Season Pass', 'Priority support']} cta="Go Pro" onClick={go('/coach/new')} />
                     </div>
-                    <p className="xs tc" style={{ marginTop: 20 }}>The AI Interview Coach is a premium feature — every interview includes a full scored report.</p>
+                    <p className="xs tc" style={{ marginTop: 20 }}>Also available: Boost Pack ₹299 (+10 AI credits) · Single Interview ₹499 · Report Unlock ₹299. One-time payments — no subscriptions, ever.</p>
                 </div>
             </section>
 

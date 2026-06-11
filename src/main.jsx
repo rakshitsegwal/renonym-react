@@ -71,7 +71,10 @@ function App() {
         try { setCurrentUser(JSON.parse(user)); } catch {}
         import('./coach/api.js').then(({ authMe }) => authMe()).then(fresh => {
             if (!fresh || !fresh.id) return;
-            const merged = { id: fresh.id, email: fresh.email, name: fresh.name, avatarUrl: fresh.avatarUrl, plan: fresh.plan || 'free', coach: fresh.coach || null };
+            const merged = { id: fresh.id, email: fresh.email, name: fresh.name, avatarUrl: fresh.avatarUrl, plan: fresh.plan || 'free', coach: fresh.coach || null,
+                credits: fresh.credits || 0, passType: fresh.passType || null, passExpiresAt: fresh.passExpiresAt || null,
+                passInterviewsRemaining: fresh.passInterviewsRemaining || 0, interviewCredits: fresh.interviewCredits || 0,
+                freeInterviewUsed: !!fresh.freeInterviewUsed, referralCode: fresh.referralCode || null };
             localStorage.setItem('rn-auth-user', JSON.stringify(merged));
             setCurrentUser(merged);
         }).catch(e => {

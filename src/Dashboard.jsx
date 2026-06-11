@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Mic, FileText, Target, History, Briefcase, Plus, Sparkles, ArrowRight } from 'lucide-react';
 import { Badge } from './coach/primitives.jsx';
 import { listSessions, coachMe } from './coach/api.js';
+import PaymentModal from './PaymentModal.jsx';
 import './coach.css';
 
 // The locally saved résumé draft — only counts if it has meaningful content.
@@ -17,7 +18,8 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
     const isPro = user?.plan === 'pro';
     const [draft] = useState(loadResumeDraft);
     const [sessions, setSessions] = useState(null);
-    const [coach, setCoach] = useState(null);   // { unlimited, passes, has }
+    const [coach, setCoach] = useState(null);   // { unlimited, passes, has, passType, ... }
+    const [showLadder, setShowLadder] = useState(false);
     const signedIn = !!localStorage.getItem('rn-auth-token');
 
     useEffect(() => {
@@ -29,9 +31,12 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
     }, []);
 
     // '—' until the entitlement check lands: never flash 'Free' at a paying user
-    const planLabel = coach?.unlimited ? '★ Coach Unlimited' : isPro ? '★ Pro'
+    const planLabel = coach?.passType === 'placement_pro' ? '★ Placement Pro'
+        : coach?.passType === 'season' ? '★ Season Pass'
+        : coach?.unlimited ? '★ Coach Unlimited' : isPro ? '★ Pro'
         : coach === null && localStorage.getItem('rn-auth-token') ? '—'
-        : coach?.passes > 0 ? `${coach.passes} session pass${coach.passes > 1 ? 'es' : ''}` : 'Free plan';
+        : coach?.passes > 0 ? `${coach.passes} session pass${coach.passes > 1 ? 'es' : ''}`
+        : coach?.interviewCredits > 0 ? `${coach.interviewCredits} interview${coach.interviewCredits > 1 ? 's' : ''} ready` : 'Free plan';
 
     const scored = (sessions || []).filter(s => s.overall_score != null);
     const avgScore = scored.length ? Math.round(scored.reduce((a, s) => a + s.overall_score, 0) / scored.length) : null;
@@ -52,6 +57,8 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
 
     return (
         <div className="rn-dark appshell">
+            {showLadder && <PaymentModal reason="generic" onClose={() => setShowLadder(false)}
+                onSuccess={() => { setShowLadder(false); window.location.reload(); }} />}
             <aside className="sidebar">
                 <div className="brand" style={{ padding: '6px 8px 18px' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
                 <button className="btn btn-gold btn-block" style={{ marginBottom: 16 }} onClick={go('/coach/new')}><Plus size={16} />Start an interview</button>
@@ -62,6 +69,15 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                 <a className="navitem" onClick={() => onOpenBuilder('jobmatch')}><Target className="ic" size={18} />Job Match</a>
                 <a className="navitem" onClick={go('/coach/reports')}><History className="ic" size={18} />Interview Reports</a>
                 <div style={{ marginTop: 'auto' }}>
+                    {/* v14 credit pill — balance or active pass at a glance */}
+                    <button className="card-gold row ac jsb" style={{ width: '100%', padding: '10px 14px', marginBottom: 10, cursor: 'pointer', borderRadius: 12 }}
+                            onClick={() => setShowLadder(true)} title="Credits power tailoring, AI review and AI styles">
+                        <span className="sm" style={{ color: 'var(--gold)', fontWeight: 600 }}>
+                            {coach?.passType ? `★ ${coach.passType === 'season' ? 'Season Pass' : 'Placement Pro'} · ${coach.passInterviewsRemaining ?? 0} left`
+                             : `⚡ ${user?.credits ?? 0} credit${(user?.credits ?? 0) === 1 ? '' : 's'}`}
+                        </span>
+                        <span className="xs" style={{ color: 'var(--gold)' }}>+</span>
+                    </button>
                     <div className="navitem" style={{ justifyContent: 'space-between' }}>
                         <div className="row ac gap-10">
                             <div className="av" style={{ width: 28, height: 28, fontSize: 12, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || user?.email || 'U')[0].toUpperCase()}</div>

@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Lock, ShieldCheck, Check } from 'lucide-react';
 import { Badge } from './primitives.jsx';
 import { AuthModal } from '../AuthModal.jsx';
-import { payAndVerify, createSession, coachMe, authMe, loadDraft, clearDraft, getUser } from './api.js';
+import { payAndVerify, createSession, coachMe, loadDraft, clearDraft, getUser } from './api.js';
+import { refreshCachedUser } from '../PaymentModal.jsx';
 
 // S6 — Coach Checkout. Order summary reflects the user's real interview draft.
 // Already-entitled users (Unlimited / pass) are never shown the pay button —
 // they go straight to session creation. Payment is collected by Razorpay's
 // hosted modal, so no card fields live in app state.
 const PLANS = {
-    unlimited: { id: 'coach_unlimited', name: 'Coach Unlimited', price: '₹1,599', per: '/mo', note: 'Unlimited voice & text interviews, reports & history', tag: 'Best value' },
-    session:   { id: 'session_pass',    name: 'Single Session Pass', price: '₹599', per: '', note: 'This one interview + full scored report', tag: '' },
+    unlimited: { id: 'season_1499', name: 'Season Pass', price: '₹1,499', per: '/90 days', note: '6 full interviews (audio + text) · unlimited AI · all templates', tag: 'MOST POPULAR' },
+    pro:       { id: 'pro_2999',    name: 'Placement Pro', price: '₹2,999', per: '/90 days', note: '25 interviews · everything in Season Pass · priority support', tag: '' },
+    session:   { id: 'single_499',  name: 'Single Interview', price: '₹499', per: '', note: 'This one interview (audio or text) + full scored report', tag: '' },
 };
 
 export default function CoachCheckout({ nav }) {
@@ -78,9 +80,7 @@ export default function CoachCheckout({ nav }) {
             console.log('[coach] entitlement after pay:', me);
             // refresh the cached user so Dashboard/topbar show the new plan
             // without a re-login (fire-and-forget)
-            authMe().then(u => {
-                if (u && u.id) localStorage.setItem('rn-auth-user', JSON.stringify({ id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl, plan: u.plan || 'free' }));
-            }).catch(() => {});
+            refreshCachedUser().catch(() => {});
             if (!me || !me.has) {
                 setError("Your payment was received, but access hasn't activated yet. Don't pay again — wait a few seconds, reload this page, and tap \"Set up interview\".");
                 setBusy(false); setPaid(true);
@@ -156,7 +156,7 @@ export default function CoachCheckout({ nav }) {
                                             <div className="row ac gap-10"><span className="h5">{pl.name}</span>{pl.tag && <Badge variant="gold">{pl.tag}</Badge>}</div>
                                             <div className="xs" style={{ marginTop: 4 }}>{pl.note}</div>
                                         </div>
-                                        <div className="tr"><div className="h4">{pl.price}<span className="xs">{pl.per}</span></div><div className="xs">{key === 'unlimited' ? 'cancel anytime' : 'one-time'}</div></div>
+                                        <div className="tr"><div className="h4">{pl.price}<span className="xs">{pl.per}</span></div><div className="xs">one-time</div></div>
                                     </button>
                                 );
                             })}
@@ -189,7 +189,7 @@ export default function CoachCheckout({ nav }) {
                     {!already && (
                         <div className="row ac jc gap-10" style={{ marginTop: 18 }}>
                             <Lock size={14} color="var(--faint)" />
-                            <span className="xs">Encrypted &amp; secure · Powered by Razorpay · Cancel anytime</span>
+                            <span className="xs">Encrypted &amp; secure · Powered by Razorpay · One-time payment, no subscription</span>
                         </div>
                     )}
                 </div>
@@ -221,7 +221,7 @@ export default function CoachCheckout({ nav }) {
                                 <div className="row jsb sm" style={{ marginBottom: 12 }}><span className="muted">{p.name}</span><span style={{ color: 'var(--text)' }}>{p.price}</span></div>
                                 <div className="divider" style={{ margin: '14px 0' }} />
                                 <div className="row jsb" style={{ marginBottom: 4 }}><span className="h5">Due today</span><span className="h3">{p.price}</span></div>
-                                <div className="xs">{plan === 'unlimited' ? 'Then ₹1,599/mo · cancel anytime from settings.' : 'One-time charge for this interview + report.'}</div>
+                                <div className="xs">{plan === 'unlimited' ? 'One-time payment · 90 days · no subscription.' : 'One-time charge for this interview + report.'}</div>
                             </div>
                         )}
                     </div>

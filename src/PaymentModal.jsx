@@ -1,178 +1,157 @@
 import React, { useState } from 'react';
+import { X, Check } from 'lucide-react';
+import { AuthModal } from './AuthModal.jsx';
+import { payAndVerify, authMe, getUser } from './coach/api.js';
 
-const RAILWAY_URL = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV
-    ? '/api'
-    : 'https://salesforce-resume-pdf-server-production.up.railway.app';
+// The ladder modal — the single purchase surface for the v14 credit + pass
+// ladder. Display order: Placement Pro → Season Pass (HERO, pre-selected) →
+// Boost Pack. Opened from: out-of-credits gates, premium-template crowns,
+// the sidebar credit pill, and the landing pricing cards.
+const LADDER = [
+    {
+        id: 'pro_2999', name: 'Placement Pro', price: '₹2,999', per: '90 days',
+        feats: ['25 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Priority support'],
+        tag: null,
+    },
+    {
+        id: 'season_1499', name: 'Season Pass', price: '₹1,499', per: '90 days',
+        feats: ['6 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Full scored reports'],
+        tag: 'MOST POPULAR', hero: true,
+    },
+    {
+        id: 'boost_299', name: 'Boost Pack', price: '₹299', per: 'one-time',
+        feats: ['+10 credits', 'Tailoring, AI review, AI styles', 'Valid 6 months'],
+        tag: null,
+    },
+];
 
-const API_SECRET = typeof import.meta !== 'undefined' && import.meta.env
-    ? import.meta.env.VITE_API_SECRET : undefined;
-
-const secureHeaders = () => ({
-    'Content-Type': 'application/json',
-    ...(API_SECRET ? { 'x-api-secret': API_SECRET } : {})
-});
-
-function loadRazorpay() {
-    return new Promise(resolve => {
-        if (window.Razorpay) { resolve(true); return; }
-        const s = document.createElement('script');
-        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        s.onload = () => resolve(true);
-        s.onerror = () => resolve(false);
-        document.body.appendChild(s);
-    });
+// Shared: refresh the cached user (credits/pass) after any purchase.
+export async function refreshCachedUser() {
+    try {
+        const u = await authMe();
+        if (u && u.id) {
+            localStorage.setItem('rn-auth-user', JSON.stringify({
+                id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl,
+                plan: u.plan || 'free', coach: u.coach || null,
+                credits: u.credits || 0, passType: u.passType || null,
+                passExpiresAt: u.passExpiresAt || null,
+                passInterviewsRemaining: u.passInterviewsRemaining || 0,
+                interviewCredits: u.interviewCredits || 0,
+                freeInterviewUsed: !!u.freeInterviewUsed,
+                referralCode: u.referralCode || null,
+            }));
+        }
+        return u;
+    } catch (e) { return null; }
 }
 
-export default function PaymentModal({ user, onSuccess, onClose, reason = 'download' }) {
-    const [period, setPeriod] = useState('yearly');
-    const [loading, setLoading] = useState(null);
-    const [err, setErr] = useState('');
+export default function PaymentModal({ onClose, onSuccess, reason = 'generic', meta = {} }) {
+    const [selected, setSelected] = useState('season_1499');
+    const [busy, setBusy] = useState(false);
+    const [status, setStatus] = useState('');
+    const [error, setError] = useState('');
+    const [showAuth, setShowAuth] = useState(false);
 
-    const PLANS = {
-        pro_monthly: { amount: 59900, label: '₹599/mo', price: 599, per: '/month' },
-        pro_yearly:  { amount: 598800, label: '₹5,988/yr', price: 5988, per: '/year', equiv: '₹499/month, billed yearly' }
+    const titles = {
+        credits: "You're out of credits",
+        template: 'Unlock all 10 templates',
+        interview: 'Keep interviewing',
+        generic: 'Upgrade your job hunt',
+    };
+    const subs = {
+        credits: 'Top up, or go unlimited for the whole season.',
+        template: 'Premium templates are included with any pass.',
+        interview: 'Pick the pass that matches your search.',
+        generic: 'One-time payments. No subscriptions. No surprises.',
     };
 
-    const triggerCopy = {
-        download:   { icon: '⬇', text: 'Unlock your PDF download' },
-        export:     { icon: '📄', text: 'Unlock your PDF/DOCX export' },
-        ai_rewrite: { icon: '✦', text: 'Unlock AI Resume Rewrite' },
-        interview:  { icon: '🎤', text: 'Unlock Interview Coach' },
-        default:    { icon: '🔓', text: 'Unlock Pro features' },
-    };
-    const trigger = triggerCopy[reason] || triggerCopy.default;
-
-    async function handlePay(planId) {
-        setLoading(planId);
-        setErr('');
+    async function pay(user) {
+        if (busy) return;
+        setBusy(true); setError(''); setStatus('Opening secure checkout…');
         try {
-            const sdkOk = await loadRazorpay();
-            if (!sdkOk) throw new Error('Failed to load Razorpay. Check your connection.');
-
-            const orderRes = await fetch(`${RAILWAY_URL}/create-order`, {
-                method: 'POST', headers: secureHeaders(),
-                body: JSON.stringify({ planId, userId: user?.id || null })
-            });
-            const orderData = await orderRes.json();
-            if (!orderRes.ok) throw new Error(orderData.error || 'Order creation failed');
-
-            await new Promise((resolve, reject) => {
-                const rzp = new window.Razorpay({
-                    key:         orderData.key_id,
-                    amount:      orderData.amount,
-                    currency:    orderData.currency,
-                    order_id:    orderData.order_id,
-                    name:        'Renonym AI',
-                    description: PLANS[planId].label,
-                    prefill:     { name: user?.name || '', email: user?.email || '' },
-                    theme:       { color: '#E8C994' },
-                    handler: async (response) => {
-                        const verifyRes = await fetch(`${RAILWAY_URL}/verify-payment`, {
-                            method: 'POST', headers: secureHeaders(),
-                            body: JSON.stringify({
-                                razorpay_order_id:   response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature:  response.razorpay_signature,
-                                planId, userId: user?.id || null
-                            })
-                        });
-                        const vd = await verifyRes.json();
-                        if (!verifyRes.ok) reject(new Error(vd.error || 'Verification failed'));
-                        else resolve(vd);
-                    },
-                    modal: { ondismiss: () => reject(new Error('CANCELLED')) }
-                });
-                rzp.on('payment.failed', e => reject(new Error(e.error?.description || 'Payment failed')));
-                rzp.open();
-            });
-
-            if (onSuccess) onSuccess({ planId });
+            await payAndVerify(selected, user, LADDER.find(p => p.id === selected)?.name || 'Renonym');
+            setStatus('Activating…');
+            await refreshCachedUser();
+            setStatus('');
+            onSuccess ? onSuccess(selected) : onClose();
         } catch (e) {
-            if (e.message !== 'CANCELLED') setErr(e.message);
-        } finally {
-            setLoading(null);
+            setStatus('');
+            if (e.message !== 'CANCELLED') setError(e.message || 'Payment failed — try again.');
+            setBusy(false);
         }
     }
 
+    function handlePay() {
+        const user = getUser();
+        if (!user) { setShowAuth(true); return; }
+        pay(user);
+    }
+
     return (
-        <div className="pm-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-            <div className="pm-modal">
-                <button className="pm-modal__close" onClick={onClose}>✕</button>
+        <div className="rn-dark" style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(4,5,7,0.78)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, overflowY: 'auto' }}
+             onClick={(e) => e.target === e.currentTarget && !busy && onClose()}>
+            {showAuth && (
+                <AuthModal reason="payment" onClose={() => setShowAuth(false)}
+                    onAuth={(token, user) => {
+                        localStorage.setItem('rn-auth-token', token);
+                        localStorage.setItem('rn-auth-user', JSON.stringify(user));
+                        setShowAuth(false);
+                        pay(user);
+                    }} />
+            )}
+            <div className="card-2" style={{ width: '100%', maxWidth: 760, maxHeight: '94dvh', overflowY: 'auto', padding: '30px 28px' }}>
+                <div className="row ac jsb" style={{ marginBottom: 6 }}>
+                    <h2 style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 26, color: 'var(--text)' }}>{titles[reason] || titles.generic}</h2>
+                    <button className="btn btn-ghost btn-sm" style={{ width: 32, padding: 0 }} onClick={onClose} disabled={busy}><X size={15} /></button>
+                </div>
+                <p className="sm" style={{ marginBottom: 20 }}>{subs[reason] || subs.generic}</p>
 
-                {/* LEFT: Blurred preview */}
-                <div className="pm-modal__left">
-                    <div className="pm-preview">
-                        <div className="pm-preview__doc">
-                            <div className="pm-preview__doc-header" />
-                            {[100,80,65,90,72,58,84,68,76,60].map((w,i) => (
-                                <div key={i} className="pm-preview__doc-line" style={{width:w+'%'}} />
-                            ))}
-                        </div>
-                        <div className="pm-preview__blur" />
-                        <div className="pm-preview__lock">
-                            <div className="pm-preview__lock-icon">🔒</div>
-                            <div className="pm-preview__lock-text">{trigger.icon} {trigger.text}</div>
-                        </div>
+                {reason === 'credits' && (
+                    <div className="card" style={{ padding: '12px 16px', marginBottom: 18, borderColor: 'var(--gold-line)', background: 'var(--gold-soft)' }}>
+                        <p className="sm" style={{ color: 'var(--text)' }}>
+                            You've used <b>{meta.actionsUsed ?? 0}</b> AI action{(meta.actionsUsed ?? 0) === 1 ? '' : 's'}. Candidates who land interviews tailor their résumé <b>15+ times</b>.
+                        </p>
                     </div>
+                )}
+
+                <div className="grid gap-12 g-3" style={{ gridTemplateColumns: reason === 'template' ? '1fr 1fr' : '1fr 1fr 1fr', marginBottom: 18, alignItems: 'stretch', paddingTop: 12 }}>
+                    {LADDER.filter(p => reason !== 'template' || p.id !== 'boost_299').map(p => {
+                        const on = selected === p.id;
+                        return (
+                            <button key={p.id} onClick={() => setSelected(p.id)}
+                                    className={on || p.hero ? 'card-gold' : 'card'}
+                                    style={{ padding: '18px 16px', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                                             borderColor: on ? 'var(--gold)' : p.hero ? 'var(--gold-line)' : 'var(--line)',
+                                             boxShadow: on ? '0 0 0 2px var(--gold-soft)' : 'none', position: 'relative' }}>
+                                {p.tag && <span className="badge gold" style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>{p.tag}</span>}
+                                <div className="row ac gap-8" style={{ marginBottom: 6 }}>
+                                    <span style={{ width: 16, height: 16, borderRadius: '50%', flex: 'none', border: '2px solid ' + (on ? 'var(--gold)' : 'var(--line-3)'), background: on ? 'radial-gradient(circle,var(--gold) 0 4px,transparent 5px)' : 'transparent' }} />
+                                    <span className="h5">{p.name}</span>
+                                </div>
+                                <div className="row ae gap-6" style={{ marginBottom: 10 }}>
+                                    <span className="h3" style={{ fontSize: 24, color: 'var(--text)' }}>{p.price}</span>
+                                    <span className="xs" style={{ paddingBottom: 4 }}>{p.per}</span>
+                                </div>
+                                <div className="col gap-6" style={{ flex: 1 }}>
+                                    {p.feats.map(f => (
+                                        <div key={f} className="row gap-6 xs" style={{ color: 'var(--text-2)', alignItems: 'flex-start' }}>
+                                            <Check size={11} color="var(--green)" style={{ flex: 'none', marginTop: 2 }} />{f}
+                                        </div>
+                                    ))}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
-                {/* RIGHT: Pricing */}
-                <div className="pm-modal__right">
-                    <div className="pm-modal__tag">One last step</div>
-                    <h2 className="pm-modal__h2">Unlock your resume.<br />Start applying today.</h2>
-                    <p className="pm-modal__sub">Your resume, ATS analysis, and design customisation are all saved and waiting.</p>
+                {error && <div className="card" style={{ padding: '12px 14px', marginBottom: 12, borderColor: 'var(--rose)', background: 'var(--rose-soft)' }}><p className="sm" style={{ color: 'var(--rose)' }}>{error}</p></div>}
 
-                    <div className="pm-toggle">
-                        <button className={`pm-t-btn${period==='monthly'?' pm-t-btn--on':''}`} onClick={() => setPeriod('monthly')}>Monthly</button>
-                        <button className={`pm-t-btn${period==='yearly'?' pm-t-btn--on':''}`} onClick={() => setPeriod('yearly')}>
-                            Yearly <span className="pm-t-btn__save">Best value</span>
-                        </button>
-                    </div>
-
-                    {period === 'yearly' ? (
-                        <div className="pm-plan pm-plan--featured">
-                            <div className="pm-plan__tag">Most popular · Save 16%</div>
-                            <div className="pm-plan__price">₹5,988<span className="pm-plan__per">/year</span></div>
-                            <div className="pm-plan__equiv">₹499/month, billed yearly</div>
-                            <ul className="pm-plan__feats">
-                                {['Unlimited PDF & DOCX export','No watermarks','AI style generator','AI resume rewrite','Job match optimizer','All future features'].map(f => (
-                                    <li key={f}><span>✓</span>{f}</li>
-                                ))}
-                            </ul>
-                            <button
-                                className="pm-pay-btn"
-                                onClick={() => handlePay('pro_yearly')}
-                                disabled={loading === 'pro_yearly'}
-                            >
-                                {loading === 'pro_yearly' ? 'Processing…' : 'Unlock for ₹5,988/year →'}
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="pm-plan">
-                            <div className="pm-plan__price">₹599<span className="pm-plan__per">/month</span></div>
-                            <ul className="pm-plan__feats">
-                                {['Unlimited PDF & DOCX export','No watermarks','AI style generator','AI resume rewrite','Job match optimizer'].map(f => (
-                                    <li key={f}><span>✓</span>{f}</li>
-                                ))}
-                            </ul>
-                            <button
-                                className="pm-pay-btn"
-                                onClick={() => handlePay('pro_monthly')}
-                                disabled={loading === 'pro_monthly'}
-                            >
-                                {loading === 'pro_monthly' ? 'Processing…' : 'Unlock for ₹599/month →'}
-                            </button>
-                        </div>
-                    )}
-
-                    {err && <div className="pm-err">{err}</div>}
-
-                    <div className="pm-trust">
-                        <span>🔒 Secured by Razorpay</span>
-                        <span>7-day money-back</span>
-                        <span>Cancel anytime</span>
-                    </div>
-                </div>
+                <button className="btn btn-gold btn-lg btn-block" onClick={handlePay} disabled={busy}>
+                    {busy ? (status || 'Processing…') : `Get ${LADDER.find(p => p.id === selected)?.name} — ${LADDER.find(p => p.id === selected)?.price}`}
+                </button>
+                <p className="xs tc" style={{ marginTop: 12 }}>
+                    One-time payment via Razorpay (card / UPI / netbanking). Need just one interview? <b>Single Interview ₹499</b> is available at interview setup.
+                </p>
             </div>
         </div>
     );

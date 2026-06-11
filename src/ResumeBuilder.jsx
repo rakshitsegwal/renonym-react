@@ -1,6 +1,7 @@
 import React from 'react';
 import { getLayout } from './ResumeLayouts.jsx';
 import { AuthModal, CreditGateModal, UserPill } from './AuthModal.jsx';
+import PaymentModal from './PaymentModal.jsx';
 
 
 
@@ -18,6 +19,10 @@ const STEPS = {
     BUILD:        'build',
     CALORIE_CALC: 'calorie-calc'
 };
+
+// v14 ladder: these three export clean for every signed-in user; the other
+// seven carry a crown and need an active pass.
+const FREE_TEMPLATES_V14 = ['sf-classic', 'sf-minimal', 'nordic-clean'];
 
 const SECTIONS = {
     PROFILE:    'profile',
@@ -134,7 +139,7 @@ class ResumeBuilder extends React.Component {
         this._isMounted  = false;
         this._root       = null;
         this._statusTimer = null;
-        const _state = makeReactive(this, ['defaultTemplate', 'clientId', 'formData', 'currentStep', 'activeSection', 'selectedGalleryTemplate', 'galleryFilter', 'inspirationBase64', 'inspirationMimeType', 'inspirationFileName', 'newSkill', 'newCert', 'templateStyle', 'templatePrompt', 'aiGeneratedCss', 'fontFamily', 'fontSize', 'jobDescription', 'foodImageBase64', 'foodImageMimeType', 'foodImagePreview', 'isAnalyzingFood', 'foodResult', 'foodError', 'hasLoadedResume', 'isAnalyzingJob', 'isOptimizingJob', 'isExporting', 'jobMatchResult', 'optimizedResume', 'showOptimizeModal', 'isApplyingOptimization', 'aiStyleMethod', 'isSaving', 'isGeneratingAi', 'isParsingResume', 'statusMessage', 'statusKind', 'analysisFeedback', 'showAnalysisModal', 'pdfLibInitialized', 'pdfLibLoaded', 'mammothLibLoaded', 'selectedMode', 'aiFlowStep', 'aiFlowMethod', 'jmResumeText', 'jmResumeFileName', 'jmIsParsingResume', 'aiGeneratedLayout', 'aiGeneratedTokens', 'currentUser', 'authToken', 'showAuthModal', 'authReason', 'showCreditGate', 'creditReason']);
+        const _state = makeReactive(this, ['defaultTemplate', 'clientId', 'formData', 'currentStep', 'activeSection', 'selectedGalleryTemplate', 'galleryFilter', 'inspirationBase64', 'inspirationMimeType', 'inspirationFileName', 'newSkill', 'newCert', 'templateStyle', 'templatePrompt', 'aiGeneratedCss', 'fontFamily', 'fontSize', 'jobDescription', 'foodImageBase64', 'foodImageMimeType', 'foodImagePreview', 'isAnalyzingFood', 'foodResult', 'foodError', 'hasLoadedResume', 'isAnalyzingJob', 'isOptimizingJob', 'isExporting', 'jobMatchResult', 'optimizedResume', 'showOptimizeModal', 'isApplyingOptimization', 'aiStyleMethod', 'isSaving', 'isGeneratingAi', 'isParsingResume', 'statusMessage', 'statusKind', 'analysisFeedback', 'showAnalysisModal', 'pdfLibInitialized', 'pdfLibLoaded', 'mammothLibLoaded', 'selectedMode', 'aiFlowStep', 'aiFlowMethod', 'jmResumeText', 'jmResumeFileName', 'jmIsParsingResume', 'aiGeneratedLayout', 'aiGeneratedTokens', 'currentUser', 'authToken', 'showAuthModal', 'authReason', 'showCreditGate', 'creditReason', 'showLadder', 'ladderReason', 'ladderMeta']);
         Object.assign(_state, {
             defaultTemplate: 'sf-classic',
             clientId: '',
@@ -193,6 +198,9 @@ class ResumeBuilder extends React.Component {
             authReason: 'export',
             showCreditGate: false,
             creditReason: 'pro_required',
+            showLadder: false,
+            ladderReason: 'generic',
+            ladderMeta: {},
         });
     }
 
@@ -205,6 +213,9 @@ class ResumeBuilder extends React.Component {
     showAuthModal   = false;
     authReason      = 'export';
     showCreditGate  = false;
+    showLadder      = false;   // v14 ladder modal (credits / templates / passes)
+    ladderReason    = 'generic';
+    ladderMeta      = {};
     creditReason    = 'pro_required';
     formData = DEFAULT_FORM();
     placeholderData = {
@@ -401,6 +412,13 @@ class ResumeBuilder extends React.Component {
 
     async _refreshUser() {
         try {
+            // pick up a session created outside this component (e.g. the ladder
+            // modal's in-modal sign-in writes localStorage only)
+            const t = localStorage.getItem('rn-auth-token');
+            if (t && t !== this.authToken) {
+                this.authToken = t;
+                try { const u = JSON.parse(localStorage.getItem('rn-auth-user') || 'null'); if (u) this.currentUser = u; } catch (e) {}
+            }
             const res = await this.apiFetch(`${RAILWAY_URL}/auth/me`, { method: 'GET' });
             if (res.status === 401) {   // expired token — sign out cleanly
                 localStorage.removeItem('rn-auth-token');
@@ -411,7 +429,10 @@ class ResumeBuilder extends React.Component {
             if (!res.ok) return;
             const u = await res.json();
             if (!u || !u.id) return;
-            const merged = { id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl, plan: u.plan || 'free', coach: u.coach || null };
+            const merged = { id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl, plan: u.plan || 'free', coach: u.coach || null,
+                credits: u.credits || 0, passType: u.passType || null, passExpiresAt: u.passExpiresAt || null,
+                passInterviewsRemaining: u.passInterviewsRemaining || 0, interviewCredits: u.interviewCredits || 0,
+                freeInterviewUsed: !!u.freeInterviewUsed, referralCode: u.referralCode || null };
             localStorage.setItem('rn-auth-user', JSON.stringify(merged));
             this.currentUser = merged;
         } catch (e) { /* offline — keep the cached snapshot */ }
@@ -499,7 +520,8 @@ class ResumeBuilder extends React.Component {
             ...t,
             tileClass: 'rp-tpl-tile' + (this.selectedGalleryTemplate === t.key ? ' rp-tpl-tile--selected' : ''),
             thumbClass: `rp-tpl-tile__thumb rp-tpl-thumb rp-tpl-thumb--${t.key}`,
-            isSelected: this.selectedGalleryTemplate === t.key
+            isSelected: this.selectedGalleryTemplate === t.key,
+            isPremium: !FREE_TEMPLATES_V14.includes(t.key)
         }));
     }
 
@@ -876,6 +898,11 @@ class ResumeBuilder extends React.Component {
 
     handleGalleryConfirm() {
         if (!this.selectedGalleryTemplate) return;
+        if (!FREE_TEMPLATES_V14.includes(this.selectedGalleryTemplate) && !this.isPaid) {
+            this.ladderReason = 'template';
+            this.showLadder   = true;
+            return;
+        }
         this.templateStyle = this.selectedGalleryTemplate;
         this.currentStep   = STEPS.METHOD;
     }
@@ -1080,7 +1107,13 @@ class ResumeBuilder extends React.Component {
     }
 
     handleQuickTemplate(event) {
-        this.templateStyle = event.currentTarget.dataset.tpl;
+        const tpl = event.currentTarget.dataset.tpl;
+        if (tpl !== 'ai-generated' && !FREE_TEMPLATES_V14.includes(tpl) && !this.isPaid) {
+            this.ladderReason = 'template';
+            this.showLadder   = true;
+            return;
+        }
+        this.templateStyle = tpl;
     }
 
     _applyFontAttributes() {
@@ -1156,7 +1189,13 @@ class ResumeBuilder extends React.Component {
     }
 
     handleTemplateChange(event) {
-        this.templateStyle = event.target.value;
+        const tpl = event.target.value;
+        if (tpl !== 'ai-generated' && !FREE_TEMPLATES_V14.includes(tpl) && !this.isPaid) {
+            this.ladderReason = 'template';
+            this.showLadder   = true;
+            return;   // select snaps back on re-render (value stays templateStyle)
+        }
+        this.templateStyle = tpl;
     }
 
     handleTemplatePrompt(event) {
@@ -1677,10 +1716,11 @@ class ResumeBuilder extends React.Component {
         this.showAuthModal = false;
         localStorage.setItem('rn-auth-token', token);
         localStorage.setItem('rn-auth-user', JSON.stringify(user));
-        // If they were trying to export, re-run the gated flow now that they're
-        // signed in (handleExport applies the Pro check → download or upgrade gate).
+        // Refresh entitlements BEFORE re-running the gated flow — the auth
+        // payload has no pass/credit fields, so a paying user signing in here
+        // would otherwise be shown the purchase ladder for what they own.
         if (this.authReason === 'export') {
-            this.handleExport();
+            this._refreshUser().then(() => this.handleExport());
         }
     }
 
@@ -1703,10 +1743,8 @@ class ResumeBuilder extends React.Component {
     // Upgrade CTA from the gate → send the user to the pricing section.
     handleUpgrade() {
         this.showCreditGate = false;
-        if (this.props && this.props.onGoToLanding) {
-            this.props.onGoToLanding();
-            setTimeout(() => { try { window.location.hash = '#pricing'; } catch (_) {} }, 60);
-        }
+        this.ladderReason   = 'generic';
+        this.showLadder     = true;   // purchase happens in-place now
     }
 
     async _proceedWithExport() {
@@ -1727,13 +1765,13 @@ class ResumeBuilder extends React.Component {
             this._setStatus('Please fill in your Full Name before exporting.', 'error');
             return;
         }
-        // Premium action — free tier requires an account.
+        // Export needs an account (identity), but free templates + AI styles
+        // export clean for everyone — only the 7 premium templates need a pass.
         if (!this._requireLogin('export')) return;
-        // Downloads are Pro-only. Free users see a watermarked + blurred preview
-        // and an upgrade prompt — no clean file is ever produced.
-        if (!this.isPro) {
-            this.creditReason   = 'pro_required';
-            this.showCreditGate = true;
+        if (!this.templateIsFree && !this.isPaid) {
+            this.ladderReason = 'template';
+            this.ladderMeta   = {};
+            this.showLadder   = true;
             return;
         }
         this._proceedWithExport();
@@ -1850,7 +1888,7 @@ class ResumeBuilder extends React.Component {
             const imgH  = canvas.height * (pageW / canvas.width);
             const pdf   = new jsPDF({ orientation: 'portrait', unit: 'px', format: [pageW, pageH], hotfixes: ['px_scaling'] });
             const img   = canvas.toDataURL('image/jpeg', 0.95);
-            const isProUser = this.isPro;   // pro OR Coach Unlimited — same rule as the export gate
+            const isProUser = this.isPaid || this.templateIsFree;   // v14: clean when the export gate passed
             let y = 0, page = 0;
             while (y < imgH && page < 12) {                       // slice into A4 pages
                 if (page > 0) pdf.addPage([pageW, pageH], 'portrait');
@@ -2403,7 +2441,15 @@ class ResumeBuilder extends React.Component {
 
     // ── Premium gating helpers ──────────────────────────────────────────────
     // True for Pro accounts only. Free + anonymous users get the gated experience.
-    get isPro() { return this.currentUser?.plan === 'pro' || !!this.currentUser?.coach?.unlimited; }   // Coach Unlimited is the paid tier actually sold
+    get isPro() { return this.currentUser?.plan === 'pro' || !!this.currentUser?.coach?.unlimited; }   // legacy paid
+    // v14: any active pass also counts as paid
+    get isPaid() {
+        const u = this.currentUser;
+        return this.isPro || !!(u?.passType && u?.passExpiresAt && new Date(u.passExpiresAt) > new Date());
+    }
+    get templateIsFree() {
+        return FREE_TEMPLATES_V14.includes(this.templateStyle) || this.templateStyle === 'ai-generated';
+    }
 
     // Call before any premium action. Returns false (and shows the auth modal)
     // when the user isn't signed in — the backend requires login for free too.
@@ -2422,11 +2468,22 @@ class ResumeBuilder extends React.Component {
             this.showAuthModal = true;
             return true;
         }
-        if (response.status === 402) {           // QUOTA_EXCEEDED or PRO_REQUIRED
-            let code = 'QUOTA_EXCEEDED';
-            try { code = (await response.json()).code || code; } catch (_) {}
-            this.creditReason   = code === 'PRO_REQUIRED' ? 'pro_required' : 'limit_reached';
-            this.showCreditGate = true;
+        if (response.status === 402) {
+            let body = {};
+            try { body = await response.json(); } catch (_) {}
+            const code = body.code || 'QUOTA_EXCEEDED';
+            if (code === 'CREDITS_REQUIRED') {           // v14: out of credits
+                this.ladderReason = 'credits';
+                this.ladderMeta   = { actionsUsed: body.actionsUsed || 0, balance: body.balance || 0 };
+                this.showLadder   = true;
+            } else if (code === 'PASS_REQUIRED') {       // v14: premium template export
+                this.ladderReason = 'template';
+                this.ladderMeta   = {};
+                this.showLadder   = true;
+            } else {                                      // legacy gates
+                this.creditReason   = code === 'PRO_REQUIRED' ? 'pro_required' : 'limit_reached';
+                this.showCreditGate = true;
+            }
             return true;
         }
         return false;
@@ -2698,6 +2755,12 @@ class ResumeBuilder extends React.Component {
         onClose={() => this.handleCreditGateClose()}
         onUpgrade={() => this.handleUpgrade()}
     />}
+    {this.showLadder && <PaymentModal
+        reason={this.ladderReason}
+        meta={this.ladderMeta}
+        onClose={() => { this.showLadder = false; }}
+        onSuccess={() => { this.showLadder = false; this._refreshUser(); this._setStatus('Purchase active — you\'re all set.', 'success'); }}
+    />}
     <div className="rp-app">
 
         
@@ -2870,6 +2933,9 @@ class ResumeBuilder extends React.Component {
                                 </div>
                                 
                                 <div className="rp-tpl-tile__check">✓</div>
+                                {tpl.isPremium && !this.isPaid && (
+                                    <div title="Included with any pass" style={{ position: 'absolute', top: 10, left: 10, zIndex: 3, background: 'linear-gradient(168deg,#E8C994,#D4AF73)', color: '#1A1305', borderRadius: 8, padding: '3px 8px', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>👑 PASS</div>
+                                )}
                             </div>
 
                             
@@ -3584,7 +3650,7 @@ class ResumeBuilder extends React.Component {
                     </div>
 
                     <div className="rp-preview__body">
-                        <div className={'rp-preview__scale-wrap' + (this.isPro ? '' : ' rp-preview--free')}>
+                        <div className="rp-preview__scale-wrap">
                             <LayoutComponent
                                 data={activeResumeData}
                                 resumeClass={resumeClass}
@@ -3600,11 +3666,7 @@ class ResumeBuilder extends React.Component {
                                 hasExperience={hasExperience}
                                 hasEducation={hasEducation}
                             />
-                            {!this.isPro && (
-                                <button className="rp-preview__lock" onClick={(e) => { e.stopPropagation(); this.creditReason = 'pro_required'; this.showCreditGate = true; }}>
-                                    🔒 Upgrade to download a clean, watermark-free PDF
-                                </button>
-                            )}
+
                         </div>
                     </div>
 
