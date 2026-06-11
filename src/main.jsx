@@ -4,7 +4,6 @@ import LandingPage from './LandingPage.jsx';
 import ResumeBuilder from './ResumeBuilder.jsx';
 import Dashboard from './Dashboard.jsx';
 import LegalPage from './LegalPage.jsx';
-import Showcase from './coach/Showcase.jsx';
 import CoachLanding from './coach/CoachLanding.jsx';
 import InterviewSetup from './coach/InterviewSetup.jsx';
 import CoachCheckout from './coach/CoachCheckout.jsx';
@@ -21,9 +20,9 @@ import './coach.css';
 // hard refresh — see vercel.json rewrites). The app views (landing / builder /
 // dashboard) live at "/" and are driven by history state so the browser Back
 // button works. Section anchors (#features etc.) keep native scroll behaviour.
-const LEGAL_PATHS    = { '/privacy': 'privacy', '/terms': 'terms', '/about': 'about', '/coach-preview': 'coach-preview' };
+const LEGAL_PATHS    = { '/privacy': 'privacy', '/terms': 'terms', '/about': 'about' };
 const PATH_FOR_VIEW  = { privacy: '/privacy', terms: '/terms', about: '/about' };
-const SECTION_HASHES = ['#features', '#templates', '#pricing'];
+const SECTION_HASHES = ['#resume', '#pricing', '#how', '#coach'];
 
 // Interview Coach routes (path-based, with params). Returns null if not a coach path.
 function matchCoach(path) {
@@ -43,6 +42,8 @@ function matchCoach(path) {
 function parseLocation() {
     const path = window.location.pathname;
     if (LEGAL_PATHS[path]) return { view: LEGAL_PATHS[path], params: {} };
+    if (path === '/dashboard') return { view: 'dashboard', params: {} };
+    if (path === '/builder')   return { view: 'builder',   params: {} };
     const coach = matchCoach(path);
     if (coach) return coach;
     return { view: 'landing', params: {} };
@@ -141,16 +142,12 @@ function App() {
         navigate('landing');
     }
 
-    if (view === 'coach-preview') {
-        return <Showcase />;
-    }
-
     if (view === 'privacy' || view === 'terms' || view === 'about') {
         return <LegalPage page={view} onHome={goToLanding} />;
     }
 
     if (view === 'coach-landing') {
-        return <CoachLanding nav={navPath} onSignIn={() => navPath('/')} currentUser={currentUser} />;
+        return <CoachLanding nav={navPath} currentUser={currentUser} />;
     }
     if (view === 'coach-setup') {
         return <InterviewSetup nav={navPath} />;
@@ -164,7 +161,7 @@ function App() {
             : <VoiceInterview nav={navPath} id={params.id} />;
     }
     if (view === 'coach-report') {
-        return <InterviewReport nav={navPath} />;
+        return <InterviewReport nav={navPath} id={params.id} />;
     }
     if (view === 'coach-complete') {
         return <InterviewComplete nav={navPath} id={params.id} />;
@@ -172,11 +169,6 @@ function App() {
     if (view === 'coach-history') {
         return <InterviewHistory nav={navPath} currentUser={currentUser} />;
     }
-    if (view.startsWith('coach-')) {
-        // checkout / session / complete / report / history — built in later phases
-        return <CoachPlaceholder view={view} params={params} nav={navPath} />;
-    }
-
     if (view === 'builder') {
         return <ResumeBuilder
             initialMode={entryMode}
@@ -205,24 +197,6 @@ function App() {
             onLogin={handleLogin}
             currentUser={currentUser}
         />
-    );
-}
-
-// Temporary placeholder for Coach screens not yet built (checkout/session/etc.)
-function CoachPlaceholder({ view, nav }) {
-    const name = view.replace('coach-', '');
-    return (
-        <div className="rn-dark" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
-            <div>
-                <span className="eyebrow">Interview Coach</span>
-                <h1 className="h1" style={{ margin: '10px 0 6px', textTransform: 'capitalize' }}>{name}</h1>
-                <p className="lead" style={{ marginBottom: 24 }}>This screen is coming in the next build phase.</p>
-                <div className="row ac jc gap-12">
-                    <button className="btn btn-gold" onClick={() => nav('/coach')}>Coach home</button>
-                    <button className="btn btn-outline" onClick={() => nav('/coach/new')}>New interview</button>
-                </div>
-            </div>
-        </div>
     );
 }
 

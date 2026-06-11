@@ -54,7 +54,7 @@ async function req(path, { method = 'GET', body, timeoutMs = 90000 } = {}) {
 
 // ── Endpoints ────────────────────────────────────────────────────────────────
 export const coachMe        = () => req('/coach/me');
-export const createSession  = (cfg) => req('/coach/sessions', { method: 'POST', body: cfg });
+export const createSession  = (cfg) => req('/coach/sessions', { method: 'POST', body: cfg, timeoutMs: 150000 });
 export const listSessions   = () => req('/coach/sessions');
 export const getSession     = (id) => req(`/coach/sessions/${id}`);
 export const submitAnswer   = (id, questionId, text) => req(`/coach/sessions/${id}/answers`, { method: 'POST', body: { questionId, text } });
@@ -103,8 +103,15 @@ export async function parseResumeFile(file) {
 
 // ── Setup draft (carries config from Setup → Checkout → session create) ──────
 const DRAFT_KEY = 'coach-draft';
-export function saveDraft(cfg) { try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(cfg)); } catch {} }
-export function loadDraft()    { try { return JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null'); } catch { return null; } }
+const DRAFT_TTL = 2 * 60 * 60 * 1000;   // a 2h-old draft is stale, not resumable
+export function saveDraft(cfg) { try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ...cfg, _ts: Date.now() })); } catch {} }
+export function loadDraft() {
+    try {
+        const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null');
+        if (d && d._ts && Date.now() - d._ts > DRAFT_TTL) { sessionStorage.removeItem(DRAFT_KEY); return null; }
+        return d;
+    } catch { return null; }
+}
 export function clearDraft()   { try { sessionStorage.removeItem(DRAFT_KEY); } catch {} }
 
 // ── Razorpay checkout (reuses the existing /create-order + /verify-payment) ───

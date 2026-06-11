@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, LayoutGrid, Mic, FileText, AppWindow, History, Search } from 'lucide-react';
+import { Plus, LayoutGrid, Mic, FileText, History, Search } from 'lucide-react';
 import { Badge } from './primitives.jsx';
-import { listSessions, getUser } from './api.js';
+import { listSessions, coachMe, getUser } from './api.js';
 
 // S11 — Interview History. Loads the user's real sessions.
 export default function InterviewHistory({ nav }) {
     const [sessions, setSessions] = useState(null);
     const [err, setErr] = useState('');
+    const [access, setAccess] = useState(null);   // { unlimited, passes, has }
+    const [query, setQuery] = useState('');
     const user = getUser();
 
     useEffect(() => {
@@ -14,10 +16,14 @@ export default function InterviewHistory({ nav }) {
         listSessions()
             .then(r => { if (alive) setSessions(r.sessions || []); })
             .catch(e => { if (e.status === 401) nav('/coach'); else setErr(e.message || 'Could not load history.'); });
+        coachMe().then(me => { if (alive) setAccess(me); }).catch(() => {});
         return () => { alive = false; };
     }, []);
 
     const COLS = '2.2fr 1.4fr 1fr 0.7fr 1.4fr';
+    const q = query.trim().toLowerCase();
+    const shown = (sessions || []).filter(s =>
+        !q || [s.job_title, s.company, s.interview_type].filter(Boolean).join(' ').toLowerCase().includes(q));
     const scored = (sessions || []).filter(s => s.overall_score != null);
     const avg = scored.length ? Math.round(scored.reduce((a, s) => a + s.overall_score, 0) / scored.length) : 0;
     const best = scored.length ? Math.max(...scored.map(s => s.overall_score)) : 0;
@@ -28,16 +34,29 @@ export default function InterviewHistory({ nav }) {
             <aside className="sidebar">
                 <div className="brand" style={{ padding: '6px 8px 18px' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
                 <button className="btn btn-gold btn-block" style={{ marginBottom: 16 }} onClick={() => nav('/coach/new')}><Plus size={16} />Start an interview</button>
-                <a className="navitem" onClick={() => nav('/')}><LayoutGrid className="ic" size={18} />Dashboard</a>
+                <a className="navitem" onClick={() => nav('/dashboard')}><LayoutGrid className="ic" size={18} />Dashboard</a>
                 <a className="navitem" onClick={() => nav('/coach')}><Mic className="ic" size={18} />Interview Coach<Badge variant="gold">Premium</Badge></a>
-                <a className="navitem" onClick={() => nav('/')}><FileText className="ic" size={18} />Résumé Studio</a>
-                <a className="navitem"><AppWindow className="ic" size={18} />Applications</a>
+                <a className="navitem" onClick={() => nav('/builder')}><FileText className="ic" size={18} />Résumé Studio</a>
                 <a className="navitem on"><History className="ic" size={18} />Reports</a>
                 <div style={{ marginTop: 'auto' }}>
                     <div className="card-gold" style={{ padding: 16, borderRadius: 14, marginBottom: 12 }}>
                         <div style={{ marginBottom: 8 }}><Badge variant="gold" dot>Coach</Badge></div>
-                        <p className="xs" style={{ color: 'var(--text-2)' }}>Unlimited interviews &amp; reports.</p>
-                        <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/pricing')}>Upgrade · ₹1,599/mo</button>
+                        {access?.unlimited ? (
+                            <>
+                                <p className="xs" style={{ color: 'var(--text-2)' }}>Coach Unlimited — active. Interview as often as you like.</p>
+                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/new')}>New interview</button>
+                            </>
+                        ) : access?.passes > 0 ? (
+                            <>
+                                <p className="xs" style={{ color: 'var(--text-2)' }}>{access.passes} session pass{access.passes > 1 ? 'es' : ''} left.</p>
+                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/new')}>Use a pass</button>
+                            </>
+                        ) : (
+                            <>
+                                <p className="xs" style={{ color: 'var(--text-2)' }}>Unlimited interviews &amp; reports.</p>
+                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/checkout')}>Upgrade · ₹1,599/mo</button>
+                            </>
+                        )}
                     </div>
                     <div className="navitem"><div className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || 'M')[0]}</div>{user?.name || 'Your account'}</div>
                 </div>
@@ -47,13 +66,17 @@ export default function InterviewHistory({ nav }) {
                 <div className="row jsb ac" style={{ height: 68, padding: '0 32px', borderBottom: '1px solid var(--line)' }}>
                     <div className="h4" style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 22 }}>Interview history</div>
                     <div className="row ac gap-14">
-                        <div className="input" style={{ width: 260, height: 40, display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface-2)' }}><Search size={15} color="var(--faint)" /><span className="sm" style={{ color: 'var(--faint)' }}>Search interviews</span></div>
-                        <div className="av" style={{ width: 38, height: 38, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || 'M')[0]}</div>
+                        <div className="row ac" style={{ position: 'relative' }}>
+                            <Search size={15} color="var(--faint)" style={{ position: 'absolute', left: 14, pointerEvents: 'none' }} />
+                            <input className="input" placeholder="Search interviews" value={query} onChange={(e) => setQuery(e.target.value)}
+                                   style={{ width: 260, height: 40, background: 'var(--surface-2)', paddingLeft: 38 }} />
+                        </div>
+                        <div className="av" style={{ width: 38, height: 38, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || user?.email || 'U')[0].toUpperCase()}</div>
                     </div>
                 </div>
 
                 <div style={{ padding: 32 }}>
-                    <div className="grid gap-20" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 28 }}>
+                    <div className="grid gap-20 g-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 28 }}>
                         <Stat label="Total interviews" value={sessions ? sessions.length : '—'} />
                         <Stat label="Average score" value={scored.length ? avg : '—'} gold={false} />
                         <Stat label="Best score" value={scored.length ? best : '—'} gold />
@@ -73,7 +96,8 @@ export default function InterviewHistory({ nav }) {
                             <div className="grid" style={{ gridTemplateColumns: COLS, padding: '0 16px 14px', gap: 12 }}>
                                 {['Interview', 'Type · mode', 'Date', 'Score', ''].map((h, i) => <span key={i} className="label" style={i === 4 ? { textAlign: 'right' } : undefined}>{h}</span>)}
                             </div>
-                            {(sessions || []).map(s => {
+                            {shown.length === 0 && <p className="sm" style={{ padding: '18px 16px' }}>No interviews match “{query}”.</p>}
+                            {shown.map(s => {
                                 const hot = s.overall_score >= 70;
                                 return (
                                     <div key={s.id} className="grid ac" style={{ gridTemplateColumns: COLS, gap: 12, padding: '16px', borderTop: '1px solid var(--line)' }}>

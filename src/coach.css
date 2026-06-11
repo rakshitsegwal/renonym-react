@@ -16,7 +16,8 @@
   --line:rgba(255,255,255,0.06); --line-2:rgba(255,255,255,0.10);
   --line-3:rgba(255,255,255,0.16); --line-4:rgba(255,255,255,0.24);
 
-  --text:#F3F3EF; --text-2:#C7C9CD; --muted:#9296A0; --faint:#62656E; --ghost:#3C3F47;
+  /* --faint lifted from #62656E for WCAG contrast on near-black (real content uses it) */
+  --text:#F3F3EF; --text-2:#C7C9CD; --muted:#9296A0; --faint:#7B7F89; --ghost:#3C3F47;
 
   /* champagne accent */
   --gold:#E8C994; --gold-2:#D4AF73; --gold-deep:#B4915A;
@@ -200,3 +201,49 @@
 }
 @keyframes rn-wavep{ 0%,100%{ transform:scaleY(.35); } 50%{ transform:scaleY(1); } }
 @keyframes rn-orbp{ 0%,100%{ box-shadow:0 0 0 0 var(--gold-soft), 0 0 60px rgba(232,201,148,.3); } 50%{ box-shadow:0 0 0 22px rgba(232,201,148,0), 0 0 90px rgba(232,201,148,.5); } }
+
+/* ── Dark page behind dark screens (no white flash on overscroll) ── */
+body:has(.rn-dark){ background:var(--bg); }
+
+/* ── Interview shell — survives mobile browser chrome (dvh > vh) ── */
+.rn-dark.vh-shell{ height:100vh; height:100dvh; }
+
+/* ── Responsive overrides ─────────────────────────────────────────────
+   Screen grids are set inline for the desktop design; these classes win
+   below the breakpoints (!important beats inline). */
+@media (max-width:1100px){
+  .rn-dark .g-dims{ grid-template-columns:repeat(2,1fr) !important; }
+}
+@media (max-width:1024px){
+  .rn-dark .rn-split{ grid-template-columns:1fr !important; }
+  .rn-dark .rn-split > aside{ border-left:none !important; border-top:1px solid var(--line); }
+  .rn-dark .lp-hero{ grid-template-columns:1fr !important; padding:56px 24px 48px !important; }
+  .rn-dark .lp-split{ grid-template-columns:1fr !important; }
+  .rn-dark .g-3{ grid-template-columns:repeat(2,1fr) !important; }
+  .rn-dark .wrap,.rn-dark .wrap-wide{ padding-left:24px; padding-right:24px; }
+}
+@media (max-width:1100px){
+  .rn-dark .sidebar{ width:200px; }
+}
+@media (max-width:760px){
+  /* sidebar holds the only logout/account controls — stack it, never hide it */
+  .rn-dark.appshell{ flex-direction:column; }
+  .rn-dark .sidebar{ width:100%; flex-direction:row; flex-wrap:wrap; align-items:center; gap:8px;
+    border-right:none; border-bottom:1px solid var(--line); padding:12px 16px; }
+  .rn-dark .sidebar .brand{ padding:0 !important; }
+  .rn-dark .sidebar > div[style*="margin-top"]{ margin-top:0 !important; }
+}
+@media (max-width:900px){
+  .rn-dark .rpt-hero{ grid-template-columns:1fr !important; text-align:center; }
+  .rn-dark .g-2{ grid-template-columns:1fr !important; }
+  .rn-dark .g-stats{ grid-template-columns:repeat(2,1fr) !important; }
+  .rn-dark .navlinks{ display:none; }
+}
+@media (max-width:760px){
+  .rn-dark .ti-grid{ grid-template-columns:1fr !important; }
+  .rn-dark .ti-grid > aside{ display:none; }
+}
+@media (max-width:560px){
+  .rn-dark .g-dims{ grid-template-columns:1fr !important; }
+  .rn-dark .g-stats{ grid-template-columns:1fr 1fr !important; }
+}

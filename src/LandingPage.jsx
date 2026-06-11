@@ -23,7 +23,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                     <div className="row ac gap-40">
                         <div className="brand"><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
                         <div className="navlinks">
-                            <a href="/coach" onClick={(e) => { e.preventDefault(); go('/coach')(); }} className="on">Interview Coach</a>
+                            <a href="/coach" onClick={(e) => { e.preventDefault(); go('/coach')(); }}>Interview Coach</a>
                             <a href="#resume" onClick={scrollTo('resume')}>Résumé Builder</a>
                             <a href="#pricing" onClick={scrollTo('pricing')}>Pricing</a>
                             <a href="#how" onClick={scrollTo('how')}>How it works</a>
@@ -43,7 +43,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
             {/* HERO */}
             <header className="rel" style={{ overflow: 'hidden' }}>
                 <div className="glow-gold" style={{ width: 700, height: 520, right: -120, top: -180 }} />
-                <div className="wrap-wide grid" style={{ gridTemplateColumns: '1.05fr 0.95fr', gap: 56, alignItems: 'center', padding: '80px 48px 70px' }}>
+                <div className="wrap-wide grid lp-hero" style={{ gridTemplateColumns: '1.05fr 0.95fr', gap: 56, alignItems: 'center', padding: '80px 48px 70px' }}>
                     <div>
                         <div className="pill" style={{ marginBottom: 26 }}><span className="dot" />Your AI job-preparation platform</div>
                         <h1 className="display">Build your résumé.<br /><span className="italic gold">Practice</span> your interview.<br />Get hired.</h1>
@@ -53,15 +53,8 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                             <button className="btn btn-outline btn-lg" onClick={onGetStarted}>Build a résumé free</button>
                         </div>
                         <div className="row ac gap-24 wrap-f" style={{ marginTop: 34 }}>
-                            <div className="row ac gap-8">
-                                <div className="row" style={{ marginRight: 2 }}>
-                                    {[['M', '#3a3320', 'var(--gold)'], ['J', '#23303a', 'var(--blue)'], ['A', '#26352b', 'var(--green)']].map(([l, b, c], i) => (
-                                        <div key={l} className="av" style={{ width: 30, height: 30, fontSize: 12, background: b, color: c, border: '2px solid var(--bg)', marginLeft: i ? -9 : 0 }}>{l}</div>
-                                    ))}
-                                </div>
-                                <span className="sm"><b style={{ color: 'var(--text)' }}>12,400+</b> candidates prepping</span>
-                            </div>
-                            <div className="row ac gap-6"><span className="gold" style={{ letterSpacing: 1 }}>★★★★★</span><span className="sm">4.9 average</span></div>
+                            <div className="row ac gap-8"><Check size={15} color="var(--green)" /><span className="sm">Free résumé builder — no card needed</span></div>
+                            <div className="row ac gap-8"><Check size={15} color="var(--green)" /><span className="sm">Every interview returns a scored report</span></div>
                         </div>
                     </div>
 
@@ -91,7 +84,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
 
             {/* TRUST MARQUEE */}
             <div className="wrap-wide" style={{ padding: '8px 48px 40px' }}>
-                <div className="label tc" style={{ marginBottom: 24 }}>Candidates have landed roles at</div>
+                <div className="label tc" style={{ marginBottom: 24 }}>Practice for interviews at companies like</div>
                 <div className="row jc wrap-f gap-40" style={{ opacity: 0.6 }}>
                     {['Stripe', 'Figma', 'Linear', 'Notion', 'Vercel', 'Ramp', 'Airbnb', 'Datadog'].map(b => (
                         <span key={b} className="h5" style={{ color: 'var(--muted)' }}>{b}</span>
@@ -104,7 +97,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                 <div className="wrap-wide">
                     <div className="card-gold rel" style={{ borderRadius: 'var(--r-2xl)', overflow: 'hidden' }}>
                         <div className="glow-gold" style={{ width: 520, height: 520, right: -120, top: -160 }} />
-                        <div className="grid rel" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                        <div className="grid rel g-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
                             <div style={{ padding: 64 }}>
                                 <Badge variant="gold" dot>Premium · The Interview Coach</Badge>
                                 <h2 className="h1" style={{ marginTop: 24 }}>The interview is where<br />offers are <span className="italic gold">won or lost</span>.</h2>
@@ -141,13 +134,13 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
 
             {/* RÉSUMÉ BUILDER (free on-ramp) */}
             <section id="resume" style={{ padding: '40px 0 96px' }}>
-                <div className="wrap-wide grid" style={{ gridTemplateColumns: '0.92fr 1.08fr', gap: 64, alignItems: 'center' }}>
+                <div className="wrap-wide grid lp-split" style={{ gridTemplateColumns: '0.92fr 1.08fr', gap: 64, alignItems: 'center' }}>
                     <div>
                         <Badge>Free to start</Badge>
                         <h2 className="h1" style={{ marginTop: 22 }}>A résumé that earns<br />the interview.</h2>
                         <p className="lead" style={{ marginTop: 20, maxWidth: '40ch' }}>Generate and tailor a recruiter-ready résumé to any job description in minutes. ATS-clean, beautifully typeset, and the on-ramp into your interview prep.</p>
                         <div className="row gap-32 wrap-f" style={{ marginTop: 34 }}>
-                            {[['94%', 'avg ATS score'], ['4 min', 'blank page to draft'], ['40+', 'tailored templates']].map(([v, l]) => (
+                            {[['10', 'polished templates'], ['4', 'designer layouts'], ['1-click', 'JD tailoring']].map(([v, l]) => (
                                 <div key={l}><div className="h2" style={{ fontSize: 34 }}>{v}</div><div className="sm" style={{ marginTop: 4 }}>{l}</div></div>
                             ))}
                         </div>
@@ -184,14 +177,14 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                         <span className="eyebrow">Everything for the hunt</span>
                         <h2 className="h1" style={{ marginTop: 18 }}>One platform, blank page to signed offer</h2>
                     </div>
-                    <div className="grid gap-24" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+                    <div className="grid gap-24 g-3" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
                         {[
                             [FileText, 'Résumé tailoring', 'Paste a job description; the AI rewrites and quantifies your bullets to match — keyword-aligned and ATS-safe.', false],
                             [Mic, 'Voice mock interviews', 'Speak your answers to a coach that listens, follows up, and reacts in real time — the closest thing to the real room.', true],
                             [BarChart3, 'Scored reports', 'Every session returns a graded breakdown with strengths, gaps, and the specific lines to rewrite before the real thing.', false],
                             [MessageSquare, 'Text interviews', 'Prefer to type? Run the same adaptive interview in writing to structure your thinking before you say it aloud.', false],
                             [BarChart2, 'Progress tracking', 'Your score trend, per-role history, and a dashboard that gives you a reason to come back until you land it.', false],
-                            [Check, 'Applications hub', 'Keep every role, résumé version, and interview prep in one place — organized around the jobs you actually want.', false],
+                            [Check, 'Import & restyle', 'Upload your existing PDF or DOCX résumé — Renonym parses it and re-typesets it into any template instantly.', false],
                         ].map(([Icon, title, body, premium]) => (
                             <div key={title} className="card-glass" style={{ padding: 28, borderRadius: 'var(--r-xl)', borderColor: premium ? 'var(--gold-line)' : 'var(--line-2)' }}>
                                 <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--gold-soft)', border: '1px solid var(--gold-line)', display: 'grid', placeItems: 'center', marginBottom: 20 }}><Icon size={20} color="var(--gold)" /></div>
@@ -210,7 +203,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                         <span className="eyebrow">Pricing</span>
                         <h2 className="h1" style={{ marginTop: 16 }}>Free to build. Pay to practice.</h2>
                     </div>
-                    <div className="grid gap-24" style={{ gridTemplateColumns: 'repeat(3,1fr)', alignItems: 'stretch' }}>
+                    <div className="grid gap-24 g-3" style={{ gridTemplateColumns: 'repeat(3,1fr)', alignItems: 'stretch' }}>
                         <PriceCard name="Résumé" price="Free" sub="The on-ramp" feats={['AI résumé builder & tailoring', 'ATS score & job-match optimizer', 'Watermarked preview']} cta="Start building" onClick={onGetStarted} />
                         <PriceCard featured name="Coach Unlimited" price="₹1,599" per="/mo" sub="Best value · cancel anytime" feats={['Unlimited voice & text interviews', 'Full scored reports + history', 'Everything in Résumé']} cta="Get Coach Unlimited" onClick={go('/coach')} />
                         <PriceCard name="Session Pass" price="₹599" sub="One-time" feats={['One full interview', 'One scored report', 'No subscription']} cta="Buy a session" onClick={go('/coach/new')} />

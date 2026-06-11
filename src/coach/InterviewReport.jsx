@@ -17,8 +17,14 @@ export default function InterviewReport({ nav, id }) {
                 let report = s.report;
                 if (!report) { const r = await scoreSession(id); report = r.report; }
                 if (!alive) return;
+                // answered count comes from the session itself (latest real answer per question)
+                const lastByQ = {};
+                (Array.isArray(s.answers) ? s.answers : []).forEach(a => { if (a && a.questionId) lastByQ[a.questionId] = a; });
+                const answered = Object.values(lastByQ).filter(a => a.text && String(a.text).trim() && !String(a.text).startsWith('[Spoken answer')).length;
                 setData({
                     report,
+                    answered,
+                    totalQ: Array.isArray(s.questions) ? s.questions.length : 0,
                     title: [s.job_title, s.company].filter(Boolean).join(' · ') || 'Interview',
                     sub: [s.interview_type, fmtDate(s.created_at), s.mode === 'text' ? 'Text' : 'Voice'].filter(Boolean).join(' · '),
                 });
@@ -40,11 +46,11 @@ export default function InterviewReport({ nav, id }) {
     return (
         <div className="rn-dark" style={{ minHeight: '100vh' }}>
             <div className="row ac jsb" style={{ position: 'sticky', top: 0, zIndex: 40, height: 68, borderBottom: '1px solid var(--line)', padding: '0 36px', background: 'rgba(10,11,13,0.8)', backdropFilter: 'blur(14px)' }}>
-                <div className="row ac gap-16">
-                    <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} onClick={() => nav('/coach/reports')}>←</button>
-                    <div><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap' }}>{data.title} — Report</div><div className="xs">{data.sub}</div></div>
+                <div className="row ac gap-16" style={{ minWidth: 0 }}>
+                    <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0, flex: 'none' }} onClick={() => nav('/coach/reports')}>←</button>
+                    <div style={{ minWidth: 0 }}><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.title} — Report</div><div className="xs">{data.sub}</div></div>
                 </div>
-                <div className="row ac gap-10">
+                <div className="row ac gap-10" style={{ flex: 'none' }}>
                     <button className="btn btn-ghost btn-sm" disabled title="PDF export coming soon"><Download size={15} />Export PDF</button>
                     <button className="btn btn-gold btn-sm" onClick={() => nav('/coach/new')}>↻ Run it again</button>
                 </div>
@@ -52,7 +58,7 @@ export default function InterviewReport({ nav, id }) {
 
             <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 36px 80px' }}>
                 {/* HERO */}
-                <div className="card-gold rel" style={{ borderColor: 'var(--gold-line)', borderRadius: 'var(--r-2xl)', padding: 48, marginBottom: 40, display: 'grid', gridTemplateColumns: '280px 1fr', gap: 40, alignItems: 'center', overflow: 'hidden' }}>
+                <div className="card-gold rel rpt-hero" style={{ borderColor: 'var(--gold-line)', borderRadius: 'var(--r-2xl)', padding: 48, marginBottom: 40, display: 'grid', gridTemplateColumns: '280px 1fr', gap: 40, alignItems: 'center', overflow: 'hidden' }}>
                     <div className="glow-gold" style={{ width: 480, height: 480, left: -120, top: -160 }} />
                     <div className="rel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <ScoreRing value={r.overall || 0} size={240} />
@@ -63,7 +69,7 @@ export default function InterviewReport({ nav, id }) {
                         <p className="lead" style={{ maxWidth: '46ch' }}>{verdict.summary || ''}</p>
                         {r.percentile && (
                             <div className="row gap-32" style={{ marginTop: 28 }}>
-                                <div><div className="label">Questions</div><div className="h4" style={{ marginTop: 6 }}>{dims.length ? '' : ''}{(data.report.questionsAnswered || '') || '—'}</div></div>
+                                <div><div className="label">Questions</div><div className="h4" style={{ marginTop: 6 }}>{data.totalQ ? `${data.answered}/${data.totalQ}` : '—'}</div></div>
                                 <div><div className="label">Percentile</div><div className="h4" style={{ marginTop: 6 }}>{r.percentile}</div></div>
                             </div>
                         )}
@@ -71,7 +77,7 @@ export default function InterviewReport({ nav, id }) {
                 </div>
 
                 {/* DIMENSIONS */}
-                <div className="grid gap-20" style={{ gridTemplateColumns: `repeat(${Math.min(4, dims.length) || 4},1fr)`, marginBottom: 40 }}>
+                <div className="grid gap-20 g-dims" style={{ gridTemplateColumns: `repeat(${Math.min(4, dims.length) || 4},1fr)`, marginBottom: 40 }}>
                     {dims.map(d => {
                         const amber = d.score < 60;
                         return (
@@ -85,7 +91,7 @@ export default function InterviewReport({ nav, id }) {
                 </div>
 
                 {/* STRENGTHS / WEAKNESSES */}
-                <div className="grid gap-24" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 40 }}>
+                <div className="grid gap-24 g-2" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 40 }}>
                     <div className="card" style={{ padding: 30 }}>
                         <div style={{ marginBottom: 20 }}><Badge variant="green" dot>Strengths</Badge></div>
                         <div className="col gap-18">
@@ -108,7 +114,7 @@ export default function InterviewReport({ nav, id }) {
                 {(r.fixes || []).length > 0 && (
                     <div style={{ marginBottom: 40 }}>
                         <div className="row ac jsb" style={{ marginBottom: 20 }}><h2 className="h3">The fixes that matter most</h2><span className="label">Tied to what you actually said</span></div>
-                        <div className="grid gap-20" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                        <div className="grid gap-20 g-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
                             {r.fixes.map((f, i) => (
                                 <div key={i} className="card" style={{ padding: 26 }}>
                                     <div className="row ac jsb" style={{ marginBottom: 16 }}><Badge>{f.tag}</Badge><Badge variant="amber">{f.score}</Badge></div>

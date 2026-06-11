@@ -35,20 +35,22 @@ export function AuthModal({ onAuth, onClose, reason }) {
                 `width=${w},height=${h},left=${left},top=${top}`
             );
 
-            // Poll for result
-            pollRef.current = setInterval(async () => {
+            // Poll for result (own handle — must not be killed by another flow's timer)
+            clearInterval(pollRef.current);
+            const iv = setInterval(async () => {
                 try {
                     const pr = await fetch(`${RAILWAY_URL}/auth/poll?nonce=${nonce}`);
                     const data = await pr.json();
                     if (!data.pending) {
-                        clearInterval(pollRef.current);
+                        clearInterval(iv);
                         if (data.token) onAuth(data.token, data.user);
                     }
                 } catch {}
             }, 1500);
+            pollRef.current = iv;
 
             // Auto-stop polling after 5 min
-            setTimeout(() => clearInterval(pollRef.current), 5 * 60 * 1000);
+            setTimeout(() => clearInterval(iv), 5 * 60 * 1000);
         } catch (e) {
             setError('Could not start Google sign-in. Try magic link instead.');
         }
@@ -59,14 +61,37 @@ export function AuthModal({ onAuth, onClose, reason }) {
         if (!email.trim()) { setError('Please enter your email.'); return; }
         setSending(true); setError('');
         try {
+            // clientId keys the server-side polling slot — without it the SPA can
+            // never learn the link was clicked (email opens in a separate tab).
+            let clientId = localStorage.getItem('rb-client-id');
+            if (!clientId) {
+                clientId = (crypto.randomUUID ? crypto.randomUUID() : 'c-' + Date.now());
+                localStorage.setItem('rb-client-id', clientId);
+            }
             const r = await fetch(`${RAILWAY_URL}/auth/magic-link/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email.trim() })
+                body: JSON.stringify({ email: email.trim(), clientId })
             });
             const data = await r.json();
             if (!r.ok) throw new Error(data.error || 'Failed to send');
             setSent(true);
+
+            // Poll until the user clicks the emailed link (15-min link lifetime).
+            // 6s interval stays well under the server's poll rate limit.
+            clearInterval(pollRef.current);
+            const iv = setInterval(async () => {
+                try {
+                    const pr = await fetch(`${RAILWAY_URL}/auth/poll?nonce=${clientId}_ml`);
+                    const d = await pr.json();
+                    if (!d.pending && d.token) {
+                        clearInterval(iv);
+                        onAuth(d.token, d.user);
+                    }
+                } catch {}
+            }, 6000);
+            pollRef.current = iv;
+            setTimeout(() => clearInterval(iv), 15 * 60 * 1000);
         } catch (e) {
             setError(e.message || 'Failed to send magic link.');
         } finally {
@@ -144,7 +169,8 @@ export function AuthModal({ onAuth, onClose, reason }) {
                         <p>Check your inbox!</p>
                         <p className="rn-auth-modal__sent-sub">
                             We sent a sign-in link to <strong>{email}</strong>.<br />
-                            Click it to sign in — the link expires in 15 minutes.
+                            Click it to sign in — the link expires in 15 minutes.<br />
+                            Keep this tab open: you'll be signed in here automatically.
                         </p>
                     </div>
                 )}

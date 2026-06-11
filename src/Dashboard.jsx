@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Mic, FileText, Target, History, Plus, Sparkles, ArrowRight } from 'lucide-react';
 import { Badge } from './coach/primitives.jsx';
+import { listSessions } from './coach/api.js';
 import './coach.css';
+
+// The locally saved résumé draft — only counts if it has meaningful content.
+function loadResumeDraft() {
+    try { const d = JSON.parse(localStorage.getItem('rb-draft') || 'null'); return d && d.fullName ? d : null; } catch { return null; }
+}
 
 // Dashboard — dark/gold reskin (per designs/screens/03). Keeps all existing
 // résumé actions (onOpenBuilder modes) and adds Interview Coach entry points.
@@ -9,6 +15,18 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
     const go = (p) => () => (onNavigate ? onNavigate(p) : onOpenBuilder('gallery'));
     const first = (user?.name || user?.email?.split('@')[0] || 'there').split(' ')[0];
     const isPro = user?.plan === 'pro';
+    const [draft] = useState(loadResumeDraft);
+    const [sessions, setSessions] = useState(null);
+
+    useEffect(() => {
+        if (!localStorage.getItem('rn-auth-token')) return;
+        let alive = true;
+        listSessions().then(r => { if (alive) setSessions(r.sessions || []); }).catch(() => {});
+        return () => { alive = false; };
+    }, []);
+
+    const scored = (sessions || []).filter(s => s.overall_score != null);
+    const avgScore = scored.length ? Math.round(scored.reduce((a, s) => a + s.overall_score, 0) / scored.length) : null;
 
     return (
         <div className="rn-dark appshell">
@@ -54,16 +72,19 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid gap-20" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 28 }}>
-                        {[['Résumés', '—'], ['Avg ATS', '—'], ['Interviews', '—'], ['Plan', isPro ? 'Pro' : 'Free']].map(([l, v]) => (
+                    {/* Stats — real numbers (draft résumé + scored interview history) */}
+                    <div className="grid gap-20 g-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 28 }}>
+                        {[['Résumés', draft ? '1' : '0'],
+                          ['Avg interview score', avgScore != null ? String(avgScore) : '—'],
+                          ['Interviews', sessions ? String(sessions.length) : '—'],
+                          ['Plan', isPro ? 'Pro' : 'Free']].map(([l, v]) => (
                             <div key={l} className="card" style={{ padding: '20px 24px' }}><div className="label">{l}</div><div className="h2" style={{ fontSize: 30, marginTop: 8 }}>{v}</div></div>
                         ))}
                     </div>
 
                     {/* Quick actions */}
                     <h2 className="h4" style={{ marginBottom: 16 }}>Quick actions</h2>
-                    <div className="grid gap-16" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 32 }}>
+                    <div className="grid gap-16 g-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 32 }}>
                         {[
                             [FileText, 'Build résumé', 'From scratch or a template', () => onOpenBuilder('gallery')],
                             [Sparkles, 'AI design', 'Generate an AI-styled résumé', () => onOpenBuilder('ai')],
@@ -78,17 +99,28 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                         ))}
                     </div>
 
-                    {/* Recent résumés */}
+                    {/* Recent résumés — the saved draft, or a real empty state */}
                     <div className="row jsb ac" style={{ marginBottom: 14 }}>
                         <h2 className="h4">Your résumés</h2>
                         <button className="btn btn-ghost btn-sm" onClick={() => onOpenBuilder('gallery')}><Plus size={14} />New</button>
                     </div>
-                    <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-                        <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}><FileText size={22} color="var(--muted)" /></div>
-                        <div className="h5" style={{ marginBottom: 6 }}>No résumés yet</div>
-                        <p className="sm" style={{ marginBottom: 20 }}>Create your first résumé to see it here.</p>
-                        <button className="btn btn-gold" onClick={() => onOpenBuilder('gallery')}>Build your first résumé →</button>
-                    </div>
+                    {draft ? (
+                        <div className="card row ac gap-18" style={{ padding: '22px 26px' }}>
+                            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--gold-soft)', border: '1px solid var(--gold-line)', display: 'grid', placeItems: 'center', flex: 'none' }}><FileText size={22} color="var(--gold)" /></div>
+                            <div className="fill" style={{ minWidth: 0 }}>
+                                <div className="h5" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{draft.fullName}{draft.title ? ` — ${draft.title}` : ''}</div>
+                                <div className="xs" style={{ marginTop: 3 }}>Saved on this device · continue where you left off</div>
+                            </div>
+                            <button className="btn btn-gold btn-sm none" onClick={() => onOpenBuilder('gallery')}>Open in Studio →</button>
+                        </div>
+                    ) : (
+                        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+                            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}><FileText size={22} color="var(--muted)" /></div>
+                            <div className="h5" style={{ marginBottom: 6 }}>No résumés yet</div>
+                            <p className="sm" style={{ marginBottom: 20 }}>Create your first résumé to see it here.</p>
+                            <button className="btn btn-gold" onClick={() => onOpenBuilder('gallery')}>Build your first résumé →</button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

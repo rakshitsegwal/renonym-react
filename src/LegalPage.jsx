@@ -10,7 +10,7 @@ import React, { useEffect } from 'react';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LAST_UPDATED = '10 June 2026';
-const CONTACT_EMAIL = 'support@renonym.com'; // TODO: replace with your real support address
+const CONTACT_EMAIL = 'support@renonym.com';
 
 const META = {
     privacy: { title: 'Privacy Policy', tag: 'Legal' },
@@ -21,12 +21,11 @@ const META = {
 function PrivacyBody() {
     return (
         <>
-            <p className="lg-draft">Draft template — review with legal counsel before publishing.</p>
             <p>This Privacy Policy explains how Renonym AI ("Renonym", "we", "us") collects, uses, and protects your information when you use our resume-building service (the "Service").</p>
 
             <h2>1. Information we collect</h2>
             <ul>
-                <li><strong>Account data</strong> — your name and email address when you sign in via Google, LinkedIn, or an email magic link.</li>
+                <li><strong>Account data</strong> — your name and email address when you sign in via Google or an email magic link.</li>
                 <li><strong>Resume content</strong> — the information you enter or upload to build your resume (work history, skills, education, contact details).</li>
                 <li><strong>Payment data</strong> — handled by our payment processor (Razorpay). We do not store your full card details on our servers.</li>
                 <li><strong>Usage &amp; device data</strong> — basic logs, an anonymous client identifier, and standard request metadata used for security and rate limiting.</li>
@@ -63,7 +62,6 @@ function PrivacyBody() {
 function TermsBody() {
     return (
         <>
-            <p className="lg-draft">Draft template — review with legal counsel before publishing.</p>
             <p>These Terms of Service ("Terms") govern your use of Renonym AI (the "Service"). By using the Service, you agree to these Terms.</p>
 
             <h2>1. The Service</h2>
@@ -136,7 +134,6 @@ export default function LegalPage({ page, onHome }) {
                 .lg-wrap p, .lg-wrap li { font-size: 15px; line-height: 1.7; color: #374151; }
                 .lg-wrap ul { padding-left: 20px; margin: 8px 0; }
                 .lg-wrap li { margin-bottom: 6px; }
-                .lg-draft { background: #fef3c7; border: 1px solid #fde68a; color: #92400e !important; padding: 10px 14px; border-radius: 8px; font-size: 13px !important; }
             `}</style>
 
             <div className="lg-topbar">

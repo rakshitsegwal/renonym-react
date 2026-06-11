@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { VoiceOrb, Waveform, Badge } from './primitives.jsx';
+import { AuthModal } from '../AuthModal.jsx';
 
 // S4 — Interview Coach landing (recreated from designs/screens/04-coach-landing.html)
 // Prices in INR per the Razorpay decision (Coach Unlimited ₹1,599/mo · Session Pass ₹599).
-export default function CoachLanding({ nav, onSignIn, currentUser }) {
+export default function CoachLanding({ nav, currentUser }) {
     const go = (p) => (e) => { e?.preventDefault?.(); nav(p); };
+    const [showAuth, setShowAuth] = useState(false);
 
     return (
         <div className="rn-dark">
+            {showAuth && (
+                <AuthModal
+                    reason="continue"
+                    onClose={() => setShowAuth(false)}
+                    onAuth={(token, user) => {
+                        localStorage.setItem('rn-auth-token', token);
+                        localStorage.setItem('rn-auth-user', JSON.stringify(user));
+                        window.location.reload();   // stay on /coach, now signed in
+                    }}
+                />
+            )}
             {/* NAV */}
             <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,11,13,0.72)', backdropFilter: 'blur(18px)', borderBottom: '1px solid var(--line)' }}>
                 <div className="wrap-wide topnav">
@@ -16,13 +29,13 @@ export default function CoachLanding({ nav, onSignIn, currentUser }) {
                         <div className="navlinks">
                             <a href="/coach" onClick={go('/coach')} className="on">Interview Coach</a>
                             <a href="/" onClick={go('/')}>Résumé Builder</a>
-                            <a href="/pricing" onClick={go('/pricing')}>Pricing</a>
+                            <a href="/coach/checkout" onClick={go('/coach/checkout')}>Pricing</a>
                         </div>
                     </div>
                     <div className="row ac gap-16">
                         {currentUser
                             ? <a href="/coach/reports" onClick={go('/coach/reports')} className="sm t2" style={{ fontWeight: 500 }}>My interviews</a>
-                            : <a href="#" onClick={(e) => { e.preventDefault(); onSignIn?.(); }} className="sm t2" style={{ fontWeight: 500 }}>Sign in</a>}
+                            : <a href="#" onClick={(e) => { e.preventDefault(); setShowAuth(true); }} className="sm t2" style={{ fontWeight: 500 }}>Sign in</a>}
                         <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold">Start an interview</a>
                     </div>
                 </div>
@@ -37,7 +50,7 @@ export default function CoachLanding({ nav, onSignIn, currentUser }) {
                     <p className="lead" style={{ maxWidth: '56ch', margin: '26px auto 0' }}>A realistic AI interviewer built from your résumé and the exact role. It asks, follows up, and scores every answer — by voice or by text — so you walk in already warmed up.</p>
                     <div className="row ac jc gap-16" style={{ marginTop: 36 }}>
                         <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold btn-lg">Start an interview</a>
-                        <a href="/pricing" onClick={go('/pricing')} className="btn btn-outline btn-lg">See plans · from ₹1,599/mo</a>
+                        <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-outline btn-lg">See plans · from ₹1,599/mo</a>
                     </div>
                     <p className="xs" style={{ marginTop: 18 }}>Included with Coach Unlimited · or a single Session Pass</p>
                 </div>
@@ -136,8 +149,8 @@ export default function CoachLanding({ nav, onSignIn, currentUser }) {
                             <h2 className="h1" style={{ maxWidth: '20ch', margin: '0 auto' }}>The cost of one under-prepared interview is the job.</h2>
                             <p className="lead" style={{ margin: '18px auto 0', maxWidth: '42ch' }}>Unlimited mock interviews and scored reports for less than a coffee a week.</p>
                             <div className="row ac jc gap-16" style={{ marginTop: 34 }}>
-                                <a href="/pricing" onClick={go('/pricing')} className="btn btn-gold btn-lg">Get Coach Unlimited · ₹1,599/mo</a>
-                                <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-outline btn-lg">Single session · ₹599</a>
+                                <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-gold btn-lg">Get Coach Unlimited · ₹1,599/mo</a>
+                                <a href="/coach/checkout?plan=session" onClick={go('/coach/checkout?plan=session')} className="btn btn-outline btn-lg">Single session · ₹599</a>
                             </div>
                         </div>
                     </div>

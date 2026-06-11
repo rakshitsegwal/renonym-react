@@ -1,25 +1,26 @@
 import React, { useState, useRef } from 'react';
 import { Upload, MessageSquare, FileText, Check } from 'lucide-react';
 import { VoiceOrb, Badge } from './primitives.jsx';
-import { saveDraft, coachMe, createSession, parseResumeFile } from './api.js';
+import { saveDraft, loadDraft, clearDraft, coachMe, createSession, parseResumeFile } from './api.js';
 
 function loadSavedResume() {
     try { const d = JSON.parse(localStorage.getItem('rb-draft') || '{}'); return d && d.fullName ? d : null; } catch { return null; }
 }
 
-// S5 — Interview Setup (recreated from designs/screens/05-interview-setup.html)
-// Phase-3 mock: interactive config; "Continue to checkout" routes to /coach/checkout.
+// S5 — Interview Setup (recreated from designs/screens/05-interview-setup.html).
+// Restores the in-flight draft so going back from checkout keeps the form.
 const TYPES   = ['Behavioral', 'Technical', 'Mixed', 'System design', 'Case'];
 const LENGTHS = [{ q: 5, label: '5 Q' }, { q: 6, label: '6 Q · ~15 min' }, { q: 10, label: '10 Q' }];
 
 export default function InterviewSetup({ nav }) {
-    const [company, setCompany] = useState('');
-    const [title, setTitle]     = useState('');
-    const [jd, setJd]           = useState('');
-    const [type, setType]       = useState('Behavioral');
-    const [length, setLength]   = useState(6);
-    const [mode, setMode]       = useState('voice');
-    const [difficulty]          = useState(66);
+    const [draft] = useState(loadDraft);   // sessionStorage — survives checkout round-trip
+    const [company, setCompany] = useState(draft?.company || '');
+    const [title, setTitle]     = useState(draft?.jobTitle || '');
+    const [jd, setJd]           = useState(draft?.jobDescription || '');
+    const [type, setType]       = useState(TYPES.includes(draft?.interviewType) ? draft.interviewType : 'Behavioral');
+    const [length, setLength]   = useState([5, 6, 10].includes(draft?.length) ? draft.length : 6);
+    const [mode, setMode]       = useState(draft?.mode === 'text' ? 'text' : 'voice');
+    const [difficulty, setDifficulty] = useState([35, 66, 90].includes(draft?.difficulty) ? draft.difficulty : 66);
     const [busy, setBusy]       = useState(false);
     const [err, setErr]         = useState('');
     const [resume, setResume]   = useState(loadSavedResume);   // user's actual résumé (saved or uploaded)
@@ -52,10 +53,16 @@ export default function InterviewSetup({ nav }) {
         saveDraft(cfg);
 
         // Check entitlement separately from session creation so a creation error
-        // never bounces an already-paid user back to checkout.
+        // never bounces an already-paid user back to checkout. Only a definitive
+        // 401/402 routes to payment — a network blip or 500 must NOT charge a
+        // paying user twice, so those show a retry error instead.
         let entitled = false;
         try { const me = await coachMe(); entitled = !!(me && me.has); }
-        catch (e) { entitled = false; }   // 401 not-signed-in / 402 no entitlement → pay first
+        catch (e) {
+            if (e.status === 401 || e.status === 402) { setBusy(false); nav('/coach/checkout'); return; }
+            setErr('Could not verify your access — check your connection and try again.');
+            setBusy(false); return;
+        }
 
         if (!entitled) { setBusy(false); nav('/coach/checkout'); return; }
 
@@ -68,7 +75,13 @@ export default function InterviewSetup({ nav }) {
         }
     }
     function clearAndGo(id) {
+        clearDraft();   // session created — a stale draft must not resurface later
         nav(`/coach/session/${id}` + (mode === 'text' ? '?mode=text' : ''));
+    }
+    function saveAndExit(e) {
+        e.preventDefault();
+        saveDraft({ resumeData: resume || {}, company, jobTitle: title, jobDescription: jd, interviewType: type, difficulty, mode, length });
+        nav('/');
     }
 
     return (
@@ -79,10 +92,10 @@ export default function InterviewSetup({ nav }) {
                     <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} onClick={() => nav('/coach')}>←</button>
                     <div className="brand"><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
                 </div>
-                <div className="row ac gap-12"><Badge variant="gold" dot>New interview</Badge><a href="/" className="sm faint" onClick={(e) => { e.preventDefault(); nav('/'); }}>Save &amp; exit</a></div>
+                <div className="row ac gap-12"><Badge variant="gold" dot>New interview</Badge><a href="/" className="sm faint" onClick={saveAndExit}>Save &amp; exit</a></div>
             </div>
 
-            <div className="grid" style={{ gridTemplateColumns: '1fr 392px', minHeight: 'calc(100vh - 68px)' }}>
+            <div className="grid rn-split" style={{ gridTemplateColumns: '1fr 392px', minHeight: 'calc(100vh - 68px)' }}>
                 {/* FORM */}
                 <div style={{ padding: '48px 64px', maxWidth: 760 }}>
                     {/* stepper */}
@@ -120,8 +133,8 @@ export default function InterviewSetup({ nav }) {
                     {/* role */}
                     <div style={{ marginBottom: 34 }}>
                         <div className="grid gap-16" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                            <div className="field"><label className="input-lbl">Company</label><input className="input" value={company} onChange={(e) => setCompany(e.target.value)} /></div>
-                            <div className="field"><label className="input-lbl">Job title</label><input className="input" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+                            <div className="field"><label className="input-lbl">Company</label><input className="input" maxLength={255} placeholder="e.g. Infosys" value={company} onChange={(e) => setCompany(e.target.value)} /></div>
+                            <div className="field"><label className="input-lbl">Job title</label><input className="input" maxLength={255} placeholder="e.g. Senior Salesforce Developer" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
                         </div>
                     </div>
                     <div style={{ marginBottom: 34 }}>
@@ -145,8 +158,12 @@ export default function InterviewSetup({ nav }) {
                         <div className="row gap-32">
                             <div style={{ flex: 1 }}>
                                 <div className="input-lbl" style={{ marginBottom: 14 }}>Difficulty</div>
-                                <div className="meter" style={{ height: 8, marginBottom: 10 }}><span style={{ width: difficulty + '%' }} /></div>
-                                <div className="row jsb xs"><span>Warm-up</span><span className="gold">Realistic</span><span>Brutal</span></div>
+                                <div className="row gap-10">
+                                    {[[35, 'Warm-up'], [66, 'Realistic'], [90, 'Brutal']].map(([v, l]) => (
+                                        <button key={v} className={'chip' + (difficulty === v ? ' on' : '')} onClick={() => setDifficulty(v)}>{l}</button>
+                                    ))}
+                                </div>
+                                <div className="meter" style={{ height: 6, marginTop: 12 }}><span style={{ width: difficulty + '%' }} /></div>
                             </div>
                             <div style={{ flex: 1 }}>
                                 <div className="input-lbl" style={{ marginBottom: 14 }}>Length</div>
@@ -178,7 +195,7 @@ export default function InterviewSetup({ nav }) {
                         <div className="label" style={{ marginBottom: 18 }}>Session summary</div>
                         <div className="card" style={{ padding: 22, marginBottom: 20 }}>
                             <div className="h4" style={{ marginBottom: 4 }}>{[title, company].filter(Boolean).join(' · ') || 'Your interview'}</div>
-                            <div className="xs" style={{ marginBottom: 18 }}>{type} · Realistic · {length} questions</div>
+                            <div className="xs" style={{ marginBottom: 18 }}>{type} · {difficulty >= 80 ? 'Brutal' : difficulty >= 50 ? 'Realistic' : 'Warm-up'} · {length} questions</div>
                             <div className="col gap-12">
                                 <Row k="Mode" v={mode === 'voice' ? 'Voice' : 'Text'} />
                                 <Row k="Est. length" v={estMin} />

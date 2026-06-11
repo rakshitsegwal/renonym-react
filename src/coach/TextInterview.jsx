@@ -20,9 +20,12 @@ export default function TextInterview({ nav, id }) {
             const qs = Array.isArray(s.questions) ? s.questions : [];
             setQuestions(qs);
             setCompany([s.job_title, s.company].filter(Boolean).join(' · ') || 'Interview');
-            // resume at the first unanswered question
-            const answered = Array.isArray(s.answers) ? s.answers.length : 0;
-            setQ(Math.min(answered, Math.max(0, qs.length - 1)));
+            // resume at the first question with no recorded answer (duplicates and
+            // re-answers don't shift the position); all answered → complete screen
+            const ansIds = new Set((Array.isArray(s.answers) ? s.answers : []).map(a => a.questionId));
+            const firstOpen = qs.findIndex(qq => !ansIds.has(qq.id));
+            if (firstOpen === -1 && qs.length) { nav(`/coach/session/${id}/complete`); return; }
+            setQ(Math.max(0, firstOpen));
         }).catch(e => {
             if (e.status === 401) nav('/coach');
             else setErr(e.message || 'Could not load this interview.');
@@ -39,7 +42,7 @@ export default function TextInterview({ nav, id }) {
     const hasResult = /\d/.test(answer);
 
     async function submit() {
-        if (busy) return;
+        if (busy || !answer.trim()) return;   // Cmd+Enter must not record an empty answer
         setBusy(true); setErr('');
         try {
             await submitAnswer(id, questions[q].id, answer);
@@ -50,13 +53,13 @@ export default function TextInterview({ nav, id }) {
     function onKey(e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); submit(); } }
 
     return (
-        <div className="rn-dark" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="rn-dark vh-shell" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div className="row ac jsb" style={{ padding: '0 32px', height: 68, borderBottom: '1px solid var(--line)', flex: 'none' }}>
-                <div className="row ac gap-10">
-                    <div className="av" style={{ width: 34, height: 34, background: '#3a3320', color: 'var(--gold)', fontSize: 14 }}>{(company[0] || 'S')}</div>
-                    <div><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap' }}>{company}</div><div className="xs">AI interview</div></div>
+                <div className="row ac gap-10" style={{ minWidth: 0 }}>
+                    <div className="av" style={{ width: 34, height: 34, background: '#3a3320', color: 'var(--gold)', fontSize: 14, flex: 'none' }}>{(company[0] || 'I')}</div>
+                    <div style={{ minWidth: 0 }}><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company}</div><div className="xs">AI interview</div></div>
                 </div>
-                <div className="row ac gap-14">
+                <div className="row ac gap-14" style={{ flex: 'none' }}>
                     <Badge variant="blue" dot>Text</Badge>
                     <span className="pill" style={{ height: 34 }}><Clock size={13} color="var(--muted)" />No time limit</span>
                     <span className="label">Q{q + 1} / {total}</span>
@@ -64,7 +67,7 @@ export default function TextInterview({ nav, id }) {
                 </div>
             </div>
 
-            <div className="grid fill" style={{ gridTemplateColumns: '300px 1fr', minHeight: 0 }}>
+            <div className="grid fill ti-grid" style={{ gridTemplateColumns: '300px 1fr', minHeight: 0 }}>
                 <aside style={{ borderRight: '1px solid var(--line)', padding: '32px 24px', overflowY: 'auto' }}>
                     <div className="label" style={{ marginBottom: 16 }}>Progress</div>
                     <div className="col gap-4">
@@ -87,7 +90,7 @@ export default function TextInterview({ nav, id }) {
 
                 <div style={{ padding: '40px 48px', overflowY: 'auto', maxWidth: 880, width: '100%', margin: '0 auto' }}>
                     <div className="label" style={{ marginBottom: 14 }}>Coach asks · Question {q + 1} of {total}</div>
-                    <h1 className="h2" style={{ fontWeight: 400, marginBottom: 8 }}>{questions[q].text}</h1>
+                    <h1 style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 8, fontSize: questions[q].text.length > 200 ? 24 : questions[q].text.length > 120 ? 28 : 34 }}>{questions[q].text}</h1>
                     <p className="sm" style={{ marginBottom: 28 }}>Answer as you would in the real interview. The coach scores every answer.</p>
 
                     <div className="card" style={{ padding: 22 }}>
