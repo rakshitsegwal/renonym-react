@@ -24,6 +24,7 @@ export default function VoiceInterview({ nav, id }) {
     const [company, setCompany] = useState('');
     const [q, setQ] = useState(0);
     const [phase, setPhase] = useState('speaking');   // speaking | recording | transcribing | denied
+    const [revealQ, setRevealQ] = useState(false);    // listening test: text hidden unless audio fails or user asks
     const [finalText, setFinalText] = useState('');   // live SR preview (when available)
     const [interim, setInterim] = useState('');
     const [recTime, setRecTime] = useState(0);
@@ -121,6 +122,7 @@ export default function VoiceInterview({ nav, id }) {
         stopEverything();
         const gen = genRef.current;
         finalRef.current = ''; setFinalText(''); setInterim(''); setErr(''); setRecTime(0);
+        setRevealQ(false);   // each question starts hidden — it's a listening test
         setPhase('speaking');
 
         // 1) natural AI interviewer voice from the server (cached per question)
@@ -158,7 +160,9 @@ export default function VoiceInterview({ nav, id }) {
     }
 
     function speakFallback(text, gen) {
-        if (!window.speechSynthesis) { beginAnswer(gen); return; }
+        // any path that opens the mic WITHOUT the question being spoken must
+        // reveal the text — never leave the candidate with nothing to answer
+        if (!window.speechSynthesis) { setRevealQ(true); beginAnswer(gen); return; }
         try {
             const u = new SpeechSynthesisUtterance(text);
             u.lang = recogLang(); u.rate = 1.03; u.pitch = 1;
@@ -167,6 +171,7 @@ export default function VoiceInterview({ nav, id }) {
             const dog = setTimeout(() => {
                 if (gen !== genRef.current || utterRef.current !== u) return;
                 try { window.speechSynthesis.cancel(); } catch {}   // stop a zombie utterance
+                setRevealQ(true);   // playback may have been cut short
                 beginAnswer(gen);
             }, Math.min(30000, 5000 + text.length * 65));
             u.onend = () => { clearTimeout(dog); if (gen === genRef.current && utterRef.current === u) beginAnswer(gen); };
@@ -174,11 +179,12 @@ export default function VoiceInterview({ nav, id }) {
                 clearTimeout(dog);
                 if (gen !== genRef.current || utterRef.current !== u) return;
                 if (e.error === 'interrupted' || e.error === 'canceled') return;
-                beginAnswer(gen);   // real synthesis failure → just open the mic
+                setRevealQ(true);
+                beginAnswer(gen);   // real synthesis failure → show text, open mic
             };
             utterRef.current = u;
             window.speechSynthesis.speak(u);
-        } catch { beginAnswer(gen); }
+        } catch { setRevealQ(true); beginAnswer(gen); }
     }
 
     async function beginAnswer(gen) {
@@ -350,7 +356,18 @@ export default function VoiceInterview({ nav, id }) {
             <div className="fill" style={{ overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                 <div className="col ac" style={{ textAlign: 'center', padding: '18px 24px', margin: 'auto', width: '100%' }}>
                     <div className="label" style={{ marginBottom: 16 }}>Interviewer asks · Question {q + 1}</div>
-                    <h1 style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: qSize, lineHeight: 1.2, letterSpacing: '-0.02em', maxWidth: 780 }}>{renderHi(question.text, question.hint)}</h1>
+                    {revealQ ? (
+                        <h1 style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: qSize, lineHeight: 1.2, letterSpacing: '-0.02em', maxWidth: 780 }}>{renderHi(question.text, question.hint)}</h1>
+                    ) : (
+                        <>
+                            {question.focus && <Badge variant="gold" style={{ marginBottom: 14 }}>{question.focus}</Badge>}
+                            <h1 style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 30, lineHeight: 1.25, letterSpacing: '-0.02em', maxWidth: 640, color: 'var(--text-2)' }}>
+                                {phase === 'speaking' ? 'Listen carefully — the interviewer is asking your question.' : 'Answer out loud, just like the real room.'}
+                            </h1>
+                            <button className="sm faint" style={{ background: 'none', border: 'none', cursor: 'pointer', marginTop: 14, textDecoration: 'underline', textUnderlineOffset: 3 }}
+                                    onClick={() => setRevealQ(true)}>Show the question</button>
+                        </>
+                    )}
 
                     {phase === 'denied' ? (
                         <div className="card" style={{ marginTop: 36, padding: '22px 26px', maxWidth: 560, borderColor: 'var(--rose)', background: 'var(--rose-soft)' }}>
