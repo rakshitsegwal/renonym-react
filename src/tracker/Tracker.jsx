@@ -3,6 +3,7 @@ import { Plus, LayoutGrid, Mic, FileText, History, Briefcase, Search, Check, X }
 import { Badge } from '../coach/primitives.jsx';
 import { saveDraft } from '../coach/api.js';
 import { listJobs, createJob, updateJob, updateEvent, addEvent, getJob, getAgenda, getInsights, getUser, getToken, STAGES, daysAgo, fmtDue } from './api.js';
+import Celebrate from './Celebrate.jsx';
 
 // Application Tracker — the job-search CRM home. Not a spreadsheet: the screen
 // opens on TODAY (what needs doing), then momentum, then the pipeline board.
@@ -13,6 +14,7 @@ export default function Tracker({ nav }) {
     const [query, setQuery] = useState('');
     const [showAdd, setShowAdd] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
+    const [celebrate, setCelebrate] = useState(null);   // job that just moved to 'offer'
     const [err, setErr] = useState('');
     const [, force] = useState(0);   // re-render after 401 sign-out
     const user = getUser();
@@ -47,7 +49,11 @@ export default function Tracker({ nav }) {
     }
 
     async function moveStage(job, stage) {
-        try { await updateJob(job.id, { stage }); reload(); }
+        try {
+            await updateJob(job.id, { stage });
+            if (stage === 'offer') setCelebrate(job);
+            reload();
+        }
         catch (e) { if (e.status === 401) handle401(); else setErr(e.message || 'Could not move the job.'); }
     }
     async function completeItem(item) {
@@ -155,6 +161,18 @@ export default function Tracker({ nav }) {
                         </div>
                     )}
 
+                    {/* INSIGHT: many applications, zero traction — the résumé is the suspect */}
+                    {!showArchived && insights && (insights.stages?.applied || 0) >= 10
+                        && !(insights.stages?.interviewing) && !(insights.stages?.offer) && (
+                        <div className="card row ac jsb wrap-f gap-12" style={{ padding: '14px 18px', marginBottom: 18, borderColor: 'var(--amber-line)' }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div className="sm" style={{ color: 'var(--amber)', fontWeight: 600 }}>{insights.stages.applied} applications, no interviews yet — your résumé may be the bottleneck.</div>
+                                <div className="xs" style={{ marginTop: 2 }}>An AI review finds exactly what recruiters are skipping over.</div>
+                            </div>
+                            <button className="btn btn-gold btn-sm none" onClick={() => nav('/builder')}>Run an AI review →</button>
+                        </div>
+                    )}
+
                     {/* MOMENTUM — hidden until there's something to measure */}
                     {!showArchived && insights && (jobs || []).length > 0 && (
                         <div className="grid gap-16 g-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 26 }}>
@@ -221,6 +239,7 @@ export default function Tracker({ nav }) {
             </div>
 
             {showAdd && <JobFormModal onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); reload(); }} />}
+            {celebrate && <Celebrate job={celebrate} onClose={() => setCelebrate(null)} />}
         </div>
     );
 }

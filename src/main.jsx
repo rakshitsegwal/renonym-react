@@ -62,13 +62,30 @@ function App() {
     const viewRef = useRef(view);
     viewRef.current = view;
 
-    // Restore auth session, then refresh it from the server — the cached user
-    // goes stale after a purchase (plan) or when signing in on another device.
+    // Capture a referral code from ?ref= — claimed once after sign-in (give 5 / get 5).
     useEffect(() => {
-        const token = localStorage.getItem('rn-auth-token');
-        const user  = localStorage.getItem('rn-auth-user');
-        if (!token || !user) return;
-        try { setCurrentUser(JSON.parse(user)); } catch {}
+        try {
+            const ref = new URLSearchParams(window.location.search).get('ref');
+            if (ref) localStorage.setItem('rn-ref-code', ref.trim().toUpperCase().slice(0, 16));
+        } catch {}
+    }, []);
+
+    function tryClaimReferral() {
+        let code = null;
+        try { code = localStorage.getItem('rn-ref-code'); } catch {}
+        if (!code || !localStorage.getItem('rn-auth-token')) return;
+        import('./coach/api.js').then(({ claimReferral }) => claimReferral(code))
+            .then(() => { try { localStorage.removeItem('rn-ref-code'); } catch {} })
+            .catch(e => {
+                // Bad/own code: drop it so we never retry forever. Network errors: keep for next sign-in.
+                if (e && (e.status === 400 || e.status === 404)) { try { localStorage.removeItem('rn-ref-code'); } catch {} }
+            });
+    }
+
+    // Refresh the cached user from the server — the popup writes only a slim
+    // {id,email,name,plan}, and any cache goes stale after a purchase or when
+    // signing in on another device. This merge adds the full v14 surface.
+    function refreshUserFromServer() {
         import('./coach/api.js').then(({ authMe }) => authMe()).then(fresh => {
             if (!fresh || !fresh.id) return;
             const merged = { id: fresh.id, email: fresh.email, name: fresh.name, avatarUrl: fresh.avatarUrl, plan: fresh.plan || 'free', coach: fresh.coach || null,
@@ -84,6 +101,16 @@ function App() {
                 setCurrentUser(null);
             }
         });
+    }
+
+    // Restore auth session on mount, then refresh it from the server.
+    useEffect(() => {
+        const token = localStorage.getItem('rn-auth-token');
+        const user  = localStorage.getItem('rn-auth-user');
+        if (!token || !user) return;
+        try { setCurrentUser(JSON.parse(user)); } catch {}
+        tryClaimReferral();
+        refreshUserFromServer();
     }, []);
 
     // Browser Back/Forward + section-anchor handling
@@ -152,6 +179,8 @@ function App() {
     function handleLogin() {
         const user = localStorage.getItem('rn-auth-user');
         if (user) { try { setCurrentUser(JSON.parse(user)); } catch {} }
+        tryClaimReferral();
+        refreshUserFromServer();   // popup cache is slim — pull referralCode/passType now
         // Return to wherever sign-in was requested from (e.g. /tracker's gate);
         // default: the builder.
         let returnTo = null;

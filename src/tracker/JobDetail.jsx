@@ -3,7 +3,8 @@ import { Mic, Target, ExternalLink, Archive, Check, Trash2, Pencil } from 'lucid
 import { Badge } from '../coach/primitives.jsx';
 import { saveDraft } from '../coach/api.js';
 import { JobFormModal } from './Tracker.jsx';
-import { getJob, updateJob, archiveJob, addEvent, updateEvent, deleteEvent, STAGES, EVENT_LABELS, fmtDue, fmtSalary } from './api.js';
+import { getJob, updateJob, archiveJob, addEvent, updateEvent, deleteEvent, getUser, STAGES, EVENT_LABELS, fmtDue, fmtSalary } from './api.js';
+import Celebrate from './Celebrate.jsx';
 
 // One job's CRM record: stage, facts, next action, and the full timeline
 // (notes · interview rounds · recruiter contacts · salary · follow-ups).
@@ -17,6 +18,7 @@ export default function JobDetail({ nav, id }) {
     const [err, setErr] = useState('');
     const [na, setNa] = useState({ text: '', due: '' });
     const [showEdit, setShowEdit] = useState(false);
+    const [celebrate, setCelebrate] = useState(false);
     const naLoadedRef = useRef(false);   // don't clobber in-progress typing on reloads
 
     const fail = (e) => {
@@ -60,7 +62,10 @@ export default function JobDetail({ nav, id }) {
         nav('/builder?mode=jobmatch');
     }
     function setStage(stage) {
-        updateJob(job.id, { stage }).then(reload).catch(fail);
+        updateJob(job.id, { stage }).then(() => {
+            if (stage === 'offer') setCelebrate(true);
+            reload();
+        }).catch(fail);
     }
     function saveNextAction() {
         updateJob(job.id, { nextAction: na.text || null, nextActionDue: na.due ? new Date(na.due).toISOString() : null })
@@ -146,6 +151,17 @@ export default function JobDetail({ nav, id }) {
                 )}
             </div>
 
+            {/* TRIGGER: interview stage + JD on file — practice this exact one */}
+            {job.stage === 'interviewing' && hasJd && (
+                <div className="card-gold row ac jsb wrap-f gap-12" style={{ padding: '16px 20px', marginBottom: 18, borderColor: 'var(--gold-line)' }}>
+                    <div style={{ minWidth: 0 }}>
+                        <div className="sm" style={{ color: 'var(--gold)', fontWeight: 600 }}>🎤 Interview coming up — practice this exact one.</div>
+                        <div className="xs" style={{ marginTop: 2 }}>Your JD and résumé are already loaded. {getUser()?.passType ? 'Included in your pass.' : 'From ₹499 — or free in text mode for your first.'}</div>
+                    </div>
+                    <button className="btn btn-gold btn-sm none" onClick={practiceInterview}>Practice now →</button>
+                </div>
+            )}
+
             {/* next action */}
             <div className="card" style={{ padding: 20, marginBottom: 18 }}>
                 <div className="label" style={{ marginBottom: 10 }}>Next action <span className="faint" style={{ textTransform: 'none', letterSpacing: 0 }}>— always know your next move</span></div>
@@ -190,6 +206,7 @@ export default function JobDetail({ nav, id }) {
             </div>
 
             {showEdit && <JobFormModal initial={job} onClose={() => setShowEdit(false)} onSaved={() => { setShowEdit(false); naLoadedRef.current = false; reload(); }} />}
+            {celebrate && <Celebrate job={job} onClose={() => setCelebrate(false)} />}
         </Shell>
     );
 }
