@@ -1024,7 +1024,7 @@ class ResumeBuilder extends React.Component {
     // résumé parsing — same CDN library).
     async _pdfToInspiration(file) {
         await loadFromCDN(CDN.pdfjs, () => !!window.pdfjsLib);
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = null;   // workerless, same as resume parsing
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         const buf  = await file.arrayBuffer();
         const pdf  = await window.pdfjsLib.getDocument({ data: buf }).promise;
         const page = await pdf.getPage(1);
@@ -1420,7 +1420,7 @@ class ResumeBuilder extends React.Component {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json', 'x-client-id': this.clientId },
                 body:    JSON.stringify({ text })
-            });
+            }, 90000);
             console.log('[extract-resume] Response status:', response.status);
 
             if (response.status === 429) {
@@ -1484,7 +1484,9 @@ class ResumeBuilder extends React.Component {
 
         } catch (e) {
             console.error('Resume upload failed:', e);
-            this._setStatus('Failed to parse resume. Please try again.', 'error');
+            this._setStatus(e && e.name === 'AbortError'
+                ? 'The AI took too long to parse that résumé — please try again (it usually works on the second attempt).'
+                : 'Failed to parse resume. Please try again.', 'error');
         } finally {
             this.isParsingResume = false;
             // Reset the file input so re-selecting the SAME file fires onChange
@@ -1498,7 +1500,7 @@ class ResumeBuilder extends React.Component {
     async _extractTextFromPDF(file) {
         if (!this.pdfLibLoaded) {
             await loadFromCDN(CDN.pdfjs);
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = null;
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
             this.pdfLibLoaded = true;
         }
 
@@ -1611,7 +1613,7 @@ class ResumeBuilder extends React.Component {
                     skills:     this.formData.skills,
                     experience: this.formData.experiences
                 })
-            });
+            }, 90000);
 
             if (response.status === 429) {
                 this._setStatus('Too many AI requests. Please wait a few minutes.', 'error');
@@ -1639,7 +1641,7 @@ class ResumeBuilder extends React.Component {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json', 'x-client-id': this.clientId },
                 body:    JSON.stringify({ formData: this.formData })
-            });
+            }, 90000);
 
             if (await this._isGated(response)) return;   // login / quota gate
             if (response.status === 429) {
@@ -1846,7 +1848,7 @@ class ResumeBuilder extends React.Component {
             const imgH  = canvas.height * (pageW / canvas.width);
             const pdf   = new jsPDF({ orientation: 'portrait', unit: 'px', format: [pageW, pageH], hotfixes: ['px_scaling'] });
             const img   = canvas.toDataURL('image/jpeg', 0.95);
-            const isProUser = (this.currentUser && this.currentUser.plan) === 'pro';
+            const isProUser = this.isPro;   // pro OR Coach Unlimited — same rule as the export gate
             let y = 0, page = 0;
             while (y < imgH && page < 12) {                       // slice into A4 pages
                 if (page > 0) pdf.addPage([pageW, pageH], 'portrait');
@@ -2088,7 +2090,7 @@ class ResumeBuilder extends React.Component {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json', 'x-client-id': this.clientId },
                 body:    JSON.stringify({ text })
-            }, 60000);
+            }, 90000);
 
             if (response.status === 429) {
                 this._setStatus('Too many AI requests. Please wait a minute.', 'error');
@@ -3578,7 +3580,7 @@ class ResumeBuilder extends React.Component {
                     </div>
 
                     <div className="rp-preview__body">
-                        <div className={'rp-preview__scale-wrap' + (currentUser?.plan === 'pro' ? '' : ' rp-preview--free')}>
+                        <div className={'rp-preview__scale-wrap' + (this.isPro ? '' : ' rp-preview--free')}>
                             <LayoutComponent
                                 data={activeResumeData}
                                 resumeClass={resumeClass}
@@ -3594,7 +3596,7 @@ class ResumeBuilder extends React.Component {
                                 hasExperience={hasExperience}
                                 hasEducation={hasEducation}
                             />
-                            {currentUser?.plan !== 'pro' && (
+                            {!this.isPro && (
                                 <button className="rp-preview__lock" onClick={(e) => { e.stopPropagation(); this.creditReason = 'pro_required'; this.showCreditGate = true; }}>
                                     🔒 Upgrade to download a clean, watermark-free PDF
                                 </button>

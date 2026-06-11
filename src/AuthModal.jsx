@@ -227,7 +227,7 @@ export function UserPill({ user, onLogout }) {
             {open && (
                 <div className="rn-user-menu">
                     <div className="rn-user-menu__email">{user.email}</div>
-                    <div className="rn-user-menu__plan">{user.plan === 'pro' ? '★ Pro' : 'Free plan'}</div>
+                    <div className="rn-user-menu__plan">{user.coach?.unlimited ? '★ Coach Unlimited' : user.plan === 'pro' ? '★ Pro' : 'Free plan'}</div>
                     <button className="rn-user-menu__logout" onClick={(e) => { e.stopPropagation(); onLogout(); }}>
                         Sign out
                     </button>
