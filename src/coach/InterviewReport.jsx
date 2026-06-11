@@ -45,13 +45,13 @@ export default function InterviewReport({ nav, id }) {
 
     return (
         <div className="rn-dark" style={{ minHeight: '100vh' }}>
-            <div className="row ac jsb" style={{ position: 'sticky', top: 0, zIndex: 40, height: 68, borderBottom: '1px solid var(--line)', padding: '0 36px', background: 'rgba(10,11,13,0.8)', backdropFilter: 'blur(14px)' }}>
+            <div className="row ac jsb no-print" style={{ position: 'sticky', top: 0, zIndex: 40, height: 68, borderBottom: '1px solid var(--line)', padding: '0 36px', background: 'rgba(10,11,13,0.8)', backdropFilter: 'blur(14px)' }}>
                 <div className="row ac gap-16" style={{ minWidth: 0 }}>
                     <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0, flex: 'none' }} onClick={() => nav('/coach/reports')}>←</button>
                     <div style={{ minWidth: 0 }}><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.title} — Report</div><div className="xs">{data.sub}</div></div>
                 </div>
                 <div className="row ac gap-10" style={{ flex: 'none' }}>
-                    <button className="btn btn-ghost btn-sm" disabled title="PDF export coming soon"><Download size={15} />Export PDF</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => window.print()} title="Print or save as PDF"><Download size={15} />Export PDF</button>
                     <button className="btn btn-gold btn-sm" onClick={() => nav('/coach/new')}>↻ Run it again</button>
                 </div>
             </div>

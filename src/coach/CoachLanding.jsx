@@ -28,13 +28,17 @@ export default function CoachLanding({ nav, currentUser }) {
                         <a href="/" onClick={go('/')} className="brand"><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></a>
                         <div className="navlinks">
                             <a href="/coach" onClick={go('/coach')} className="on">Interview Coach</a>
-                            <a href="/" onClick={go('/')}>Résumé Builder</a>
+                            <a href="/builder" onClick={go('/builder')}>Résumé Builder</a>
+                            <a href="/dashboard" onClick={go('/dashboard')}>Dashboard</a>
                             <a href="/coach/checkout" onClick={go('/coach/checkout')}>Pricing</a>
                         </div>
                     </div>
                     <div className="row ac gap-16">
                         {currentUser
-                            ? <a href="/coach/reports" onClick={go('/coach/reports')} className="sm t2" style={{ fontWeight: 500 }}>My interviews</a>
+                            ? <a href="/coach/reports" onClick={go('/coach/reports')} className="row ac gap-8" title={currentUser.email} style={{ fontWeight: 500 }}>
+                                <span className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(currentUser.name || currentUser.email || 'U')[0].toUpperCase()}</span>
+                                <span className="sm t2">{(currentUser.name || '').split(' ')[0] || 'My interviews'}</span>
+                              </a>
                             : <a href="#" onClick={(e) => { e.preventDefault(); setShowAuth(true); }} className="sm t2" style={{ fontWeight: 500 }}>Sign in</a>}
                         <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold">Start an interview</a>
                     </div>

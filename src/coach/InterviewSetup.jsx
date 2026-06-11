@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, MessageSquare, FileText, Check } from 'lucide-react';
 import { VoiceOrb, Badge } from './primitives.jsx';
-import { saveDraft, loadDraft, clearDraft, coachMe, createSession, parseResumeFile } from './api.js';
+import { saveDraft, loadDraft, clearDraft, coachMe, createSession, parseResumeFile, getUser, getToken } from './api.js';
 
 function loadSavedResume() {
     try { const d = JSON.parse(localStorage.getItem('rb-draft') || '{}'); return d && d.fullName ? d : null; } catch { return null; }
@@ -25,7 +25,16 @@ export default function InterviewSetup({ nav }) {
     const [err, setErr]         = useState('');
     const [resume, setResume]   = useState(loadSavedResume);   // user's actual résumé (saved or uploaded)
     const [resumeBusy, setResumeBusy] = useState(false);
+    const [access, setAccess]   = useState(null);   // { unlimited, passes, has } — entitled users see no pay UI
     const fileRef = useRef(null);
+    const user = getUser();
+
+    useEffect(() => {
+        if (!getToken()) return;
+        let alive = true;
+        coachMe().then(me => { if (alive) setAccess(me); }).catch(() => {});
+        return () => { alive = false; };
+    }, []);
 
     async function onResumeFile(e) {
         const file = e.target.files?.[0];
@@ -90,9 +99,20 @@ export default function InterviewSetup({ nav }) {
             <div className="row ac jsb" style={{ height: 68, borderBottom: '1px solid var(--line)', padding: '0 36px' }}>
                 <div className="row ac gap-16">
                     <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} onClick={() => nav('/coach')}>←</button>
-                    <div className="brand"><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
+                    <a href="/" className="brand" onClick={(e) => { e.preventDefault(); nav('/'); }} style={{ cursor: 'pointer' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></a>
                 </div>
-                <div className="row ac gap-12"><Badge variant="gold" dot>New interview</Badge><a href="/" className="sm faint" onClick={saveAndExit}>Save &amp; exit</a></div>
+                <div className="row ac gap-14">
+                    <a href="/dashboard" className="sm muted none" onClick={(e) => { e.preventDefault(); nav('/dashboard'); }}>Dashboard</a>
+                    <a href="/builder" className="sm muted none" onClick={(e) => { e.preventDefault(); nav('/builder'); }}>Résumé Studio</a>
+                    {user && (
+                        <span className="row ac gap-8" title={user.email}>
+                            <span className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(user.name || user.email || 'U')[0].toUpperCase()}</span>
+                            <span className="sm" style={{ color: 'var(--text-2)' }}>{(user.name || '').split(' ')[0] || 'You'}</span>
+                            {access?.unlimited && <Badge variant="gold">Unlimited</Badge>}
+                        </span>
+                    )}
+                    <a href="/" className="sm faint" onClick={saveAndExit}>Save &amp; exit</a>
+                </div>
             </div>
 
             <div className="grid rn-split" style={{ gridTemplateColumns: '1fr 392px', minHeight: 'calc(100vh - 68px)' }}>
@@ -102,9 +122,9 @@ export default function InterviewSetup({ nav }) {
                     <div className="row ac gap-10" style={{ marginBottom: 40 }}>
                         <div className="row ac gap-10"><Step n="1" on label="Set up" /></div>
                         <div style={{ width: 36, height: 1, background: 'var(--line-3)' }} />
-                        <Step n="2" label="Checkout" />
+                        <Step n="2" label={access?.has ? 'Interview' : 'Checkout'} />
                         <div style={{ width: 36, height: 1, background: 'var(--line-3)' }} />
-                        <Step n="3" label="Interview" />
+                        <Step n="3" label={access?.has ? 'Report' : 'Interview'} />
                     </div>
 
                     <h1 className="h2" style={{ marginBottom: 8 }}>Set up your interview</h1>
@@ -203,14 +223,27 @@ export default function InterviewSetup({ nav }) {
                                 <Row k="Report" v="Full scored" />
                             </div>
                         </div>
-                        <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20 }}>
-                            <div className="row ac jsb"><Badge variant="gold" dot>Premium</Badge><span className="sm gold" style={{ fontWeight: 600 }}>Session Pass</span></div>
-                            <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹599</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + report</span></div>
-                            <p className="xs" style={{ marginTop: 8 }}>Or unlock unlimited with Coach Unlimited at ₹1,599/mo.</p>
-                        </div>
-                        <button className="btn btn-gold btn-lg btn-block" onClick={handleContinue} disabled={busy}>{busy ? 'Preparing…' : 'Continue to checkout →'}</button>
+                        {access?.has ? (
+                            <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20 }}>
+                                <div className="row ac jsb"><Badge variant="gold" dot>{access.unlimited ? 'Coach Unlimited' : 'Session Pass'}</Badge><Check size={16} color="var(--green)" /></div>
+                                <p className="sm" style={{ marginTop: 10, color: 'var(--text-2)' }}>
+                                    {access.unlimited
+                                        ? 'Your plan is active — this interview is included. No payment needed.'
+                                        : `You have ${access.passes} session pass${access.passes > 1 ? 'es' : ''} — this interview uses one.`}
+                                </p>
+                            </div>
+                        ) : (getToken() && access === null) ? null : (
+                            <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20 }}>
+                                <div className="row ac jsb"><Badge variant="gold" dot>Premium</Badge><span className="sm gold" style={{ fontWeight: 600 }}>Session Pass</span></div>
+                                <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹599</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + report</span></div>
+                                <p className="xs" style={{ marginTop: 8 }}>Or unlock unlimited with Coach Unlimited at ₹1,599/mo.</p>
+                            </div>
+                        )}
+                        <button className="btn btn-gold btn-lg btn-block" onClick={handleContinue} disabled={busy}>
+                            {busy ? 'Preparing…' : access?.has ? 'Start interview →' : (getToken() && access === null) ? 'Continue →' : 'Continue to checkout →'}
+                        </button>
                         {err && <div className="card" style={{ marginTop: 12, padding: '12px 14px', borderColor: 'var(--rose)', background: 'var(--rose-soft)' }}><p className="sm" style={{ color: 'var(--rose)' }}>{err}</p></div>}
-                        <p className="xs tc" style={{ marginTop: 14 }}>You won't be charged until the next step.</p>
+                        {!access?.has && <p className="xs tc" style={{ marginTop: 14 }}>You won't be charged until the next step.</p>}
                     </div>
                 </aside>
             </div>

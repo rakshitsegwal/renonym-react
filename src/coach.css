@@ -163,7 +163,7 @@
 .rn-dark .navlinks{ display:flex; align-items:center; gap:30px; }
 .rn-dark .navlinks a{ font-size:14.5px; color:var(--muted); transition:color .15s; white-space:nowrap; }
 .rn-dark .navlinks a:hover,.rn-dark .navlinks a.on{ color:var(--text); }
-.rn-dark .appshell{ display:flex; min-height:100vh; }
+.rn-dark.appshell, .rn-dark .appshell{ display:flex; min-height:100vh; }
 .rn-dark .sidebar{ width:248px; flex:none; background:var(--bg-1); border-right:1px solid var(--line); padding:22px 16px; display:flex; flex-direction:column; gap:4px; }
 .rn-dark .navitem{ display:flex; align-items:center; gap:12px; height:42px; padding:0 12px; border-radius:10px; font-size:14.5px; color:var(--muted); transition:.15s; white-space:nowrap; }
 .rn-dark .navitem:hover{ background:var(--surface-2); color:var(--text-2); }
@@ -204,6 +204,24 @@
 
 /* ── Dark page behind dark screens (no white flash on overscroll) ── */
 body:has(.rn-dark){ background:var(--bg); }
+
+/* ── Print: the interview report becomes a clean light document ── */
+@media print {
+  .no-print{ display:none !important; }
+  body, .rn-dark{ background:#ffffff !important; color:#111 !important; }
+  .rn-dark .card, .rn-dark .card-2, .rn-dark .card-glass, .rn-dark .card-gold{
+    background:#ffffff !important; border-color:#d8d8d8 !important; box-shadow:none !important;
+  }
+  .rn-dark .glow-gold{ display:none !important; }
+  .rn-dark .h1,.rn-dark .h2,.rn-dark .h3,.rn-dark .h4,.rn-dark .h5,
+  .rn-dark .lead,.rn-dark .body-t,.rn-dark .sm{ color:#1a1a1a !important; }
+  .rn-dark .xs,.rn-dark .label,.rn-dark .muted,.rn-dark .faint{ color:#555 !important; }
+  .rn-dark .eyebrow,.rn-dark .gold{ color:#8a6d3b !important; }
+  .rn-dark .green-t{ color:#1d7a4f !important; } .rn-dark .amber-t{ color:#9a6212 !important; }
+  .rn-dark .meter{ background:#eee !important; }
+  .rn-dark .badge{ background:#f4f4f4 !important; color:#444 !important; border-color:#ddd !important; }
+  .rn-dark .card, .rn-dark .card-2{ break-inside:avoid; }
+}
 
 /* ── Interview shell — survives mobile browser chrome (dvh > vh) ── */
 .rn-dark.vh-shell{ height:100vh; height:100dvh; }
