@@ -183,7 +183,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                             [Mic, 'Voice mock interviews', 'Speak your answers to a coach that listens, follows up, and reacts in real time — the closest thing to the real room.', true],
                             [BarChart3, 'Scored reports', 'Every session returns a graded breakdown with strengths, gaps, and the specific lines to rewrite before the real thing.', false],
                             [MessageSquare, 'Text interviews', 'Prefer to type? Run the same adaptive interview in writing to structure your thinking before you say it aloud.', false],
-                            [BarChart2, 'Progress tracking', 'Your score trend, per-role history, and a dashboard that gives you a reason to come back until you land it.', false],
+                            [BarChart2, 'Application tracker', 'Every job, stage, recruiter note and follow-up in one pipeline — wired straight into your résumé and interview prep.', false],
                             [Check, 'Import & restyle', 'Upload your existing PDF or DOCX résumé — Renonym parses it and re-typesets it into any template instantly.', false],
                         ].map(([Icon, title, body, premium]) => (
                             <div key={title} className="card-glass" style={{ padding: 28, borderRadius: 'var(--r-xl)', borderColor: premium ? 'var(--gold-line)' : 'var(--line-2)' }}>

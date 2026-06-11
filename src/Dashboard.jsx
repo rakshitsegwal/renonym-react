@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Mic, FileText, Target, History, Plus, Sparkles, ArrowRight } from 'lucide-react';
+import { LayoutGrid, Mic, FileText, Target, History, Briefcase, Plus, Sparkles, ArrowRight } from 'lucide-react';
 import { Badge } from './coach/primitives.jsx';
 import { listSessions, coachMe } from './coach/api.js';
 import './coach.css';
@@ -41,6 +41,7 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                 <div className="brand" style={{ padding: '6px 8px 18px' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
                 <button className="btn btn-gold btn-block" style={{ marginBottom: 16 }} onClick={go('/coach/new')}><Plus size={16} />Start an interview</button>
                 <a className="navitem on"><LayoutGrid className="ic" size={18} />Dashboard</a>
+                <a className="navitem" onClick={go('/tracker')}><Briefcase className="ic" size={18} />Applications</a>
                 <a className="navitem" onClick={go('/coach')}><Mic className="ic" size={18} />Interview Coach<Badge variant="gold">Premium</Badge></a>
                 <a className="navitem" onClick={() => onOpenBuilder('gallery')}><FileText className="ic" size={18} />Résumé Studio</a>
                 <a className="navitem" onClick={() => onOpenBuilder('jobmatch')}><Target className="ic" size={18} />Job Match</a>
@@ -94,7 +95,7 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                     <div className="grid gap-16 g-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 32 }}>
                         {[
                             [FileText, 'Build résumé', 'From scratch or a template', () => onOpenBuilder('gallery')],
-                            [Sparkles, 'AI design', 'Generate an AI-styled résumé', () => onOpenBuilder('ai')],
+                            [Briefcase, 'Track applications', 'Your job-search pipeline', go('/tracker')],
                             [Target, 'Job match', 'Score your résumé vs a JD', () => onOpenBuilder('jobmatch')],
                             [Mic, 'Start interview', 'Practice with the AI Coach', go('/coach/new')],
                         ].map(([Icon, t, d, action]) => (

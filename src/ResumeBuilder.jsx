@@ -332,6 +332,11 @@ class ResumeBuilder extends React.Component {
             this.selectedMode  = 'templates';
             this.currentStep   = STEPS.BUILD;
             this.activeSection = SECTIONS.JOB_MATCH;
+            // JD handed off from the Application Tracker ("Tailor résumé to this JD")
+            try {
+                const jd = localStorage.getItem('rn-jd-handoff');
+                if (jd) { this.jobDescription = jd; localStorage.removeItem('rn-jd-handoff'); }
+            } catch (e) { /* ignore */ }
         } else {
             this.selectedMode = 'templates';
             this.currentStep  = STEPS.GALLERY;
@@ -1998,6 +2003,13 @@ class ResumeBuilder extends React.Component {
                 el.value = this.templatePrompt || '';
             }
         });
+
+        // Sync the Job Match JD textarea (uncontrolled) — needed for the
+        // tracker's "Tailor résumé to this JD" handoff to show the JD.
+        const jmEl = this._root && this._root.querySelector('textarea.rp-jm-jd-textarea');
+        if (jmEl && (this.jobDescription || '') !== jmEl.value && document.activeElement !== jmEl) {
+            jmEl.value = this.jobDescription || '';
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

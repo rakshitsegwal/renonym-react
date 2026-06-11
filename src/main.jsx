@@ -12,6 +12,8 @@ import InterviewComplete from './coach/InterviewComplete.jsx';
 import InterviewHistory from './coach/InterviewHistory.jsx';
 import VoiceInterview from './coach/VoiceInterview.jsx';
 import TextInterview from './coach/TextInterview.jsx';
+import Tracker from './tracker/Tracker.jsx';
+import JobDetail from './tracker/JobDetail.jsx';
 import './app.css';
 import './coach.css';
 
@@ -43,7 +45,10 @@ function parseLocation() {
     const path = window.location.pathname;
     if (LEGAL_PATHS[path]) return { view: LEGAL_PATHS[path], params: {} };
     if (path === '/dashboard') return { view: 'dashboard', params: {} };
-    if (path === '/builder')   return { view: 'builder',   params: {} };
+    if (path === '/builder')   return { view: 'builder',   params: { mode: new URLSearchParams(window.location.search).get('mode') || undefined } };
+    if (path === '/tracker')   return { view: 'tracker',   params: {} };
+    const jm = path.match(/^\/tracker\/job\/([^/]+)$/);
+    if (jm) return { view: 'tracker-job', params: { id: jm[1] } };
     const coach = matchCoach(path);
     if (coach) return coach;
     return { view: 'landing', params: {} };
@@ -117,6 +122,7 @@ function App() {
         const state = { view: nextView, entryMode: mode || entryMode };
         window.history.pushState(state, '', path);
         if (mode) setEntryMode(mode);
+        setParams({});   // stale path params (e.g. ?mode=jobmatch) must not leak into state-driven views
         setView(nextView);
         window.scrollTo(0, 0);
     }
@@ -143,7 +149,11 @@ function App() {
     function handleLogin() {
         const user = localStorage.getItem('rn-auth-user');
         if (user) { try { setCurrentUser(JSON.parse(user)); } catch {} }
-        // After login from landing — go to builder
+        // Return to wherever sign-in was requested from (e.g. /tracker's gate);
+        // default: the builder.
+        let returnTo = null;
+        try { returnTo = localStorage.getItem('rn-return-to'); localStorage.removeItem('rn-return-to'); } catch {}
+        if (returnTo) { navPath(returnTo); return; }
         goToBuilder('gallery');
     }
 
@@ -181,9 +191,16 @@ function App() {
     if (view === 'coach-history') {
         return <InterviewHistory nav={navPath} currentUser={currentUser} />;
     }
+    if (view === 'tracker') {
+        return <Tracker nav={navPath} />;
+    }
+    if (view === 'tracker-job') {
+        return <JobDetail nav={navPath} id={params.id} />;
+    }
+
     if (view === 'builder') {
         return <ResumeBuilder
-            initialMode={entryMode}
+            initialMode={params.mode || entryMode}
             onGoToDashboard={goToDashboard}
             onGoToLanding={goToLanding}
         />;

@@ -29,6 +29,7 @@ export default function CoachLanding({ nav, currentUser }) {
                         <div className="navlinks">
                             <a href="/coach" onClick={go('/coach')} className="on">Interview Coach</a>
                             <a href="/builder" onClick={go('/builder')}>Résumé Builder</a>
+                            <a href="/tracker" onClick={go('/tracker')}>Applications</a>
                             <a href="/dashboard" onClick={go('/dashboard')}>Dashboard</a>
                             <a href="/coach/checkout" onClick={go('/coach/checkout')}>Pricing</a>
                         </div>

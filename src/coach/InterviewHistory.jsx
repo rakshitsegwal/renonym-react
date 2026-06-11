@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, LayoutGrid, Mic, FileText, History, Search } from 'lucide-react';
+import { Plus, LayoutGrid, Mic, FileText, History, Briefcase, Search } from 'lucide-react';
 import { Badge } from './primitives.jsx';
 import { listSessions, coachMe, getUser } from './api.js';
 
@@ -35,6 +35,7 @@ export default function InterviewHistory({ nav }) {
                 <div className="brand" style={{ padding: '6px 8px 18px' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
                 <button className="btn btn-gold btn-block" style={{ marginBottom: 16 }} onClick={() => nav('/coach/new')}><Plus size={16} />Start an interview</button>
                 <a className="navitem" onClick={() => nav('/dashboard')}><LayoutGrid className="ic" size={18} />Dashboard</a>
+                <a className="navitem" onClick={() => nav('/tracker')}><Briefcase className="ic" size={18} />Applications</a>
                 <a className="navitem" onClick={() => nav('/coach')}><Mic className="ic" size={18} />Interview Coach<Badge variant="gold">Premium</Badge></a>
                 <a className="navitem" onClick={() => nav('/builder')}><FileText className="ic" size={18} />Résumé Studio</a>
                 <a className="navitem on"><History className="ic" size={18} />Reports</a>
