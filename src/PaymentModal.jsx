@@ -30,7 +30,7 @@ export default function PaymentModal({ user, onSuccess, onClose, reason = 'downl
 
     const PLANS = {
         pro_monthly: { amount: 59900, label: '₹599/mo', price: 599, per: '/month' },
-        pro_yearly:  { amount: 598800, label: '₹499/yr', price: 499, per: '/year', equiv: 'Just ₹41/month' }
+        pro_yearly:  { amount: 598800, label: '₹5,988/yr', price: 5988, per: '/year', equiv: '₹499/month, billed yearly' }
     };
 
     const triggerCopy = {
@@ -65,7 +65,7 @@ export default function PaymentModal({ user, onSuccess, onClose, reason = 'downl
                     name:        'Renonym AI',
                     description: PLANS[planId].label,
                     prefill:     { name: user?.name || '', email: user?.email || '' },
-                    theme:       { color: '#6d28d9' },
+                    theme:       { color: '#E8C994' },
                     handler: async (response) => {
                         const verifyRes = await fetch(`${RAILWAY_URL}/verify-payment`, {
                             method: 'POST', headers: secureHeaders(),
@@ -132,8 +132,8 @@ export default function PaymentModal({ user, onSuccess, onClose, reason = 'downl
                     {period === 'yearly' ? (
                         <div className="pm-plan pm-plan--featured">
                             <div className="pm-plan__tag">Most popular · Save 16%</div>
-                            <div className="pm-plan__price">₹499<span className="pm-plan__per">/year</span></div>
-                            <div className="pm-plan__equiv">That's just ₹41/month</div>
+                            <div className="pm-plan__price">₹5,988<span className="pm-plan__per">/year</span></div>
+                            <div className="pm-plan__equiv">₹499/month, billed yearly</div>
                             <ul className="pm-plan__feats">
                                 {['Unlimited PDF & DOCX export','No watermarks','AI style generator','AI resume rewrite','Job match optimizer','All future features'].map(f => (
                                     <li key={f}><span>✓</span>{f}</li>
@@ -144,7 +144,7 @@ export default function PaymentModal({ user, onSuccess, onClose, reason = 'downl
                                 onClick={() => handlePay('pro_yearly')}
                                 disabled={loading === 'pro_yearly'}
                             >
-                                {loading === 'pro_yearly' ? 'Processing…' : 'Unlock for ₹499/year →'}
+                                {loading === 'pro_yearly' ? 'Processing…' : 'Unlock for ₹5,988/year →'}
                             </button>
                         </div>
                     ) : (

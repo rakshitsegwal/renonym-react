@@ -61,7 +61,7 @@ export default function PaymentButton({ planId, label, className, user, onSucces
                         name:  loggedInUser?.name  || '',
                         email: loggedInUser?.email || '',
                     },
-                    theme: { color: '#6d28d9' },
+                    theme: { color: '#E8C994' },
 
                     handler: async (response) => {
                         try {

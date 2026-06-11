@@ -380,7 +380,9 @@ class ResumeBuilder extends React.Component {
         }
         this.clientId = clientId;
 
-        // Restore auth session if token exists
+        // Restore auth session if token exists, then refresh from the server —
+        // the cached snapshot goes stale after an upgrade (plan would still
+        // read 'free' and wrongly blur/block a paying user).
         const savedToken = localStorage.getItem('rn-auth-token');
         const savedUser  = localStorage.getItem('rn-auth-user');
         if (savedToken && savedUser) {
@@ -388,7 +390,26 @@ class ResumeBuilder extends React.Component {
                 this.authToken   = savedToken;
                 this.currentUser = JSON.parse(savedUser);
             } catch(e) { /* ignore corrupt */ }
+            this._refreshUser();
         }
+    }
+
+    async _refreshUser() {
+        try {
+            const res = await this.apiFetch(`${RAILWAY_URL}/auth/me`, { method: 'GET' });
+            if (res.status === 401) {   // expired token — sign out cleanly
+                localStorage.removeItem('rn-auth-token');
+                localStorage.removeItem('rn-auth-user');
+                this.authToken = ''; this.currentUser = null;
+                return;
+            }
+            if (!res.ok) return;
+            const u = await res.json();
+            if (!u || !u.id) return;
+            const merged = { id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl, plan: u.plan || 'free' };
+            localStorage.setItem('rn-auth-user', JSON.stringify(merged));
+            this.currentUser = merged;
+        } catch (e) { /* offline — keep the cached snapshot */ }
     }
 
     componentDidUpdate() { this._renderedCallback(); }
@@ -3523,7 +3544,7 @@ class ResumeBuilder extends React.Component {
                                     </React.Fragment>))}
                                     {hasAiCss ? (<React.Fragment>
                                         <button className="rp-tpl-quick-btn" data-tpl="ai-generated" onClick={(e) => this.handleQuickTemplate(e)}>
-                                            <div className="rp-tpl-quick-btn__swatch" style={{'background':'linear-gradient(135deg, #6d28d9, #9333ea)'}}></div>
+                                            <div className="rp-tpl-quick-btn__swatch" style={{'background':'linear-gradient(135deg, #E8C994, #D4AF73)'}}></div>
                                             <span className="rp-tpl-quick-btn__label">AI Style</span>
                                         </button>
                                     </React.Fragment>) : null}

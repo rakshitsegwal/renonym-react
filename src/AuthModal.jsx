@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import PaymentButton from './PaymentButton.jsx';
 
 const RAILWAY_URL = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV
     ? '/api'
@@ -112,7 +111,7 @@ export function AuthModal({ onAuth, onClose, reason }) {
                     {reason === 'export'
                         ? 'Create a free account to download your resume PDF.'
                         : reason === 'payment'
-                        ? 'Create a free account first, then complete your upgrade to Pro.'
+                        ? 'Create a free account first, then complete your purchase.'
                         : 'Sign in to save your work and access all features.'}
                 </p>
 

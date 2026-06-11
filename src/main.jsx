@@ -57,13 +57,25 @@ function App() {
     const viewRef = useRef(view);
     viewRef.current = view;
 
-    // Restore auth session
+    // Restore auth session, then refresh it from the server — the cached user
+    // goes stale after a purchase (plan) or when signing in on another device.
     useEffect(() => {
         const token = localStorage.getItem('rn-auth-token');
         const user  = localStorage.getItem('rn-auth-user');
-        if (token && user) {
-            try { setCurrentUser(JSON.parse(user)); } catch {}
-        }
+        if (!token || !user) return;
+        try { setCurrentUser(JSON.parse(user)); } catch {}
+        import('./coach/api.js').then(({ authMe }) => authMe()).then(fresh => {
+            if (!fresh || !fresh.id) return;
+            const merged = { id: fresh.id, email: fresh.email, name: fresh.name, avatarUrl: fresh.avatarUrl, plan: fresh.plan || 'free' };
+            localStorage.setItem('rn-auth-user', JSON.stringify(merged));
+            setCurrentUser(merged);
+        }).catch(e => {
+            if (e && e.status === 401) {   // token expired — sign out cleanly
+                localStorage.removeItem('rn-auth-token');
+                localStorage.removeItem('rn-auth-user');
+                setCurrentUser(null);
+            }
+        });
     }, []);
 
     // Browser Back/Forward + section-anchor handling

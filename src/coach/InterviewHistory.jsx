@@ -39,6 +39,7 @@ export default function InterviewHistory({ nav }) {
                 <a className="navitem" onClick={() => nav('/builder')}><FileText className="ic" size={18} />Résumé Studio</a>
                 <a className="navitem on"><History className="ic" size={18} />Reports</a>
                 <div style={{ marginTop: 'auto' }}>
+                    {access !== null && (
                     <div className="card-gold" style={{ padding: 16, borderRadius: 14, marginBottom: 12 }}>
                         <div style={{ marginBottom: 8 }}><Badge variant="gold" dot>Coach</Badge></div>
                         {access?.unlimited ? (
@@ -58,7 +59,8 @@ export default function InterviewHistory({ nav }) {
                             </>
                         )}
                     </div>
-                    <div className="navitem"><div className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || 'M')[0]}</div>{user?.name || 'Your account'}</div>
+                    )}
+                    <div className="navitem"><div className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || user?.email || 'U')[0].toUpperCase()}</div>{user?.name || 'Your account'}</div>
                 </div>
             </aside>
 

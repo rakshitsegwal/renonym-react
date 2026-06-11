@@ -54,6 +54,7 @@ async function req(path, { method = 'GET', body, timeoutMs = 90000 } = {}) {
 
 // ── Endpoints ────────────────────────────────────────────────────────────────
 export const coachMe        = () => req('/coach/me');
+export const authMe         = () => req('/auth/me');   // fresh plan from the server — localStorage goes stale after purchases
 export const createSession  = (cfg) => req('/coach/sessions', { method: 'POST', body: cfg, timeoutMs: 150000 });
 
 // ── Audio interview: AI interviewer voice + spoken-answer transcription ──────

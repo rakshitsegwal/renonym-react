@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Lock, ShieldCheck, Check } from 'lucide-react';
 import { Badge } from './primitives.jsx';
 import { AuthModal } from '../AuthModal.jsx';
-import { payAndVerify, createSession, coachMe, loadDraft, clearDraft, getUser } from './api.js';
+import { payAndVerify, createSession, coachMe, authMe, loadDraft, clearDraft, getUser } from './api.js';
 
 // S6 — Coach Checkout. Order summary reflects the user's real interview draft.
 // Already-entitled users (Unlimited / pass) are never shown the pay button —
@@ -76,6 +76,11 @@ export default function CoachCheckout({ nav }) {
             let me = null;
             try { me = await coachMe(); } catch (e) { console.error('[coach] coachMe failed:', e); }
             console.log('[coach] entitlement after pay:', me);
+            // refresh the cached user so Dashboard/topbar show the new plan
+            // without a re-login (fire-and-forget)
+            authMe().then(u => {
+                if (u && u.id) localStorage.setItem('rn-auth-user', JSON.stringify({ id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl, plan: u.plan || 'free' }));
+            }).catch(() => {});
             if (!me || !me.has) {
                 setError("Your payment was received, but access hasn't activated yet. Don't pay again — wait a few seconds, reload this page, and tap \"Set up interview\".");
                 setBusy(false); setPaid(true);

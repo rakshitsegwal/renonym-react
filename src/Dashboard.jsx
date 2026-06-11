@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Mic, FileText, Target, History, Plus, Sparkles, ArrowRight } from 'lucide-react';
 import { Badge } from './coach/primitives.jsx';
-import { listSessions } from './coach/api.js';
+import { listSessions, coachMe } from './coach/api.js';
 import './coach.css';
 
 // The locally saved résumé draft — only counts if it has meaningful content.
@@ -17,13 +17,20 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
     const isPro = user?.plan === 'pro';
     const [draft] = useState(loadResumeDraft);
     const [sessions, setSessions] = useState(null);
+    const [coach, setCoach] = useState(null);   // { unlimited, passes, has }
 
     useEffect(() => {
         if (!localStorage.getItem('rn-auth-token')) return;
         let alive = true;
         listSessions().then(r => { if (alive) setSessions(r.sessions || []); }).catch(() => {});
+        coachMe().then(me => { if (alive) setCoach(me); }).catch(() => {});
         return () => { alive = false; };
     }, []);
+
+    // '—' until the entitlement check lands: never flash 'Free' at a paying user
+    const planLabel = coach?.unlimited ? '★ Coach Unlimited' : isPro ? '★ Pro'
+        : coach === null && localStorage.getItem('rn-auth-token') ? '—'
+        : coach?.passes > 0 ? `${coach.passes} session pass${coach.passes > 1 ? 'es' : ''}` : 'Free plan';
 
     const scored = (sessions || []).filter(s => s.overall_score != null);
     const avgScore = scored.length ? Math.round(scored.reduce((a, s) => a + s.overall_score, 0) / scored.length) : null;
@@ -44,7 +51,7 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                             <div className="av" style={{ width: 28, height: 28, fontSize: 12, background: '#3a3320', color: 'var(--gold)' }}>{(user?.name || user?.email || 'U')[0].toUpperCase()}</div>
                             <div>
                                 <div className="sm" style={{ color: 'var(--text)' }}>{first}</div>
-                                <div className="xs">{isPro ? '★ Pro' : 'Free plan'}</div>
+                                <div className="xs" style={coach?.unlimited || isPro ? { color: 'var(--gold)' } : undefined}>{planLabel}</div>
                             </div>
                         </div>
                         <button onClick={onLogout} title="Log out" className="sm faint" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>↩</button>
@@ -77,7 +84,7 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                         {[['Résumés', draft ? '1' : '0'],
                           ['Avg interview score', avgScore != null ? String(avgScore) : '—'],
                           ['Interviews', sessions ? String(sessions.length) : '—'],
-                          ['Plan', isPro ? 'Pro' : 'Free']].map(([l, v]) => (
+                          ['Plan', coach?.unlimited ? 'Unlimited' : isPro ? 'Pro' : 'Free']].map(([l, v]) => (
                             <div key={l} className="card" style={{ padding: '20px 24px' }}><div className="label">{l}</div><div className="h2" style={{ fontSize: 30, marginTop: 8 }}>{v}</div></div>
                         ))}
                     </div>
