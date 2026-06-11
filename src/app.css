@@ -1061,6 +1061,7 @@ html, body, #root {
    ═══════════════════════════════════════════════════════════════════════════ */
 .rb-resume {
     width: 794px;   /* A4 at 96dpi */
+    overflow-wrap: break-word;
     min-height: 1122px;
     height: auto;
     background: #ffffff;
@@ -5219,8 +5220,11 @@ html, body, #root {
    by having higher specificity via the :host selector.
    ══════════════════════════════════════════════════════════════ */
 
-/* Force the resume body to always be a 2-col grid */
-.rb-resume--ai-generated .rb-resume__body {
+/* Force the resume body to a 2-col grid — ONLY for the default two-col
+   structure. The other AI layouts (single/banner/asymmetric) carry a
+   --layout-* class and define their own structure; force-gridding them
+   scrambled 3 of the 4 AI layouts. */
+.rb-resume--ai-generated:not([class*="--layout-"]) .rb-resume__body {
     display: grid !important;
     grid-template-columns: 210px 1fr !important;
     overflow: visible !important;
@@ -5743,6 +5747,8 @@ html, body, #root {
 }
 .rb-resume--layout-banner .rb-resume__body--banner {
     padding: 0;
+    display: block !important;
+    grid-template-columns: unset !important;
 }
 .rb-resume--layout-banner .rb-resume__banner-cols {
     display: grid;
@@ -5816,6 +5822,53 @@ html, body, #root {
     padding: 24px 20px;
     display: flex;
     flex-direction: column;
+}
+
+/* ── AI tokens × non-two-col layouts ─────────────────────────────────────────
+   Placed AFTER the layout blocks so the cascade lets tokens win. Without
+   these, banner/asymmetric/single silently ignored most AI colors. */
+.rb-resume--ai-tokens .rb-resume__banner {
+    background: var(--rn-hbg, #032d60);
+}
+.rb-resume--ai-tokens .rb-resume__banner .rb-resume__name,
+.rb-resume--ai-tokens .rb-resume__banner .rb-resume__title-line,
+.rb-resume--ai-tokens .rb-resume__banner .rb-resume__contact-item {
+    color: var(--rn-htx, #ffffff);
+}
+.rb-resume--ai-tokens .rb-resume__banner-left {
+    background: var(--rn-sbg, #f2f3f5);
+}
+.rb-resume--ai-tokens .rb-resume__banner-left .rb-section-title {
+    color: var(--rn-stitle, var(--rn-accent, #0176d3));
+}
+.rb-resume--ai-tokens .rb-resume__banner-left .rb-summary {
+    color: var(--rn-stx, #374151);
+}
+.rb-resume--ai-tokens.rb-resume--layout-asymmetric .rb-resume__sidebar--accent {
+    background: var(--rn-sbg, #1d4ed8);
+}
+.rb-resume--ai-tokens.rb-resume--layout-asymmetric .rb-resume__sidebar--accent .rb-section-title {
+    color: var(--rn-stitle, rgba(255,255,255,0.92));
+}
+.rb-resume--ai-tokens.rb-resume--layout-asymmetric .rb-resume__sidebar--accent .rb-resume__contact-item,
+.rb-resume--ai-tokens.rb-resume--layout-asymmetric .rb-resume__sidebar--accent .rb-cert {
+    color: var(--rn-stx, rgba(255,255,255,0.85));
+}
+/* the brand rules hardcode white name/title/pills — once the sidebar bg is a
+   token (often light), those must be tokens too or text vanishes */
+.rb-resume--ai-tokens.rb-resume--layout-asymmetric .rb-resume__sidebar--accent .rb-resume__name {
+    color: var(--rn-stitle, var(--rn-stx, #111827));
+}
+.rb-resume--ai-tokens.rb-resume--layout-asymmetric .rb-resume__sidebar--accent .rb-resume__title-line {
+    color: var(--rn-stx, rgba(255,255,255,0.8));
+}
+.rb-resume--ai-tokens.rb-resume--layout-asymmetric .rb-resume__sidebar--accent .rb-skill-pill {
+    background: var(--rn-skillbg, rgba(255,255,255,0.15));
+    color: var(--rn-skilltx, #ffffff);
+    border: none;
+}
+.rb-resume--ai-tokens.rb-resume--layout-single .rb-section-title {
+    color: var(--rn-mtitle, var(--rn-accent, #0176d3));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

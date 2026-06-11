@@ -55,6 +55,44 @@ async function req(path, { method = 'GET', body, timeoutMs = 90000 } = {}) {
 // ── Endpoints ────────────────────────────────────────────────────────────────
 export const coachMe        = () => req('/coach/me');
 export const createSession  = (cfg) => req('/coach/sessions', { method: 'POST', body: cfg, timeoutMs: 150000 });
+
+// ── Audio interview: AI interviewer voice + spoken-answer transcription ──────
+// Both have client-side fallbacks (browser TTS / live SpeechRecognition), so a
+// failure here degrades gracefully instead of blocking the interview.
+export async function questionAudio(sessionId, questionId) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+        const res = await fetch(`${RAILWAY_URL}/coach/sessions/${sessionId}/question-audio`, {
+            method: 'POST', headers: headers(), signal: controller.signal,
+            body: JSON.stringify({ questionId }),
+        });
+        if (!res.ok) throw new CoachError(`Audio unavailable (${res.status})`, res.status);
+        return await res.blob();
+    } finally { clearTimeout(timer); }
+}
+
+export async function transcribeAudio(sessionId, blob) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90000);
+    try {
+        const t = getToken();
+        const res = await fetch(`${RAILWAY_URL}/coach/sessions/${sessionId}/transcribe`, {
+            method: 'POST', signal: controller.signal,
+            headers: {
+                'Content-Type': blob.type || 'application/octet-stream',
+                'x-client-id': clientId(),
+                ...(API_SECRET ? { 'x-api-secret': API_SECRET } : {}),
+                ...(t ? { Authorization: `Bearer ${t}` } : {}),
+            },
+            body: blob,
+        });
+        let data = null;
+        try { data = await res.json(); } catch {}
+        if (!res.ok) throw new CoachError((data && data.error) || `Transcription failed (${res.status})`, res.status);
+        return (data && data.text) || '';
+    } finally { clearTimeout(timer); }
+}
 export const listSessions   = () => req('/coach/sessions');
 export const getSession     = (id) => req(`/coach/sessions/${id}`);
 export const submitAnswer   = (id, questionId, text) => req(`/coach/sessions/${id}/answers`, { method: 'POST', body: { questionId, text } });

@@ -181,10 +181,10 @@ export default function InterviewSetup({ nav }) {
                         <div className="input-lbl" style={{ marginBottom: 14 }}>Interview mode</div>
                         <div className="grid gap-12" style={{ gridTemplateColumns: '1fr 1fr' }}>
                             <ModeCard on={mode === 'voice'} onClick={() => setMode('voice')}
-                                      icon={<VoiceOrb size={36} state="idle" />} title="Voice" desc="Speak your answers" />
+                                      icon={<VoiceOrb size={36} state="idle" />} title="Audio" desc="The AI interviewer speaks — you answer out loud" />
                             <ModeCard on={mode === 'text'} onClick={() => setMode('text')}
                                       icon={<div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', color: 'var(--blue)' }}><MessageSquare size={18} /></div>}
-                                      title="Text" desc="Type your answers" />
+                                      title="Text" desc="Read each question and type your answers" />
                         </div>
                     </div>
                 </div>
@@ -197,7 +197,7 @@ export default function InterviewSetup({ nav }) {
                             <div className="h4" style={{ marginBottom: 4 }}>{[title, company].filter(Boolean).join(' · ') || 'Your interview'}</div>
                             <div className="xs" style={{ marginBottom: 18 }}>{type} · {difficulty >= 80 ? 'Brutal' : difficulty >= 50 ? 'Realistic' : 'Warm-up'} · {length} questions</div>
                             <div className="col gap-12">
-                                <Row k="Mode" v={mode === 'voice' ? 'Voice' : 'Text'} />
+                                <Row k="Mode" v={mode === 'voice' ? 'Audio' : 'Text'} />
                                 <Row k="Est. length" v={estMin} />
                                 <Row k="Résumé" v={resume?.fullName ? resume.fullName : 'From the role'} />
                                 <Row k="Report" v="Full scored" />

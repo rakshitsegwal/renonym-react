@@ -89,13 +89,27 @@ const CDN = {
     pdfjs:       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
     mammoth:     'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'
 };
-function loadFromCDN(url) {
-    return new Promise(function(resolve, reject) {
-        if (document.querySelector('script[src="' + url + '"]')) { resolve(); return; }
+// `check` verifies the library global actually exists — a script tag left in
+// the DOM by a FAILED earlier load must not short-circuit a retry. Failed tags
+// are removed so retrying creates a fresh one; in-flight loads are deduped.
+const _cdnInflight = new Map();
+function loadFromCDN(url, check) {
+    if (check && check()) return Promise.resolve();
+    if (_cdnInflight.has(url)) return _cdnInflight.get(url);
+    const p = new Promise(function(resolve, reject) {
+        const existing = document.querySelector('script[src="' + url + '"]');
+        if (existing) {
+            if (!check || check()) { resolve(); return; }
+            existing.remove();   // poisoned tag from a failed load — start over
+        }
         var s = document.createElement('script');
-        s.src = url; s.onload = resolve; s.onerror = reject;
+        s.src = url;
+        s.onload  = function() { _cdnInflight.delete(url); if (!check || check()) resolve(); else reject(new Error('Library failed to initialise')); };
+        s.onerror = function() { _cdnInflight.delete(url); s.remove(); reject(new Error('CDN load failed')); };
         document.head.appendChild(s);
     });
+    _cdnInflight.set(url, p);
+    return p;
 }
 
 
@@ -379,17 +393,8 @@ class ResumeBuilder extends React.Component {
 
     componentDidUpdate() { this._renderedCallback(); }
     async _renderedCallback() {
-        if (!this.pdfLibInitialized) {
-            this.pdfLibInitialized = true;
-            try {
-                await Promise.all([
-                    loadFromCDN(CDN.html2canvas),
-                    loadFromCDN(CDN.jsPDF)
-                ]);
-            } catch (e) {
-                console.error('PDF library load failed', e);
-            }
-        }
+        // html2canvas/jsPDF are loaded lazily inside _clientPdfFallback — no
+        // point fetching ~550KB for every visitor who never needs the fallback.
         this._syncTextareas();
         this._saveDraft();
     }
@@ -444,7 +449,7 @@ class ResumeBuilder extends React.Component {
     get showTopbar() { return this.currentStep !== STEPS.CALORIE_CALC; }
 
     get isAiMode()   { return this.selectedMode === 'ai'; }
-    get hasAiCss()   { return !!this.aiGeneratedCss; }
+    get hasAiCss()   { return !!(this.aiGeneratedTokens || this.aiGeneratedCss); }   // token-based since the CSS→tokens migration
 
     // ── Gallery computed ──────────────────────────────────────────────────
     get galleryClass() {
@@ -919,7 +924,7 @@ class ResumeBuilder extends React.Component {
         const isImage = file.type.startsWith('image/');
 
         if (!allowedTypes.includes(file.type) && !file.name.endsWith('.docx')) {
-            this._setStatus('Please upload a PDF, DOCX, PNG, or JPG file.', 'error');
+            this._setStatus('Please upload a PNG, JPG, or PDF file as inspiration.', 'error');
             return;
         }
 
@@ -929,22 +934,80 @@ class ResumeBuilder extends React.Component {
         }
 
         try {
-            if (isImage || file.type === 'application/pdf') {
-                // Store as base64 for server-side vision analysis
-                const base64 = await this._readAsBase64(file);
-                this.inspirationBase64   = base64;
-                this.inspirationMimeType = file.type;
+            if (isImage) {
+                // Downscale so the vision payload is always under the server gate
+                // — big phone photos used to be silently dropped server-side.
+                const small = await this._imageToInspiration(file);
+                this.inspirationBase64   = small.base64;
+                this.inspirationMimeType = small.mime;
+                this.inspirationFileName = file.name;
+            } else if (file.type === 'application/pdf') {
+                // Vision can't read PDFs — rasterize page 1 to a PNG locally so
+                // the reference is actually analysed instead of silently ignored.
+                this._setStatus('Reading your PDF reference…', 'info');
+                const png = await this._pdfToInspiration(file);
+                this.inspirationBase64   = png.base64;
+                this.inspirationMimeType = png.mime;
                 this.inspirationFileName = file.name;
             } else {
-                // For DOCX — just store name, server will handle
-                this.inspirationFileName = file.name;
-                this.inspirationBase64   = '';
-                this.inspirationMimeType = '';
+                // DOCX has no visual signal to analyse — be honest about it.
+                this._setStatus('DOCX can\'t be used as visual inspiration — upload a PNG/JPG screenshot or a PDF instead.', 'error');
+                return;
             }
             this._setStatus('Inspiration file ready ✓', 'success');
         } catch (e) {
-            this._setStatus('Failed to read inspiration file.', 'error');
+            console.error('Inspiration read failed:', e);
+            this._setStatus('Could not read that file — try a PNG or JPG screenshot of the design instead.', 'error');
+        } finally {
+            if (event.target) event.target.value = '';
         }
+    }
+
+    // Downscale an image to ≤1600px JPEG so the base64 payload stays small and
+    // the server's vision step never silently skips it.
+    async _imageToInspiration(file) {
+        const dataUrl = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = () => reject(new Error('read failed'));
+            r.readAsDataURL(file);
+        });
+        const img = await new Promise((resolve, reject) => {
+            const i = new Image();
+            i.onload = () => resolve(i);
+            i.onerror = () => reject(new Error('decode failed'));
+            i.src = dataUrl;
+        });
+        const MAX = 1600;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        if (scale >= 1 && file.size < 2 * 1024 * 1024) {
+            return { base64: dataUrl.split(',')[1], mime: file.type };   // already small
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';                       // PNG transparency must not become black
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const out = canvas.toDataURL('image/jpeg', 0.85);
+        return { base64: out.split(',')[1], mime: 'image/jpeg' };
+    }
+
+    // Render page 1 of a PDF to a PNG data URL (pdf.js is already used for
+    // résumé parsing — same CDN library).
+    async _pdfToInspiration(file) {
+        await loadFromCDN(CDN.pdfjs, () => !!window.pdfjsLib);
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = null;   // workerless, same as resume parsing
+        const buf  = await file.arrayBuffer();
+        const pdf  = await window.pdfjsLib.getDocument({ data: buf }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.4 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        const out = canvas.toDataURL('image/png');
+        return { base64: out.split(',')[1], mime: 'image/png' };
     }
 
     handleRemoveInspiration() {
@@ -1265,7 +1328,11 @@ class ResumeBuilder extends React.Component {
             this.aiGeneratedCss    = '';
             this.templateStyle     = 'ai-generated';
 
-            this._setStatus('AI theme applied! 🎨', 'success');
+            if (result.fallback) {
+                this._setStatus('The AI couldn\'t build a custom theme this time — a clean default was applied. Try again in a moment.', 'info');
+            } else {
+                this._setStatus('AI theme applied! 🎨', 'success');
+            }
 
         } catch (e) {
             console.error('AI template generation failed:', e);
@@ -1646,7 +1713,14 @@ class ResumeBuilder extends React.Component {
         try {
             this._setStatus('Generating PDF…', 'info');
 
-            const resumeEl = this._root && this._root.querySelector('[data-id="resume-preview"]');
+            // The preview isn't mounted on every tab (e.g. Job Match) — hop to
+            // Design so export works from anywhere instead of silently no-oping.
+            let resumeEl = this._root && this._root.querySelector('[data-id="resume-preview"]');
+            if (!resumeEl) {
+                this.activeSection = SECTIONS.DESIGN;
+                await new Promise(r => setTimeout(r, 150));
+                resumeEl = this._root && this._root.querySelector('[data-id="resume-preview"]');
+            }
             if (!resumeEl) {
                 this._setStatus('Preview not found. Please wait for the page to load fully.', 'error');
                 return;
@@ -1659,36 +1733,110 @@ class ResumeBuilder extends React.Component {
             const css  = await this.getCssText();
             const html = resumeEl.outerHTML;
 
-            const response = await this.apiFetch(`${RAILWAY_URL}/generate-pdf`, {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json', 'x-client-id': this.clientId },
-                body:    JSON.stringify({ html, css })
-            });
+            // 120s budget: a cold Chromium launch + fonts + multi-page render can
+            // legitimately exceed the old 30s default, which aborted good exports.
+            let response = null;
+            try {
+                response = await this.apiFetch(`${RAILWAY_URL}/generate-pdf`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-client-id': this.clientId },
+                    body:    JSON.stringify({ html, css })
+                }, 120000);
+            } catch (netErr) {
+                // server unreachable / timed out → render locally (Pro-gated upstream)
+                console.warn('PDF server unreachable — rendering locally:', netErr);
+                await this._clientPdfFallback(resumeEl);
+                return;
+            }
 
-            if (await this._isGated(response)) return;   // login / Pro-required gate (defense in depth)
+            if (await this._isGated(response)) { this._setStatus('', 'info'); return; }
             if (response.status === 429) {
                 this._setStatus('PDF export limit reached. Please try later.', 'error');
                 return;
             }
+            if (response.status === 413) {
+                this._setStatus('Your résumé is too large to export — try a smaller photo or shorter sections.', 'error');
+                return;
+            }
+            if (!response.ok) {
+                console.warn('PDF server error', response.status, '— rendering locally');
+                await this._clientPdfFallback(resumeEl);
+                return;
+            }
 
-            if (!response.ok) throw new Error('PDF generation failed');
-
-            const blob     = await response.blob();
-            const url      = window.URL.createObjectURL(blob);
-            const a        = document.createElement('a');
-            const safeName = (this.formData.fullName || 'resume').replace(/[^\w\-]+/g, '_');
-            a.href         = url;
-            a.download     = `${safeName}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-
+            const blob = await response.blob();
+            // verify it's actually a PDF (%PDF magic) before handing it to the user
+            const head = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+            if (!(head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46)) {
+                console.warn('Response was not a PDF — rendering locally');
+                await this._clientPdfFallback(resumeEl);
+                return;
+            }
+            this._downloadBlob(blob);
             this._setStatus('PDF downloaded successfully.', 'success');
 
         } catch (e) {
             console.error(e);
             this._setStatus('Failed to generate PDF. Please try again.', 'error');
+        }
+    }
+
+    _downloadBlob(blob) {
+        const url      = window.URL.createObjectURL(blob);
+        const a        = document.createElement('a');
+        const safeName = (this.formData.fullName || 'resume').replace(/[^\w\-]+/g, '_');
+        a.href         = url;
+        a.download     = `${safeName}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    // Last line of defence: rasterize the live preview locally with
+    // html2canvas + jsPDF (CDN, lazy). Lower fidelity than the server render,
+    // but the user always walks away with a PDF. Only reachable by Pro users —
+    // handleExport gates free accounts before any download path runs.
+    async _clientPdfFallback(resumeEl) {
+        this._setStatus('Server busy — rendering your PDF locally…', 'info');
+        try {
+            await Promise.all([
+                loadFromCDN(CDN.html2canvas, () => !!window.html2canvas),
+                loadFromCDN(CDN.jsPDF,       () => !!(window.jspdf && window.jspdf.jsPDF)),
+            ]);
+            const canvas = await window.html2canvas(resumeEl, {
+                scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+                windowWidth: 1200,
+                // the preview sits inside a transform:scale() wrapper — html2canvas
+                // garbles scaled ancestors, so neutralize it in the cloned DOM
+                onclone: (doc) => {
+                    doc.querySelectorAll('.rp-preview__scale-wrap').forEach(w => { w.style.transform = 'none'; });
+                    const el = doc.querySelector('[data-id="resume-preview"]');
+                    if (el) el.style.filter = 'none';
+                },
+            });
+            const { jsPDF } = window.jspdf;
+            const pageW = 794, pageH = 1123;                      // A4 @ 96dpi
+            const imgH  = canvas.height * (pageW / canvas.width);
+            const pdf   = new jsPDF({ orientation: 'portrait', unit: 'px', format: [pageW, pageH], hotfixes: ['px_scaling'] });
+            const img   = canvas.toDataURL('image/jpeg', 0.95);
+            const isProUser = (this.currentUser && this.currentUser.plan) === 'pro';
+            let y = 0, page = 0;
+            while (y < imgH && page < 12) {                       // slice into A4 pages
+                if (page > 0) pdf.addPage([pageW, pageH], 'portrait');
+                pdf.addImage(img, 'JPEG', 0, -y, pageW, imgH);
+                if (!isProUser) {                                 // gating model: free output is watermarked
+                    pdf.setTextColor(190, 190, 190); pdf.setFontSize(46);
+                    pdf.text('Renonym — upgrade to remove', pageW / 2, pageH / 2, { align: 'center', angle: 30 });
+                }
+                y += pageH; page++;
+            }
+            const safeName = (this.formData.fullName || 'resume').replace(/[^\w\-]+/g, '_');
+            pdf.save(`${safeName}.pdf`);
+            this._setStatus('PDF downloaded (rendered locally).', 'success');
+        } catch (e) {
+            console.error('Local PDF fallback failed:', e);
+            this._setStatus('Failed to generate PDF. Check your connection and try again.', 'error');
         }
     }
 
@@ -2460,7 +2608,10 @@ class ResumeBuilder extends React.Component {
             showCreditGate,
             creditReason
         } = this;
-        const LayoutComponent = getLayout(aiGeneratedLayout || 'two-col');
+        // The AI layout only applies while the AI theme is selected — gallery
+        // templates always render on the two-col structure their CSS expects,
+        // and the AI layout survives a template round-trip.
+        const LayoutComponent = getLayout(this.templateStyle === 'ai-generated' ? (aiGeneratedLayout || 'two-col') : 'two-col');
         return (
             <div ref={r => this._root = r}>
 
@@ -2919,7 +3070,7 @@ class ResumeBuilder extends React.Component {
                                         <input
                                             type="file"
                                             id="rp-inspiration-file-input"
-                                            accept=".pdf,.docx,.png,.jpg,.jpeg"
+                                            accept=".pdf,.png,.jpg,.jpeg,.webp"
                                             onChange={(e) => this.handleInspirationUpload(e)}
                                             hidden
                                         />
