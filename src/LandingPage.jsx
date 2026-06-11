@@ -10,7 +10,19 @@ import './coach.css';
 export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, currentUser }) {
     const [showLogin, setShowLogin] = useState(false);
     const go = (p) => () => (onNavigate ? onNavigate(p) : onGetStarted());
-    const scrollTo = (id) => (e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); };
+    const scrollTo = (id) => (e) => {
+        e.preventDefault();
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        try { history.replaceState(null, '', '#' + id); } catch {}   // deep-linkable sections
+    };
+
+    // deep link: /#pricing etc. scrolls on first load
+    useEffect(() => {
+        const id = (window.location.hash || '').slice(1);
+        if (!id) return;
+        const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 120);
+        return () => clearTimeout(t);
+    }, []);
 
     return (
         <div className="rn-dark">

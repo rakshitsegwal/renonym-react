@@ -18,6 +18,7 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
     const [draft] = useState(loadResumeDraft);
     const [sessions, setSessions] = useState(null);
     const [coach, setCoach] = useState(null);   // { unlimited, passes, has }
+    const signedIn = !!localStorage.getItem('rn-auth-token');
 
     useEffect(() => {
         if (!localStorage.getItem('rn-auth-token')) return;
@@ -34,6 +35,20 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
 
     const scored = (sessions || []).filter(s => s.overall_score != null);
     const avgScore = scored.length ? Math.round(scored.reduce((a, s) => a + s.overall_score, 0) / scored.length) : null;
+
+    // the dashboard is a signed-in surface — never render a "Welcome back, there" shell
+    if (!signedIn) {
+        return (
+            <div className="rn-dark" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 20 }}>
+                <div>
+                    <span className="eyebrow">Dashboard</span>
+                    <h1 className="h1" style={{ margin: '12px 0 8px' }}>Sign in to see your dashboard.</h1>
+                    <p className="lead" style={{ marginBottom: 24, maxWidth: '44ch' }}>Your résumés, interview reports and application pipeline live here.</p>
+                    <button className="btn btn-gold btn-lg" onClick={() => { try { localStorage.setItem('rn-return-to', '/dashboard'); } catch {} (onNavigate ? onNavigate('/') : onOpenBuilder('gallery')); }}>Sign in</button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="rn-dark appshell">

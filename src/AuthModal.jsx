@@ -184,12 +184,12 @@ export function CreditGateModal({ reason, onClose, onUpgrade }) {
         pro_required: {
             icon: '⬇',
             title: 'Downloading is a Pro feature',
-            sub: 'Your free preview is watermarked and blurred. Upgrade to Pro to download a clean, full-resolution PDF — plus unlimited AI features.',
+            sub: 'Your free preview is watermarked and blurred. Go premium to download a clean, full-resolution PDF — plus unlimited AI features.',
         },
         limit_reached: {
             icon: '✦',
             title: "You've used today's free actions",
-            sub: 'Free accounts get a limited number of AI actions per day. Upgrade to Pro for unlimited AI styling, job-match analysis, reviews, and clean downloads.',
+            sub: 'Free accounts get a limited number of AI actions per day. Go premium for unlimited AI styling, job-match analysis, reviews, and clean downloads.',
         },
     };
     const c = COPY[reason] || COPY.limit_reached;
@@ -202,8 +202,8 @@ export function CreditGateModal({ reason, onClose, onUpgrade }) {
                 <p className="rn-auth-modal__sub">{c.sub}</p>
                 <div className="rn-credit-options">
                     <button className="rn-credit-option rn-credit-option--pro" onClick={onUpgrade}>
-                        <span className="rn-credit-option__label">Upgrade to Pro</span>
-                        <span className="rn-credit-option__desc">Unlimited AI + clean, watermark-free downloads</span>
+                        <span className="rn-credit-option__label">Get Coach Unlimited · ₹1,599/mo</span>
+                        <span className="rn-credit-option__desc">Unlimited interviews + unlimited AI + clean, watermark-free downloads</span>
                     </button>
                     <button className="rn-auth-back" onClick={onClose}>Maybe later</button>
                 </div>

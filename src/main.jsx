@@ -71,7 +71,7 @@ function App() {
         try { setCurrentUser(JSON.parse(user)); } catch {}
         import('./coach/api.js').then(({ authMe }) => authMe()).then(fresh => {
             if (!fresh || !fresh.id) return;
-            const merged = { id: fresh.id, email: fresh.email, name: fresh.name, avatarUrl: fresh.avatarUrl, plan: fresh.plan || 'free' };
+            const merged = { id: fresh.id, email: fresh.email, name: fresh.name, avatarUrl: fresh.avatarUrl, plan: fresh.plan || 'free', coach: fresh.coach || null };
             localStorage.setItem('rn-auth-user', JSON.stringify(merged));
             setCurrentUser(merged);
         }).catch(e => {

@@ -30,7 +30,7 @@ export default function CoachCheckout({ nav }) {
     // A 401 means the stored session is stale — force re-auth instead of letting
     // an entitled-but-expired user pay a second time.
     useEffect(() => {
-        if (!getUser()) return;
+        if (!getUser()) { setShowAuth(true); return; }   // checkout is a signed-in surface
         let alive = true;
         coachMe()
             .then(me => { if (alive && me && me.has) { setAlready(true); setPaid(true); } })

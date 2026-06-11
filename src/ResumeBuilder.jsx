@@ -411,7 +411,7 @@ class ResumeBuilder extends React.Component {
             if (!res.ok) return;
             const u = await res.json();
             if (!u || !u.id) return;
-            const merged = { id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl, plan: u.plan || 'free' };
+            const merged = { id: u.id, email: u.email, name: u.name, avatarUrl: u.avatarUrl, plan: u.plan || 'free', coach: u.coach || null };
             localStorage.setItem('rn-auth-user', JSON.stringify(merged));
             this.currentUser = merged;
         } catch (e) { /* offline — keep the cached snapshot */ }
@@ -2397,7 +2397,7 @@ class ResumeBuilder extends React.Component {
 
     // ── Premium gating helpers ──────────────────────────────────────────────
     // True for Pro accounts only. Free + anonymous users get the gated experience.
-    get isPro() { return this.currentUser?.plan === 'pro'; }
+    get isPro() { return this.currentUser?.plan === 'pro' || !!this.currentUser?.coach?.unlimited; }   // Coach Unlimited is the paid tier actually sold
 
     // Call before any premium action. Returns false (and shows the auth modal)
     // when the user isn't signed in — the backend requires login for free too.
@@ -2710,7 +2710,7 @@ class ResumeBuilder extends React.Component {
                         <span className="rp-topbar__page-title">Choose a Template</span>
                     </div>
                     <div className="rp-topbar__actions">
-                        <span className="rp-topbar__step-pill">10 Templates</span>
+                        <span className="rp-topbar__step-pill">{this.templateGallery.length} Templates</span>
                     </div>
                 </React.Fragment>) : null}
 
@@ -2833,7 +2833,7 @@ class ResumeBuilder extends React.Component {
                             Click a template to preview it — then hit "Use this template" to continue.
                         </p>
                     </div>
-                    <span className="rp-gallery__count">10 templates</span>
+                    <span className="rp-gallery__count">{this.templateGallery.length} templates</span>
                 </div>
 
                 
