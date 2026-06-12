@@ -3,7 +3,7 @@ import { Mic, Target, ExternalLink, Archive, Check, Trash2, Pencil } from 'lucid
 import { Badge } from '../coach/primitives.jsx';
 import { saveDraft } from '../coach/api.js';
 import { JobFormModal } from './Tracker.jsx';
-import { getJob, updateJob, archiveJob, addEvent, updateEvent, deleteEvent, getUser, STAGES, EVENT_LABELS, fmtDue, fmtSalary } from './api.js';
+import { getJob, updateJob, archiveJob, addEvent, updateEvent, deleteEvent, getUser, STAGES, EVENT_LABELS, fmtDue, fmtSalary, safeExternalUrl } from './api.js';
 import Celebrate from './Celebrate.jsx';
 
 // One job's CRM record: stage, facts, next action, and the full timeline
@@ -126,7 +126,7 @@ export default function JobDetail({ nav, id }) {
                         </button>
                         <div className="row gap-8">
                             <button className="btn btn-outline btn-sm fill" onClick={() => setShowEdit(true)}><Pencil size={13} />Edit job</button>
-                            {job.url && <a className="btn btn-outline btn-sm" href={job.url} target="_blank" rel="noreferrer" title="Open posting"><ExternalLink size={13} /></a>}
+                            {safeExternalUrl(job.url) && <a className="btn btn-outline btn-sm" href={safeExternalUrl(job.url)} target="_blank" rel="noopener noreferrer" title="Open posting"><ExternalLink size={13} /></a>}
                             {!job.archived && <button className="btn btn-outline btn-sm" title="Archive" onClick={doArchive}><Archive size={13} /></button>}
                         </div>
                         {!hasJd && <span className="xs" style={{ textAlign: 'right' }}>Add the JD to unlock practice &amp; tailoring</span>}

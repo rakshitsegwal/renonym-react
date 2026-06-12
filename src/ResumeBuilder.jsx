@@ -1053,7 +1053,9 @@ class ResumeBuilder extends React.Component {
         await loadFromCDN(CDN.pdfjs, () => !!window.pdfjsLib);
         window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         const buf  = await file.arrayBuffer();
-        const pdf  = await window.pdfjsLib.getDocument({ data: buf }).promise;
+        // isEvalSupported:false mitigates CVE-2024-4367 (arbitrary JS via a crafted
+        // font) on this pinned pdf.js; we only read text, so eval is never needed.
+        const pdf  = await window.pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise;
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 1.4 });
         const canvas = document.createElement('canvas');
@@ -1544,7 +1546,7 @@ class ResumeBuilder extends React.Component {
         }
 
         const arrayBuffer = await this._readAsArrayBuffer(file);
-        const pdf         = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdf         = await window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;   // CVE-2024-4367 mitigation
         let   fullText    = '';
 
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -2395,6 +2397,7 @@ class ResumeBuilder extends React.Component {
 
     async handleAnalyzeFood() {
         if (!this.foodImageBase64) { this._setStatus('Upload a photo first.', 'error'); return; }
+        if (!this._requireLogin('feature')) return;   // vision is gated server-side: login + 1 credit
         this.isAnalyzingFood = true;
         this.foodResult = null;
         this.foodError  = '';
@@ -2405,6 +2408,8 @@ class ResumeBuilder extends React.Component {
                 body: JSON.stringify({ imageBase64: this.foodImageBase64, mimeType: this.foodImageMimeType })
             }, 45000);
             if (r.status === 429) { this.foodError = 'Too many requests. Please wait a minute and try again.'; return; }
+            if (r.status === 401) { this.foodError = 'Please sign in to analyse a photo.'; return; }
+            if (r.status === 402) { this.foodError = 'You’re out of AI credits — top up to keep analysing.'; return; }
             if (!r.ok) throw new Error('failed');
             this.foodResult = await r.json();
         } catch (e) {

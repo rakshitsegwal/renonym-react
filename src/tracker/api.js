@@ -93,3 +93,17 @@ export function fmtSalary(j) {
     if (j.salary_min && j.salary_max) return `${cur} ${f(j.salary_min)}–${f(j.salary_max)}`;
     return `${cur} ${f(j.salary_min || j.salary_max)}`;
 }
+
+// Only ever put http(s) URLs into an href — a stored "javascript:" / "data:"
+// link would execute in the owner's session when clicked. Returns null if unsafe.
+export function safeExternalUrl(raw) {
+    if (!raw) return null;
+    let v = String(raw).trim();
+    if (!v) return null;
+    if (!/^https?:\/\//i.test(v)) {
+        if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return null;   // any other scheme (javascript:, data:, …) → reject
+        v = 'https://' + v;                                 // bare "company.com/jobs" → assume https
+    }
+    try { const u = new URL(v); return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null; }
+    catch (_) { return null; }
+}
