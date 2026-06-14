@@ -204,7 +204,7 @@ function App() {
     }
 
     if (view === 'coach-landing') {
-        return <CoachLanding nav={navPath} currentUser={currentUser} />;
+        return <CoachLanding nav={navPath} currentUser={currentUser} onLogout={handleLogout} />;
     }
     if (view === 'coach-setup') {
         return <InterviewSetup nav={navPath} />;
@@ -262,6 +262,7 @@ function App() {
             onNavigate={navPath}
             onNavigateLegal={goToLegal}
             onLogin={handleLogin}
+            onLogout={handleLogout}
             currentUser={currentUser}
         />
     );

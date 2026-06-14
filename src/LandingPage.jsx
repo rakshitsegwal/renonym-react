@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AuthModal } from './AuthModal.jsx';
+import { AuthModal, UserPill } from './AuthModal.jsx';
 import { FileText, Mic, BarChart3, MessageSquare, BarChart2, Check } from 'lucide-react';
 import { VoiceOrb, Waveform, ScoreRing, Meter, Badge } from './coach/primitives.jsx';
 import { foundingStatus } from './coach/api.js';
@@ -8,7 +8,7 @@ import './coach.css';
 // S1 — Landing (dark/gold reskin, recreated from designs/screens/01-landing-desktop.html).
 // Coach-led hero; the résumé builder is the free on-ramp. Existing résumé entry
 // points (onGetStarted/onStartAi/onOpenJobMatch) are preserved.
-export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, currentUser }) {
+export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, onLogout, currentUser }) {
     const [showLogin, setShowLogin] = useState(false);
     const [founding, setFounding] = useState(null);   // { total, claimed, remaining, open }
     const go = (p) => () => (onNavigate ? onNavigate(p) : onGetStarted());
@@ -47,7 +47,10 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                     </div>
                     <div className="row ac gap-16">
                         {currentUser
-                            ? <button className="btn btn-ghost btn-sm" onClick={onGoToDashboard}>Dashboard →</button>
+                            ? <div className="row ac gap-12">
+                                <button className="btn btn-ghost btn-sm" onClick={onGoToDashboard}>Dashboard →</button>
+                                <UserPill user={currentUser} onLogout={onLogout} />
+                              </div>
                             : <>
                                 <button className="sm t2" style={{ fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => (onLogin ? setShowLogin(true) : onGetStarted())}>Sign in</button>
                                 <button className="btn btn-gold" onClick={onGetStarted}>Get started</button>

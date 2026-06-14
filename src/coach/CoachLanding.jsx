@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { VoiceOrb, Waveform, Badge } from './primitives.jsx';
-import { AuthModal } from '../AuthModal.jsx';
+import { AuthModal, UserPill } from '../AuthModal.jsx';
 
 // S4 — Interview Coach landing (recreated from designs/screens/04-coach-landing.html)
 // v14 ladder pricing: Season Pass ₹1,499/90d (hero) · Single Interview ₹499.
-export default function CoachLanding({ nav, currentUser }) {
+export default function CoachLanding({ nav, currentUser, onLogout }) {
     const go = (p) => (e) => { e?.preventDefault?.(); nav(p); };
     const [showAuth, setShowAuth] = useState(false);
 
@@ -36,10 +36,7 @@ export default function CoachLanding({ nav, currentUser }) {
                     </div>
                     <div className="row ac gap-16">
                         {currentUser
-                            ? <a href="/coach/reports" onClick={go('/coach/reports')} className="row ac gap-8" title={currentUser.email} style={{ fontWeight: 500 }}>
-                                <span className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(currentUser.name || currentUser.email || 'U')[0].toUpperCase()}</span>
-                                <span className="sm t2">{(currentUser.name || '').split(' ')[0] || 'My interviews'}</span>
-                              </a>
+                            ? <UserPill user={currentUser} onLogout={onLogout} />
                             : <a href="#" onClick={(e) => { e.preventDefault(); setShowAuth(true); }} className="sm t2" style={{ fontWeight: 500 }}>Sign in</a>}
                         <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold">Start an interview</a>
                     </div>
