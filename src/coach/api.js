@@ -56,6 +56,10 @@ async function req(path, { method = 'GET', body, timeoutMs = 90000 } = {}) {
 export const coachMe        = () => req('/coach/me');
 export const authMe         = () => req('/auth/me');   // fresh plan from the server — localStorage goes stale after purchases
 export const claimReferral   = (code) => req('/referral/claim', { method: 'POST', body: { code } });
+// Founding User Beta Program
+export const foundingStatus  = () => req('/founding/status');                                  // public counter
+export const redeemFounding  = (code) => req('/founding/redeem', { method: 'POST', body: { code } });
+export const adminFounding   = () => req('/admin/founding');                                   // email-allowlist gated
 export const createSession  = (cfg) => req('/coach/sessions', { method: 'POST', body: cfg, timeoutMs: 150000 });
 
 // ── Audio interview: AI interviewer voice + spoken-answer transcription ──────

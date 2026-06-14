@@ -14,6 +14,7 @@ import VoiceInterview from './coach/VoiceInterview.jsx';
 import TextInterview from './coach/TextInterview.jsx';
 import Tracker from './tracker/Tracker.jsx';
 import JobDetail from './tracker/JobDetail.jsx';
+import AdminFounding from './AdminFounding.jsx';
 import './app.css';
 import './coach.css';
 
@@ -45,6 +46,7 @@ function parseLocation() {
     const path = window.location.pathname;
     if (LEGAL_PATHS[path]) return { view: LEGAL_PATHS[path], params: {} };
     if (path === '/dashboard') return { view: 'dashboard', params: {} };
+    if (path === '/admin')     return { view: 'admin',     params: {} };
     if (path === '/builder')   return { view: 'builder',   params: { mode: new URLSearchParams(window.location.search).get('mode') || undefined } };
     if (path === '/tracker')   return { view: 'tracker',   params: {} };
     const jm = path.match(/^\/tracker\/job\/([^/]+)$/);
@@ -91,7 +93,8 @@ function App() {
             const merged = { id: fresh.id, email: fresh.email, name: fresh.name, avatarUrl: fresh.avatarUrl, plan: fresh.plan || 'free', coach: fresh.coach || null,
                 credits: fresh.credits || 0, passType: fresh.passType || null, passExpiresAt: fresh.passExpiresAt || null,
                 passInterviewsRemaining: fresh.passInterviewsRemaining || 0, interviewCredits: fresh.interviewCredits || 0,
-                freeInterviewUsed: !!fresh.freeInterviewUsed, referralCode: fresh.referralCode || null };
+                freeInterviewUsed: !!fresh.freeInterviewUsed, referralCode: fresh.referralCode || null,
+                emailVerified: !!fresh.emailVerified, founding: fresh.founding || null };
             localStorage.setItem('rn-auth-user', JSON.stringify(merged));
             setCurrentUser(merged);
         }).catch(e => {
@@ -228,6 +231,9 @@ function App() {
     }
     if (view === 'tracker-job') {
         return <JobDetail nav={navPath} id={params.id} />;
+    }
+    if (view === 'admin') {
+        return <AdminFounding nav={navPath} currentUser={currentUser} />;
     }
 
     if (view === 'builder') {

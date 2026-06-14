@@ -9,6 +9,9 @@ import './coach.css';
 function loadResumeDraft() {
     try { const d = JSON.parse(localStorage.getItem('rb-draft') || 'null'); return d && d.fullName ? d : null; } catch { return null; }
 }
+function fmtDate(d) {
+    try { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch { return ''; }
+}
 
 // Dashboard — dark/gold reskin (per designs/screens/03). Keeps all existing
 // résumé actions (onOpenBuilder modes) and adds Interview Coach entry points.
@@ -98,6 +101,30 @@ export default function Dashboard({ user, onOpenBuilder, onLogout, onNavigate })
                 </div>
 
                 <div style={{ padding: 32, maxWidth: 1100 }}>
+                    {/* Founding User Beta — badge, trial countdown, discount status */}
+                    {user?.founding && (
+                        <div className="card-gold rel" style={{ borderColor: 'var(--gold-line)', borderRadius: 'var(--r-xl)', padding: '20px 24px', marginBottom: 28 }}>
+                            <div className="row ac jsb wrap-f gap-16">
+                                <div>
+                                    <Badge variant="gold" dot style={{ marginBottom: 8 }}>★ Founding User #{user.founding.number}</Badge>
+                                    <div className="sm" style={{ color: 'var(--text)' }}>
+                                        {user.founding.trialActive
+                                            ? <><b style={{ color: 'var(--gold)' }}>{user.founding.trialDaysRemaining} day{user.founding.trialDaysRemaining === 1 ? '' : 's'}</b> of full premium left · trial ends {fmtDate(user.founding.trialEndsAt)}</>
+                                            : <>Your 7-day premium trial has ended.</>}
+                                    </div>
+                                    <div className="xs" style={{ marginTop: 4 }}>
+                                        {user.founding.discountAvailable
+                                            ? '🎁 30% off your first purchase is still available.'
+                                            : '✓ Founding 30% discount used.'}
+                                    </div>
+                                </div>
+                                {!user.founding.trialActive && user.founding.discountAvailable && (
+                                    <button className="btn btn-gold btn-sm none" onClick={() => setShowLadder(true)}>Choose a plan — 30% off</button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Up next — Coach prep (gold) */}
                     <div className="card-gold rel" style={{ borderColor: 'var(--gold-line)', borderRadius: 'var(--r-xl)', padding: 32, marginBottom: 28, overflow: 'hidden' }}>
                         <div className="glow-gold" style={{ width: 320, height: 320, right: -80, top: -120 }} />
