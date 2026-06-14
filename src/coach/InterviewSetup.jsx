@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Upload, MessageSquare, FileText, Check } from 'lucide-react';
 import { VoiceOrb, Badge } from './primitives.jsx';
 import { saveDraft, loadDraft, clearDraft, coachMe, createSession, parseResumeFile, getUser, getToken } from './api.js';
+import { useIsMobile } from '../useIsMobile.js';
 
 function loadSavedResume() {
     try { const d = JSON.parse(localStorage.getItem('rb-draft') || '{}'); return d && d.fullName ? d : null; } catch { return null; }
@@ -13,6 +14,7 @@ const TYPES   = ['Behavioral', 'Technical', 'Mixed', 'System design', 'Case'];
 const LENGTHS = [{ q: 5, label: '5 Q' }, { q: 6, label: '6 Q · ~15 min' }, { q: 10, label: '10 Q' }];
 
 export default function InterviewSetup({ nav }) {
+    const isMobile = useIsMobile();
     const [draft] = useState(loadDraft);   // sessionStorage — survives checkout round-trip
     const [company, setCompany] = useState(draft?.company || '');
     const [title, setTitle]     = useState(draft?.jobTitle || '');
@@ -100,34 +102,34 @@ export default function InterviewSetup({ nav }) {
     return (
         <div className="rn-dark" style={{ minHeight: '100vh' }}>
             {/* top bar */}
-            <div className="row ac jsb" style={{ height: 68, borderBottom: '1px solid var(--line)', padding: '0 36px' }}>
+            <div className="row ac jsb" style={{ height: 68, borderBottom: '1px solid var(--line)', padding: isMobile ? '0 16px' : '0 36px' }}>
                 <div className="row ac gap-16">
                     <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} onClick={() => nav('/coach')}>←</button>
                     <a href="/" className="brand" onClick={(e) => { e.preventDefault(); nav('/'); }} style={{ cursor: 'pointer' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></a>
                 </div>
                 <div className="row ac gap-14">
-                    <a href="/dashboard" className="sm muted none" onClick={(e) => { e.preventDefault(); nav('/dashboard'); }}>Dashboard</a>
-                    <a href="/builder" className="sm muted none" onClick={(e) => { e.preventDefault(); nav('/builder'); }}>Résumé Studio</a>
+                    {!isMobile && <a href="/dashboard" className="sm muted none" onClick={(e) => { e.preventDefault(); nav('/dashboard'); }}>Dashboard</a>}
+                    {!isMobile && <a href="/builder" className="sm muted none" onClick={(e) => { e.preventDefault(); nav('/builder'); }}>Résumé Studio</a>}
                     {user && (
                         <span className="row ac gap-8" title={user.email}>
                             <span className="av" style={{ width: 26, height: 26, fontSize: 11, background: '#3a3320', color: 'var(--gold)' }}>{(user.name || user.email || 'U')[0].toUpperCase()}</span>
-                            <span className="sm" style={{ color: 'var(--text-2)' }}>{(user.name || '').split(' ')[0] || 'You'}</span>
+                            {!isMobile && <span className="sm" style={{ color: 'var(--text-2)' }}>{(user.name || '').split(' ')[0] || 'You'}</span>}
                             {access?.unlimited && <Badge variant="gold">Unlimited</Badge>}
                         </span>
                     )}
-                    <a href="/" className="sm faint" onClick={saveAndExit}>Save &amp; exit</a>
+                    <a href="/" className="sm faint" onClick={saveAndExit}>{isMobile ? 'Exit' : 'Save & exit'}</a>
                 </div>
             </div>
 
-            <div className="grid rn-split" style={{ gridTemplateColumns: '1fr 392px', minHeight: 'calc(100vh - 68px)' }}>
+            <div className="grid rn-split" style={{ gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : '1fr 392px', minHeight: 'calc(100vh - 68px)' }}>
                 {/* FORM */}
-                <div style={{ padding: '48px 64px', maxWidth: 760 }}>
+                <div style={{ padding: isMobile ? '28px 18px' : '48px 64px', maxWidth: 760, minWidth: 0 }}>
                     {/* stepper */}
                     <div className="row ac gap-10" style={{ marginBottom: 40 }}>
                         <div className="row ac gap-10"><Step n="1" on label="Set up" /></div>
-                        <div style={{ width: 36, height: 1, background: 'var(--line-3)' }} />
+                        <div style={{ width: isMobile ? 14 : 36, height: 1, background: 'var(--line-3)' }} />
                         <Step n="2" label={access?.has ? 'Interview' : 'Checkout'} />
-                        <div style={{ width: 36, height: 1, background: 'var(--line-3)' }} />
+                        <div style={{ width: isMobile ? 14 : 36, height: 1, background: 'var(--line-3)' }} />
                         <Step n="3" label={access?.has ? 'Report' : 'Interview'} />
                     </div>
 
@@ -156,7 +158,7 @@ export default function InterviewSetup({ nav }) {
 
                     {/* role */}
                     <div style={{ marginBottom: 34 }}>
-                        <div className="grid gap-16" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                        <div className="grid gap-16" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             <div className="field"><label className="input-lbl">Company</label><input className="input" maxLength={255} placeholder="e.g. Infosys" value={company} onChange={(e) => setCompany(e.target.value)} /></div>
                             <div className="field"><label className="input-lbl">Job title</label><input className="input" maxLength={255} placeholder="e.g. Senior Salesforce Developer" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
                         </div>
@@ -179,19 +181,19 @@ export default function InterviewSetup({ nav }) {
 
                     {/* difficulty + length */}
                     <div style={{ marginBottom: 34 }}>
-                        <div className="row gap-32">
-                            <div style={{ flex: 1 }}>
+                        <div className="row gap-32 wrap-f">
+                            <div style={{ flex: 1, minWidth: isMobile ? '100%' : 0 }}>
                                 <div className="input-lbl" style={{ marginBottom: 14 }}>Difficulty</div>
-                                <div className="row gap-10">
+                                <div className="row gap-10 wrap-f">
                                     {[[35, 'Warm-up'], [66, 'Realistic'], [90, 'Brutal']].map(([v, l]) => (
                                         <button key={v} className={'chip' + (difficulty === v ? ' on' : '')} onClick={() => setDifficulty(v)}>{l}</button>
                                     ))}
                                 </div>
                                 <div className="meter" style={{ height: 6, marginTop: 12 }}><span style={{ width: difficulty + '%' }} /></div>
                             </div>
-                            <div style={{ flex: 1 }}>
+                            <div style={{ flex: 1, minWidth: isMobile ? '100%' : 0 }}>
                                 <div className="input-lbl" style={{ marginBottom: 14 }}>Length</div>
-                                <div className="row gap-10">
+                                <div className="row gap-10 wrap-f">
                                     {LENGTHS.map(l => (
                                         <button key={l.q} className={'chip' + (length === l.q ? ' on' : '')} onClick={() => setLength(l.q)}>{l.label}</button>
                                     ))}
@@ -203,7 +205,7 @@ export default function InterviewSetup({ nav }) {
                     {/* mode */}
                     <div style={{ marginBottom: 34 }}>
                         <div className="input-lbl" style={{ marginBottom: 14 }}>Interview mode</div>
-                        <div className="grid gap-12" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                        <div className="grid gap-12" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             <ModeCard on={mode === 'voice'} onClick={() => setMode('voice')}
                                       icon={<VoiceOrb size={36} state="idle" />} title="Audio"
                                       desc={access && !access.has ? 'Needs a pass or Single Interview (₹499) — your free interview is text' : 'The AI interviewer speaks — you answer out loud'} />

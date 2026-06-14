@@ -7165,3 +7165,15 @@ html, body, #root {
 @media (max-width: 380px) {
     .rn-auth-modal { padding: 28px 20px 24px; }
 }
+
+/* ── Mobile overflow safety net ───────────────────────────────────────────
+   Decorative glows and the odd wide element must never create a horizontal
+   scrollbar — on phones that zooms the whole page out and shrinks all text.
+   Clip stray overflow at the root and let big display headings wrap. The
+   tracker board's intentional horizontal scroll lives on an inner element,
+   so it is unaffected. */
+@media (max-width: 760px) {
+    html, body { overflow-x: hidden; max-width: 100%; }
+    .rn-dark .glow-gold { max-width: 92vw; }
+    .rn-dark .h1, .rn-dark .display, .rn-dark .h2, .rn-dark h1, .rn-dark h2 { overflow-wrap: break-word; }
+}

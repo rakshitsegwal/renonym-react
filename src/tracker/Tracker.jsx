@@ -4,10 +4,12 @@ import { Badge } from '../coach/primitives.jsx';
 import { saveDraft } from '../coach/api.js';
 import { listJobs, createJob, updateJob, updateEvent, addEvent, getJob, getAgenda, getInsights, getUser, getToken, STAGES, daysAgo, fmtDue } from './api.js';
 import Celebrate from './Celebrate.jsx';
+import { useIsMobile } from '../useIsMobile.js';
 
 // Application Tracker — the job-search CRM home. Not a spreadsheet: the screen
 // opens on TODAY (what needs doing), then momentum, then the pipeline board.
 export default function Tracker({ nav }) {
+    const isMobile = useIsMobile();
     const [jobs, setJobs] = useState(null);
     const [agenda, setAgenda] = useState(null);
     const [insights, setInsights] = useState(null);
@@ -108,14 +110,14 @@ export default function Tracker({ nav }) {
             </aside>
 
             <div className="fill" style={{ minWidth: 0 }}>
-                <div className="row jsb ac" style={{ height: 68, padding: '0 32px', borderBottom: '1px solid var(--line)' }}>
+                <div className="row jsb ac" style={{ height: isMobile ? 'auto' : 68, padding: isMobile ? '12px 16px' : '0 32px', borderBottom: '1px solid var(--line)', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 10 : 0 }}>
                     <div className="h4" style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 22 }}>Applications</div>
-                    <div className="row ac gap-14">
+                    <div className="row ac gap-10" style={{ flexWrap: isMobile ? 'wrap' : 'nowrap', width: isMobile ? '100%' : 'auto' }}>
                         <button className={'chip' + (showArchived ? ' on' : '')} onClick={() => { setShowArchived(v => !v); setJobs(null); }}>Archived</button>
-                        <div className="row ac" style={{ position: 'relative' }}>
+                        <div className="row ac" style={{ position: 'relative', flex: isMobile ? 1 : 'none', minWidth: isMobile ? 120 : 'auto' }}>
                             <Search size={15} color="var(--faint)" style={{ position: 'absolute', left: 14, pointerEvents: 'none' }} />
                             <input className="input" placeholder="Search jobs" value={query} onChange={(e) => setQuery(e.target.value)}
-                                   style={{ width: 220, height: 40, background: 'var(--surface-2)', paddingLeft: 38 }} />
+                                   style={{ width: isMobile ? '100%' : 220, height: 40, background: 'var(--surface-2)', paddingLeft: 38 }} />
                         </div>
                         <button className="btn btn-gold btn-sm" onClick={() => setShowAdd(true)}><Plus size={14} />Add job</button>
                     </div>
