@@ -88,6 +88,24 @@ function App() {
             });
     }
 
+    // Fire a 'signup' analytics event exactly once for a brand-new account (the
+    // backend tags the first auth payload with created:true). Returns true if it
+    // fired, so callers know not to also log 'signin'. The flag is stripped so it
+    // can never re-fire — and this runs BEFORE refreshUserFromServer overwrites
+    // the cached user (which would drop the flag).
+    function trackSignupOnce() {
+        try {
+            const u = JSON.parse(localStorage.getItem('rn-auth-user') || 'null');
+            if (u && u.created) {
+                track('signup');
+                delete u.created;
+                localStorage.setItem('rn-auth-user', JSON.stringify(u));
+                return true;
+            }
+        } catch {}
+        return false;
+    }
+
     // Refresh the cached user from the server — the popup writes only a slim
     // {id,email,name,plan}, and any cache goes stale after a purchase or when
     // signing in on another device. This merge adds the full v14 surface.
@@ -117,6 +135,7 @@ function App() {
         const user  = localStorage.getItem('rn-auth-user');
         if (!token || !user) return;
         try { setCurrentUser(JSON.parse(user)); } catch {}
+        trackSignupOnce();   // catches signups from reload-based auth paths
         tryClaimReferral();
         refreshUserFromServer();
     }, []);
@@ -187,7 +206,7 @@ function App() {
     function handleLogin() {
         const user = localStorage.getItem('rn-auth-user');
         if (user) { try { setCurrentUser(JSON.parse(user)); } catch {} }
-        track('signin');
+        if (!trackSignupOnce()) track('signin');
         tryClaimReferral();
         refreshUserFromServer();   // popup cache is slim — pull referralCode/passType now
         // Return to wherever sign-in was requested from (e.g. /tracker's gate);

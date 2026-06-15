@@ -2,6 +2,7 @@ import React from 'react';
 import { getLayout } from './ResumeLayouts.jsx';
 import { AuthModal, CreditGateModal, UserPill } from './AuthModal.jsx';
 import PaymentModal from './PaymentModal.jsx';
+import { track } from './analytics.js';
 
 
 
@@ -1848,6 +1849,7 @@ class ResumeBuilder extends React.Component {
                 return;
             }
             this._downloadBlob(blob);
+            track('resume_exported', { template: this.templateStyle });
             this._setStatus('PDF downloaded successfully.', 'success');
 
         } catch (e) {
@@ -2256,6 +2258,7 @@ class ResumeBuilder extends React.Component {
                 return;
             }
             this.jobMatchResult = await r.json();
+            track('jobmatch_run', { signedIn: !!this.authToken });
             this._setStatus('Analysis complete!','success');
         } catch(e){ this._setStatus('Analysis failed. Check your connection and try again.','error'); }
         finally { this.isAnalyzingJob=false; }
