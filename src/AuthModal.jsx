@@ -51,7 +51,7 @@ export function AuthModal({ onAuth, onClose, reason }) {
             // Auto-stop polling after 5 min
             setTimeout(() => clearInterval(iv), 5 * 60 * 1000);
         } catch (e) {
-            setError('Could not start Google sign-in. Try magic link instead.');
+            setError('Could not start Google sign-in. Please try again.');
         }
     }
 
@@ -129,16 +129,8 @@ export function AuthModal({ onAuth, onClose, reason }) {
                             Continue with Google
                         </button>
 
-                        <div className="rn-auth-modal__divider">
-                            <span>or</span>
-                        </div>
-
-                        <button className="rn-auth-btn rn-auth-btn--magic" onClick={() => setMode('magic')}>
-                            ✉ Continue with email
-                        </button>
-
                         <p className="rn-auth-modal__terms">
-                            Free forever · No credit card needed
+                            Free to start · No credit card needed
                         </p>
                     </div>
                 )}
