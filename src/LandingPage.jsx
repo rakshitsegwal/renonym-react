@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthModal, UserPill } from './AuthModal.jsx';
+import PaymentModal from './PaymentModal.jsx';
 import { FileText, Mic, BarChart3, MessageSquare, BarChart2, Check } from 'lucide-react';
 import { VoiceOrb, Waveform, ScoreRing, Meter, Badge } from './coach/primitives.jsx';
 import { foundingStatus } from './coach/api.js';
@@ -10,6 +11,7 @@ import './coach.css';
 // points (onGetStarted/onStartAi/onOpenJobMatch) are preserved.
 export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, onLogout, currentUser }) {
     const [showLogin, setShowLogin] = useState(false);
+    const [showFounding, setShowFounding] = useState(false);   // founding coupon redemption modal
     const [founding, setFounding] = useState(null);   // { total, claimed, remaining, open }
     const go = (p) => () => (onNavigate ? onNavigate(p) : onGetStarted());
 
@@ -32,6 +34,11 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
         <div className="rn-dark">
             {showLogin && <AuthModal reason="continue" onClose={() => setShowLogin(false)}
                 onAuth={(token, user) => { localStorage.setItem('rn-auth-token', token); localStorage.setItem('rn-auth-user', JSON.stringify(user)); setShowLogin(false); onLogin && onLogin(); }} />}
+
+            {/* Founding beta — coupon redemption (free 7-day premium, no payment) */}
+            {showFounding && <PaymentModal reason="founding"
+                onClose={() => setShowFounding(false)}
+                onSuccess={() => { setShowFounding(false); onGoToDashboard && onGoToDashboard(); }} />}
 
             {/* NAV */}
             <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,11,13,0.72)', backdropFilter: 'blur(18px)', borderBottom: '1px solid var(--line)' }}>
@@ -79,7 +86,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                                 <span className="badge gold" style={{ whiteSpace: 'nowrap' }}>
                                     {founding.remaining} / {founding.total} slots left
                                 </span>
-                                <button className="btn btn-gold btn-sm none" onClick={onGetStarted}>Claim your spot →</button>
+                                <button className="btn btn-gold btn-sm none" onClick={() => setShowFounding(true)}>Claim your spot →</button>
                             </div>
                         </div>
                     </div>

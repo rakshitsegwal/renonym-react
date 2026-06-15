@@ -87,12 +87,14 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
         credits: "You're out of credits",
         template: 'Unlock all 10 templates',
         interview: 'Keep interviewing',
+        founding: '🎉 Claim your founding spot',
         generic: 'Upgrade your job hunt',
     };
     const subs = {
         credits: 'Top up, or go unlimited for the whole season.',
         template: 'Premium templates are included with any pass.',
         interview: 'Pick the pass that matches your search.',
+        founding: 'Enter your founding code below for 7 days of full premium — free, no payment.',
         generic: 'One-time payments. No subscriptions. No surprises.',
     };
 
