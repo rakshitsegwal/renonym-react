@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { VoiceOrb, Waveform, Badge } from './primitives.jsx';
 import { AuthModal, UserPill } from '../AuthModal.jsx';
+import { useIsMobile } from '../useIsMobile.js';
 
 // S4 — Interview Coach landing (recreated from designs/screens/04-coach-landing.html)
 // v14 ladder pricing: Season Pass ₹1,499/90d (hero) · Single Interview ₹499.
 export default function CoachLanding({ nav, currentUser, onLogout }) {
+    const isMobile = useIsMobile();
     const go = (p) => (e) => { e?.preventDefault?.(); nav(p); };
     const [showAuth, setShowAuth] = useState(false);
 
@@ -38,7 +40,7 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
                         {currentUser
                             ? <UserPill user={currentUser} onLogout={onLogout} />
                             : <a href="#" onClick={(e) => { e.preventDefault(); setShowAuth(true); }} className="sm t2" style={{ fontWeight: 500 }}>Sign in</a>}
-                        <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold">Start an interview</a>
+                        {!isMobile && <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold">Start an interview</a>}
                     </div>
                 </div>
             </nav>
@@ -50,7 +52,7 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
                     <div className="pill" style={{ margin: '0 auto 26px' }}><span className="dot" />Premium feature · the AI Interview Coach</div>
                     <h1 className="display" style={{ maxWidth: '16ch', margin: '0 auto' }}>Rehearse the interview before it <span className="italic gold">happens</span>.</h1>
                     <p className="lead" style={{ maxWidth: '56ch', margin: '26px auto 0' }}>A realistic AI interviewer built from your résumé and the exact role. It asks, follows up, and scores every answer — by voice or by text — so you walk in already warmed up.</p>
-                    <div className="row ac jc gap-16" style={{ marginTop: 36 }}>
+                    <div className="row ac jc gap-16 wrap-f" style={{ marginTop: 36 }}>
                         <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold btn-lg">Start an interview</a>
                         <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-outline btn-lg">See plans · from ₹499</a>
                     </div>
@@ -65,7 +67,7 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
                         <span className="eyebrow">Two ways to practice</span>
                         <h2 className="h1" style={{ marginTop: 16 }}>Speak it, or type it</h2>
                     </div>
-                    <div className="grid gap-24" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                    <div className="grid gap-24 g-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
                         {/* voice */}
                         <div className="card-gold rel" style={{ padding: 38, borderRadius: 'var(--r-2xl)', overflow: 'hidden', borderColor: 'var(--gold-line)' }}>
                             <div className="glow-gold" style={{ width: 300, height: 300, right: -60, top: -100 }} />
@@ -110,7 +112,7 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
                         <div><span className="eyebrow">The interview process</span><h2 className="h1" style={{ marginTop: 16 }}>How a session runs</h2></div>
                         <p className="sm" style={{ maxWidth: '34ch', textAlign: 'right' }}>Every interview is generated fresh from your résumé and the job — never a generic question bank.</p>
                     </div>
-                    <div className="grid gap-20" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+                    <div className="grid gap-20 g-3" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
                         {[['01', 'Set up', 'Add the role, job description, type & difficulty.'],
                           ['02', 'Interview', 'Answer 6–10 tailored questions with live follow-ups.'],
                           ['03', 'Score', 'Get graded on clarity, structure, confidence & fit.'],
@@ -128,7 +130,7 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
             {/* BENEFITS */}
             <section style={{ padding: '60px 0' }}>
                 <div className="wrap-wide">
-                    <div className="grid gap-20" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+                    <div className="grid gap-20 g-3" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
                         {[['Built from your résumé', 'Questions reference your actual experience and the exact job — so prep transfers directly to the real interview.'],
                           ['Brutally specific feedback', 'Not a vague grade. Quotable notes tied to what you said, plus the precise lines to rewrite.'],
                           ['Progress you can feel', "A score that climbs session over session, with history per role — proof you're getting ready."]].map(([t, d]) => (
@@ -150,7 +152,7 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
                             <Badge variant="gold" dot style={{ margin: '0 auto 22px' }}>Premium</Badge>
                             <h2 className="h1" style={{ maxWidth: '20ch', margin: '0 auto' }}>The cost of one under-prepared interview is the job.</h2>
                             <p className="lead" style={{ margin: '18px auto 0', maxWidth: '42ch' }}>Six full mock interviews, scored reports, and unlimited AI — one payment, ninety days.</p>
-                            <div className="row ac jc gap-16" style={{ marginTop: 34 }}>
+                            <div className="row ac jc gap-16 wrap-f" style={{ marginTop: 34 }}>
                                 <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-gold btn-lg">Season Pass · ₹1,499 / 90 days</a>
                                 <a href="/coach/checkout?plan=session" onClick={go('/coach/checkout?plan=session')} className="btn btn-outline btn-lg">Single interview · ₹499</a>
                             </div>

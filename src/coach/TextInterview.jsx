@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 import { Badge } from './primitives.jsx';
 import { getSession, submitAnswer } from './api.js';
+import { useIsMobile } from '../useIsMobile.js';
 
 // S8 — Text Interview. Loads the AI-generated questions for the session and
 // posts each typed answer to the backend; deliberately a dedicated composer.
 export default function TextInterview({ nav, id }) {
+    const isMobile = useIsMobile();
     const [questions, setQuestions] = useState(null);
     const [company, setCompany] = useState('');
     const [q, setQ] = useState(0);
@@ -54,16 +56,16 @@ export default function TextInterview({ nav, id }) {
 
     return (
         <div className="rn-dark vh-shell" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div className="row ac jsb" style={{ padding: '0 32px', height: 68, borderBottom: '1px solid var(--line)', flex: 'none' }}>
+            <div className="row ac jsb" style={{ padding: isMobile ? '0 14px' : '0 32px', height: 68, borderBottom: '1px solid var(--line)', flex: 'none', gap: 8 }}>
                 <div className="row ac gap-10" style={{ minWidth: 0 }}>
                     <div className="av" style={{ width: 34, height: 34, background: '#3a3320', color: 'var(--gold)', fontSize: 14, flex: 'none' }}>{(company[0] || 'I')}</div>
-                    <div style={{ minWidth: 0 }}><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company}</div><div className="xs">AI interview</div></div>
+                    <div style={{ minWidth: 0 }}><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company || 'Interview'}</div><div className="xs">{isMobile ? `Text · Q${q + 1}/${total}` : 'AI interview'}</div></div>
                 </div>
-                <div className="row ac gap-14" style={{ flex: 'none' }}>
-                    <Badge variant="blue" dot>Text</Badge>
-                    <span className="pill" style={{ height: 34 }}><Clock size={13} color="var(--muted)" />No time limit</span>
-                    <span className="label">Q{q + 1} / {total}</span>
-                    <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--rose)', color: 'var(--rose)' }} onClick={() => nav(`/coach/session/${id}/complete`)}>End interview</button>
+                <div className="row ac gap-10" style={{ flex: 'none' }}>
+                    {!isMobile && <Badge variant="blue" dot>Text</Badge>}
+                    {!isMobile && <span className="pill" style={{ height: 34 }}><Clock size={13} color="var(--muted)" />No time limit</span>}
+                    {!isMobile && <span className="label">Q{q + 1} / {total}</span>}
+                    <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--rose)', color: 'var(--rose)' }} onClick={() => nav(`/coach/session/${id}/complete`)}>{isMobile ? 'End' : 'End interview'}</button>
                 </div>
             </div>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Clock, SkipForward, RotateCcw, Type, Square, MicOff } from 'lucide-react';
 import { VoiceOrb, Waveform, ProgressDots, Badge } from './primitives.jsx';
 import { getSession, submitAnswer, questionAudio, transcribeAudio } from './api.js';
+import { useIsMobile } from '../useIsMobile.js';
 
 // S7 — Audio Interview. The AI interviewer SPEAKS each question (server TTS,
 // natural voice; browser speechSynthesis as fallback) and the candidate
@@ -20,6 +21,7 @@ const recogLang = () => {
 const fmtClock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
 export default function VoiceInterview({ nav, id }) {
+    const isMobile = useIsMobile();
     const [questions, setQuestions] = useState(null);
     const [company, setCompany] = useState('');
     const [q, setQ] = useState(0);
@@ -337,16 +339,16 @@ export default function VoiceInterview({ nav, id }) {
 
     return (
         <div className="rn-dark vh-shell" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div className="row ac jsb" style={{ padding: '0 32px', height: 68, borderBottom: '1px solid var(--line)', flex: 'none' }}>
+            <div className="row ac jsb" style={{ padding: isMobile ? '0 14px' : '0 32px', height: 68, borderBottom: '1px solid var(--line)', flex: 'none', gap: 8 }}>
                 <div className="row ac gap-10" style={{ minWidth: 0 }}>
                     <div className="av" style={{ width: 34, height: 34, background: '#3a3320', color: 'var(--gold)', fontSize: 14, flex: 'none' }}>{company[0] || 'I'}</div>
-                    <div style={{ minWidth: 0 }}><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company}</div><div className="xs">AI audio interview</div></div>
+                    <div style={{ minWidth: 0 }}><div className="h5" style={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company || 'Interview'}</div><div className="xs">{isMobile ? `Audio · Q${q + 1}/${total}` : 'AI audio interview'}</div></div>
                 </div>
-                <div className="row ac gap-14" style={{ flex: 'none' }}>
-                    <Badge variant="blue" dot>Audio</Badge>
+                <div className="row ac gap-10" style={{ flex: 'none' }}>
+                    {!isMobile && <Badge variant="blue" dot>Audio</Badge>}
                     <span className="pill" style={{ height: 34 }}><Clock size={13} color="var(--muted)" />{fmtClock(elapsed)}</span>
-                    <span className="label">Q{q + 1} / {total}</span>
-                    <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--rose)', color: 'var(--rose)' }} onClick={() => { stopEverything(); nav(`/coach/session/${id}/complete`); }}>End interview</button>
+                    {!isMobile && <span className="label">Q{q + 1} / {total}</span>}
+                    <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--rose)', color: 'var(--rose)' }} onClick={() => { stopEverything(); nav(`/coach/session/${id}/complete`); }}>{isMobile ? 'End' : 'End interview'}</button>
                 </div>
             </div>
 

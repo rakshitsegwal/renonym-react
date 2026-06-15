@@ -153,7 +153,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                                         <div key={t} className="row ac gap-12"><span style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 18, height: 18 }}><Check size={13} color="var(--green)" /></span><span className="body-t" style={{ color: 'var(--text-2)' }}>{t}</span></div>
                                     ))}
                                 </div>
-                                <div className="row ac gap-16" style={{ marginTop: 38 }}>
+                                <div className="row ac gap-16 wrap-f" style={{ marginTop: 38 }}>
                                     <button className="btn btn-gold btn-lg" onClick={go('/coach')}>Explore the Coach</button>
                                     <button className="btn btn-outline btn-lg" onClick={scrollTo('pricing')}>From ₹499 — no subscription</button>
                                 </div>

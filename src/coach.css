@@ -262,6 +262,16 @@ body:has(.rn-dark){ background:var(--bg); }
   .rn-dark .ti-grid{ grid-template-columns:1fr !important; }
   .rn-dark .ti-grid > aside{ display:none; }
 }
+@media (max-width:640px){
+  /* multi-column landing grids (features, pricing) stack on phones.
+     minmax(0,1fr) — NOT 1fr — so the column can shrink below its content's
+     intrinsic width instead of overflowing the viewport. */
+  .rn-dark .g-3, .rn-dark .g-2, .rn-dark .lp-split{ grid-template-columns:minmax(0,1fr) !important; }
+  .rn-dark .g-3 > *, .rn-dark .g-2 > *, .rn-dark .lp-split > *{ min-width:0; }
+  /* big serif headings shrink so long phrases don't overflow 390px */
+  .rn-dark .display{ font-size:clamp(34px,11vw,46px) !important; }
+  .rn-dark .h1{ font-size:clamp(27px,8.5vw,36px) !important; }
+}
 @media (max-width:560px){
   .rn-dark .g-dims{ grid-template-columns:1fr !important; }
   .rn-dark .g-stats{ grid-template-columns:1fr 1fr !important; }
