@@ -3,6 +3,7 @@ import { Upload, MessageSquare, FileText, Check } from 'lucide-react';
 import { VoiceOrb, Badge } from './primitives.jsx';
 import { saveDraft, loadDraft, clearDraft, coachMe, createSession, parseResumeFile, getUser, getToken } from './api.js';
 import { useIsMobile } from '../useIsMobile.js';
+import { track } from '../analytics.js';
 
 function loadSavedResume() {
     try { const d = JSON.parse(localStorage.getItem('rb-draft') || '{}'); return d && d.fullName ? d : null; } catch { return null; }
@@ -83,6 +84,7 @@ export default function InterviewSetup({ nav }) {
 
         try {
             const s = await createSession(cfg);
+            track('interview_started', { mode });
             clearAndGo(s.id);
         } catch (e) {
             setErr(e.message || 'Could not start the interview. Please try again.');

@@ -15,8 +15,12 @@ import TextInterview from './coach/TextInterview.jsx';
 import Tracker from './tracker/Tracker.jsx';
 import JobDetail from './tracker/JobDetail.jsx';
 import AdminFounding from './AdminFounding.jsx';
+import { Analytics } from '@vercel/analytics/react';
+import { initClarity, identify, track } from './analytics.js';
 import './app.css';
 import './coach.css';
+
+initClarity();   // session replay + heatmaps (Microsoft Clarity), if VITE_CLARITY_ID is set
 
 // ── Lightweight routing ─────────────────────────────────────────────────────
 // Legal pages get real paths (so they're shareable / SEO-able and survive a
@@ -97,6 +101,7 @@ function App() {
                 emailVerified: !!fresh.emailVerified, founding: fresh.founding || null };
             localStorage.setItem('rn-auth-user', JSON.stringify(merged));
             setCurrentUser(merged);
+            identify(merged.id);
         }).catch(e => {
             if (e && e.status === 401) {   // token expired — sign out cleanly
                 localStorage.removeItem('rn-auth-token');
@@ -182,6 +187,7 @@ function App() {
     function handleLogin() {
         const user = localStorage.getItem('rn-auth-user');
         if (user) { try { setCurrentUser(JSON.parse(user)); } catch {} }
+        track('signin');
         tryClaimReferral();
         refreshUserFromServer();   // popup cache is slim — pull referralCode/passType now
         // Return to wherever sign-in was requested from (e.g. /tracker's gate);
@@ -268,4 +274,9 @@ function App() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(
+    <>
+        <App />
+        <Analytics />   {/* Vercel Web Analytics — auto-tracks pageviews incl. SPA route changes */}
+    </>
+);

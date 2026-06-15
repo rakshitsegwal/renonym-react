@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Check, Gift } from 'lucide-react';
 import { AuthModal } from './AuthModal.jsx';
 import { payAndVerify, authMe, getUser, redeemFounding } from './coach/api.js';
+import { track } from './analytics.js';
 
 // The ladder modal — the single purchase surface for the v14 credit + pass
 // ladder. Display order: Placement Pro → Season Pass (HERO, pre-selected) →
@@ -69,6 +70,7 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
         try {
             await redeemFounding(code);
             await refreshCachedUser();
+            track('founding_redeemed');
             setCouponMsg('🎉 You’re a founding member — 7 days of full premium unlocked!');
             setTimeout(() => { onSuccess ? onSuccess('founding') : onClose(); }, 1500);
         } catch (e) {
@@ -101,6 +103,7 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
             await payAndVerify(selected, user, LADDER.find(p => p.id === selected)?.name || 'Renonym');
             setStatus('Activating…');
             await refreshCachedUser();
+            track('purchase', { plan: selected, reason });
             setStatus('');
             onSuccess ? onSuccess(selected) : onClose();
         } catch (e) {
