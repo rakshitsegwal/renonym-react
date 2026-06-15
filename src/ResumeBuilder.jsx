@@ -2781,7 +2781,8 @@ class ResumeBuilder extends React.Component {
         {showTopbar ? (<React.Fragment>
             <header className="rp-topbar">
 
-                <div className="rp-brand">
+                <div className="rp-brand" style={{ cursor: 'pointer' }} title="Back to dashboard"
+                     onClick={() => this.props?.onGoToDashboard ? this.props.onGoToDashboard() : this.props?.onGoToLanding?.()}>
                     <div className="rp-brand__mark">R</div>
                     <span className="rp-brand__name">Renonym AI</span>
                 </div>
