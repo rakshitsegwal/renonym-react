@@ -9,10 +9,13 @@ import { refreshCachedUser } from '../PaymentModal.jsx';
 // Already-entitled users (Unlimited / pass) are never shown the pay button —
 // they go straight to session creation. Payment is collected by Razorpay's
 // hosted modal, so no card fields live in app state.
+// Reprice 2026-06 (cheap→premium). Plan `id`s keep their original names — the
+// server's `amount` is the only price of record.
 const PLANS = {
-    unlimited: { id: 'season_1499', name: 'Season Pass', price: '₹1,499', rupees: 1499, per: '/90 days', note: '6 full interviews (audio + text) · unlimited AI · all templates', tag: 'MOST POPULAR' },
-    pro:       { id: 'pro_2999',    name: 'Placement Pro', price: '₹2,999', rupees: 2999, per: '/90 days', note: '25 interviews · everything in Season Pass · priority support', tag: '' },
-    session:   { id: 'single_499',  name: 'Single Interview', price: '₹499', rupees: 499, per: '', note: 'This one interview (audio or text) + full scored report', tag: '' },
+    session:   { id: 'single_499',  name: 'Single Interview', price: '₹49',    rupees: 49,   per: '',         note: 'This one interview (audio or text) + full scored report', tag: '' },
+    prep:      { id: 'prep_199',    name: 'Prep Pack',        price: '₹199',   rupees: 199,  per: '/30 days', note: '3 full interviews · unlimited AI · all templates', tag: '' },
+    unlimited: { id: 'season_1499', name: 'Season Pass',      price: '₹699',   rupees: 699,  per: '/90 days', note: '8 full interviews (audio + text) · unlimited AI · all templates', tag: 'MOST POPULAR' },
+    pro:       { id: 'pro_2999',    name: 'Placement Pro',    price: '₹1,499', rupees: 1499, per: '/90 days', note: '25 interviews · everything in Season Pass · priority support', tag: '' },
 };
 const inr = (n) => '₹' + Number(n).toLocaleString('en-IN');
 

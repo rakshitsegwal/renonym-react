@@ -66,7 +66,7 @@ export default function InterviewHistory({ nav }) {
                         ) : (
                             <>
                                 <p className="xs" style={{ color: 'var(--text-2)' }}>Unlimited interviews &amp; reports.</p>
-                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/checkout')}>Season Pass · ₹1,499</button>
+                                <button className="btn btn-gold btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => nav('/coach/checkout')}>Season Pass · ₹699</button>
                             </>
                         )}
                     </div>

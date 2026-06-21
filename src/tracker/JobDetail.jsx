@@ -156,7 +156,7 @@ export default function JobDetail({ nav, id }) {
                 <div className="card-gold row ac jsb wrap-f gap-12" style={{ padding: '16px 20px', marginBottom: 18, borderColor: 'var(--gold-line)' }}>
                     <div style={{ minWidth: 0 }}>
                         <div className="sm" style={{ color: 'var(--gold)', fontWeight: 600 }}>🎤 Interview coming up — practice this exact one.</div>
-                        <div className="xs" style={{ marginTop: 2 }}>Your JD and résumé are already loaded. {getUser()?.passType ? 'Included in your pass.' : 'From ₹499 — or free in text mode for your first.'}</div>
+                        <div className="xs" style={{ marginTop: 2 }}>Your JD and résumé are already loaded. {getUser()?.passType ? 'Included in your pass.' : 'From ₹49 — or free in text mode for your first.'}</div>
                     </div>
                     <button className="btn btn-gold btn-sm none" onClick={practiceInterview}>Practice now →</button>
                 </div>

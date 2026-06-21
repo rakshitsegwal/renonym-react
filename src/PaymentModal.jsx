@@ -4,20 +4,27 @@ import { AuthModal } from './AuthModal.jsx';
 import { payAndVerify, authMe, getUser, validatePromo } from './coach/api.js';
 import { track } from './analytics.js';
 
-// The ladder modal — the single purchase surface for the v14 credit + pass
-// ladder. Display order: Placement Pro → Season Pass (HERO, pre-selected) →
-// Boost Pack. Opened from: out-of-credits gates, premium-template crowns,
-// the sidebar credit pill, and the landing pricing cards.
+// The ladder modal — the single purchase surface for the credit + pass ladder.
+// Display order cheap→premium: Prep Pack → Season Pass (HERO, pre-selected) →
+// Placement Pro → Boost Pack. Opened from: out-of-credits gates,
+// premium-template crowns, the sidebar credit pill, and the landing cards.
+// Prices reprice 2026-06; plan `id`s keep their original names (the server's
+// `amount` is the only price of record).
 const LADDER = [
     {
-        id: 'pro_2999', name: 'Placement Pro', price: '₹2,999', rupees: 2999, per: '90 days',
-        feats: ['25 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Priority support'],
+        id: 'prep_199', name: 'Prep Pack', price: '₹199', rupees: 199, per: '30 days',
+        feats: ['3 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Full scored reports'],
         tag: null,
     },
     {
-        id: 'season_1499', name: 'Season Pass', price: '₹1,499', rupees: 1499, per: '90 days',
-        feats: ['6 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Full scored reports'],
+        id: 'season_1499', name: 'Season Pass', price: '₹699', rupees: 699, per: '90 days',
+        feats: ['8 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Full scored reports'],
         tag: 'MOST POPULAR', hero: true,
+    },
+    {
+        id: 'pro_2999', name: 'Placement Pro', price: '₹1,499', rupees: 1499, per: '90 days',
+        feats: ['25 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Priority support'],
+        tag: null,
     },
     {
         id: 'boost_299', name: 'Boost Pack', price: '₹299', rupees: 299, per: 'one-time',
@@ -201,7 +208,7 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
                     })()}
                 </button>
                 <p className="xs tc" style={{ marginTop: 12 }}>
-                    One-time payment via Razorpay (card / UPI / netbanking). Need just one interview? <b>Single Interview ₹499</b> is available at interview setup.
+                    One-time payment via Razorpay (card / UPI / netbanking). Need just one interview? <b>Single Interview ₹49</b> is available at interview setup.
                 </p>
             </div>
         </div>

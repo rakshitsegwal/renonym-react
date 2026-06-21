@@ -194,7 +194,7 @@ export function CreditGateModal({ reason, onClose, onUpgrade }) {
                 <p className="rn-auth-modal__sub">{c.sub}</p>
                 <div className="rn-credit-options">
                     <button className="rn-credit-option rn-credit-option--pro" onClick={onUpgrade}>
-                        <span className="rn-credit-option__label">See plans — from ₹299</span>
+                        <span className="rn-credit-option__label">See plans — from ₹199</span>
                         <span className="rn-credit-option__desc">Credit packs &amp; passes · one-time payments, no subscriptions</span>
                     </button>
                     <button className="rn-auth-back" onClick={onClose}>Maybe later</button>

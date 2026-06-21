@@ -254,20 +254,24 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
                 </div>
             </section>
 
-            {/* PRICING — prices kept in sync with the server (reprice lands with the backend change) */}
+            {/* PRICING — numbers in sync with the server PLANS (reprice 2026-06) */}
             <section id="pricing" style={{ padding: '64px 0' }}>
                 <div className="wrap-wide">
-                    <div className="tc" style={{ marginBottom: 48 }}>
+                    <div className="tc" style={{ marginBottom: 32 }}>
                         <span className="eyebrow">Pricing</span>
-                        <h2 className="h1" style={{ marginTop: 16 }}>Free to build. Pay only to practise.</h2>
+                        <h2 className="h1" style={{ marginTop: 16 }}>Free to build. <span className="italic gold">₹49</span> to practise.</h2>
                         <p className="lead" style={{ marginTop: 14 }}>One-time payments. No subscription, no auto-renew — ever.</p>
                     </div>
-                    <div className="grid gap-24 g-3" style={{ gridTemplateColumns: 'repeat(3,1fr)', alignItems: 'stretch' }}>
-                        <PriceCard name="Free" price="₹0" sub="Forever" feats={['Résumé builder + 3 templates', 'Free ATS PDF export', 'Unlimited JD match scores', '2 credits at signup', '1 free practice interview', 'Full application tracker']} cta="Start free" onClick={onGetStarted} />
-                        <PriceCard featured name="Season Pass" price="₹1,499" per="/90 days" sub="MOST POPULAR · one-time" feats={['6 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Full scored reports']} cta="Get the Season Pass" onClick={go('/coach/new')} />
-                        <PriceCard name="Placement Pro" price="₹2,999" per="/90 days" sub="For an all-out search" feats={['25 full interviews', 'Everything in Season Pass', 'Priority support']} cta="Go Pro" onClick={go('/coach/new')} />
+                    {/* tripwire callout — the smallest first 'yes' */}
+                    <div className="card-gold tc" style={{ maxWidth: 660, margin: '0 auto 30px', padding: '18px 24px', borderColor: 'var(--gold-line)' }}>
+                        <span className="body-t">Just want to try it? Your first interview is <b className="gold">₹49</b> — full scored report, one-time. Or the <b style={{ color: 'var(--text)' }}>Prep Pack: 3 interviews for ₹199</b>.</span>
                     </div>
-                    <p className="xs tc" style={{ marginTop: 20 }}>Also available: Boost Pack ₹299 (+10 AI credits) · Single Interview ₹499 · Report Unlock ₹299. One-time payments — no subscriptions, ever.</p>
+                    <div className="grid gap-24 g-3" style={{ gridTemplateColumns: 'repeat(3,1fr)', alignItems: 'stretch' }}>
+                        <PriceCard name="Free" price="₹0" sub="Forever" feats={['Résumé builder + 3 templates', 'Free ATS PDF export', 'Unlimited JD match scores', '1 free interview + full report', '2 AI credits at signup', 'Full application tracker']} cta="Start free" onClick={onGetStarted} />
+                        <PriceCard featured name="Season Pass" price="₹699" per="/90 days" sub="MOST POPULAR · one-time" feats={['8 full interviews (audio + text)', 'Unlimited AI actions', 'All 10 templates', 'Full scored reports']} cta="Get the Season Pass" onClick={go('/coach/new')} />
+                        <PriceCard name="Placement Pro" price="₹1,499" per="/90 days" sub="For an all-out search" feats={['25 full interviews', 'Everything in Season Pass', 'Priority support']} cta="Go Pro" onClick={go('/coach/new')} />
+                    </div>
+                    <p className="xs tc" style={{ marginTop: 20 }}>Also one-time: Single Interview ₹49 · Prep Pack ₹199 (3 interviews) · Boost Pack ₹299 (+10 AI credits). No subscriptions, ever.</p>
                 </div>
             </section>
 

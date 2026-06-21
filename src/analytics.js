@@ -2,7 +2,9 @@ import { track as vercelTrack } from '@vercel/analytics';
 
 // Rupee value per SKU — Meta Pixel needs a value+currency on Purchase to optimise
 // ad delivery and report ROAS. Server is still the source of truth for revenue.
-const SKU_VALUE = { boost_299: 299, single_499: 499, season_1499: 1499, pro_2999: 2999, report_unlock_299: 299 };
+// Meta Purchase value (₹) per plan id. Keys keep their original names; values
+// track the real charged price (reprice 2026-06).
+const SKU_VALUE = { boost_299: 299, single_499: 49, prep_199: 199, season_1499: 699, pro_2999: 1499 };
 
 // Forward an event to the Meta (Facebook) Pixel, mapping to Meta standard events
 // where they exist (better for ad optimisation) and trackCustom for the rest.

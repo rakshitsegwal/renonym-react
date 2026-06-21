@@ -222,7 +222,7 @@ export default function InterviewSetup({ nav }) {
                         <div className="grid gap-12" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             <ModeCard on={mode === 'voice'} onClick={() => setMode('voice')}
                                       icon={<VoiceOrb size={36} state="idle" />} title="Audio"
-                                      desc={access && !access.has ? 'Needs a pass or Single Interview (₹499) — your free interview is text' : 'The AI interviewer speaks — you answer out loud'} />
+                                      desc={access && !access.has ? 'Needs a pass or Single Interview (₹49) — your free interview is text' : 'The AI interviewer speaks — you answer out loud'} />
                             <ModeCard on={mode === 'text'} onClick={() => setMode('text')}
                                       icon={<div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', color: 'var(--blue)' }}><MessageSquare size={18} /></div>}
                                       title="Text" desc="Read each question and type your answers" />
@@ -265,7 +265,7 @@ export default function InterviewSetup({ nav }) {
                         ) : (getToken() && access === null) ? null : (access && access.freeInterviewAvailable && !access.passType && mode === 'text') ? (
                             <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20, borderColor: 'var(--green-line)' }}>
                                 <div className="row ac jsb"><Badge variant="green" dot>Included</Badge><span className="sm green-t" style={{ fontWeight: 600 }}>First interview FREE</span></div>
-                                <p className="sm" style={{ marginTop: 10, color: 'var(--text-2)' }}>Your first text interview is on us — 5 questions, real scoring, partial report (full report ₹299 or included with a pass).</p>
+                                <p className="sm" style={{ marginTop: 10, color: 'var(--text-2)' }}>Your first text interview is on us — 5 questions, real scoring, and your full scored report.</p>
                             </div>
                         ) : (
                             <div className="card-gold" style={{ padding: '18px 20px', marginBottom: 20 }}>
@@ -273,8 +273,8 @@ export default function InterviewSetup({ nav }) {
                                     <p className="xs" style={{ marginBottom: 10, color: 'var(--green)' }}>Tip: switch to Text mode and your first interview is free.</p>
                                 )}
                                 <div className="row ac jsb"><Badge variant="gold" dot>Premium</Badge><span className="sm gold" style={{ fontWeight: 600 }}>Single Interview</span></div>
-                                <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹499</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + full report</span></div>
-                                <p className="xs" style={{ marginTop: 8 }}>Or 6 interviews + unlimited AI with the Season Pass — ₹1,499 / 90 days.</p>
+                                <div className="row ae gap-6" style={{ marginTop: 12 }}><span className="h2" style={{ fontSize: 34 }}>₹49</span><span className="xs" style={{ paddingBottom: 8 }}>one interview + full report</span></div>
+                                <p className="xs" style={{ marginTop: 8 }}>Or 8 interviews + unlimited AI with the Season Pass — ₹699 / 90 days.</p>
                             </div>
                         )}
                         <button className="btn btn-gold btn-lg btn-block" onClick={handleContinue} disabled={busy}>

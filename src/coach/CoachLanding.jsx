@@ -4,7 +4,7 @@ import { AuthModal, UserPill } from '../AuthModal.jsx';
 import { useIsMobile } from '../useIsMobile.js';
 
 // S4 — Interview Coach landing (recreated from designs/screens/04-coach-landing.html)
-// v14 ladder pricing: Season Pass ₹1,499/90d (hero) · Single Interview ₹499.
+// Ladder pricing (reprice 2026-06): Season Pass ₹699/90d (hero) · Single Interview ₹49.
 export default function CoachLanding({ nav, currentUser, onLogout }) {
     const isMobile = useIsMobile();
     const go = (p) => (e) => { e?.preventDefault?.(); nav(p); };
@@ -54,7 +54,7 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
                     <p className="lead" style={{ maxWidth: '56ch', margin: '26px auto 0' }}>A realistic AI interviewer built from your résumé and the exact role. It asks, follows up, and scores every answer — by voice or by text — so you walk in already warmed up.</p>
                     <div className="row ac jc gap-16 wrap-f" style={{ marginTop: 36 }}>
                         <a href="/coach/new" onClick={go('/coach/new')} className="btn btn-gold btn-lg">Start an interview</a>
-                        <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-outline btn-lg">See plans · from ₹499</a>
+                        <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-outline btn-lg">See plans · from ₹49</a>
                     </div>
                     <p className="xs" style={{ marginTop: 18 }}>One-time passes — never a subscription</p>
                 </div>
@@ -153,8 +153,8 @@ export default function CoachLanding({ nav, currentUser, onLogout }) {
                             <h2 className="h1" style={{ maxWidth: '20ch', margin: '0 auto' }}>The cost of one under-prepared interview is the job.</h2>
                             <p className="lead" style={{ margin: '18px auto 0', maxWidth: '42ch' }}>Six full mock interviews, scored reports, and unlimited AI — one payment, ninety days.</p>
                             <div className="row ac jc gap-16 wrap-f" style={{ marginTop: 34 }}>
-                                <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-gold btn-lg">Season Pass · ₹1,499 / 90 days</a>
-                                <a href="/coach/checkout?plan=session" onClick={go('/coach/checkout?plan=session')} className="btn btn-outline btn-lg">Single interview · ₹499</a>
+                                <a href="/coach/checkout" onClick={go('/coach/checkout')} className="btn btn-gold btn-lg">Season Pass · ₹699 / 90 days</a>
+                                <a href="/coach/checkout?plan=session" onClick={go('/coach/checkout?plan=session')} className="btn btn-outline btn-lg">Single interview · ₹49</a>
                             </div>
                         </div>
                     </div>
