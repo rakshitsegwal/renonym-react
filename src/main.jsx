@@ -15,6 +15,7 @@ import TextInterview from './coach/TextInterview.jsx';
 import Tracker from './tracker/Tracker.jsx';
 import JobDetail from './tracker/JobDetail.jsx';
 import AdminFounding from './AdminFounding.jsx';
+import WelcomeChooser from './WelcomeChooser.jsx';
 import { Analytics } from '@vercel/analytics/react';
 import { initClarity, identify, track, fbqPageView } from './analytics.js';
 import './app.css';
@@ -65,6 +66,7 @@ function App() {
     const [params, setParams]       = useState(() => parseLocation().params);
     const [entryMode, setEntryMode] = useState('gallery');
     const [currentUser, setCurrentUser] = useState(null);
+    const [showChooser, setShowChooser] = useState(false);   // post-login "where to start?" modal
     const viewRef = useRef(view);
     viewRef.current = view;
 
@@ -218,11 +220,21 @@ function App() {
         tryClaimReferral();
         refreshUserFromServer();   // popup cache is slim — pull referralCode/passType now
         // Return to wherever sign-in was requested from (e.g. /tracker's gate);
-        // default: the builder.
+        // otherwise let them choose where to start instead of dumping them in the builder.
         let returnTo = null;
         try { returnTo = localStorage.getItem('rn-return-to'); localStorage.removeItem('rn-return-to'); } catch {}
         if (returnTo) { navPath(returnTo); return; }
-        goToBuilder('gallery');
+        setShowChooser(true);
+    }
+
+    // Welcome chooser routes into each tool's normal flow.
+    function handleChoose(key) {
+        setShowChooser(false);
+        if (key === 'builder')  return goToBuilder('gallery');
+        if (key === 'jobmatch') return goToBuilder('jobmatch');
+        if (key === 'coach')    return navPath('/coach/new');
+        if (key === 'tracker')  return navPath('/tracker');
+        goToDashboard();
     }
 
     function handleLogout() {
@@ -287,17 +299,20 @@ function App() {
     }
 
     return (
-        <LandingPage
-            onGetStarted={() => goToBuilder('gallery')}
-            onStartAi={() => goToBuilder('ai')}
-            onOpenJobMatch={() => goToBuilder('jobmatch')}
-            onGoToDashboard={goToDashboard}
-            onNavigate={navPath}
-            onNavigateLegal={goToLegal}
-            onLogin={handleLogin}
-            onLogout={handleLogout}
-            currentUser={currentUser}
-        />
+        <>
+            <LandingPage
+                onGetStarted={() => goToBuilder('gallery')}
+                onStartAi={() => goToBuilder('ai')}
+                onOpenJobMatch={() => goToBuilder('jobmatch')}
+                onGoToDashboard={goToDashboard}
+                onNavigate={navPath}
+                onNavigateLegal={goToLegal}
+                onLogin={handleLogin}
+                onLogout={handleLogout}
+                currentUser={currentUser}
+            />
+            {showChooser && <WelcomeChooser name={currentUser?.name} onPick={handleChoose} onSkip={() => handleChoose('dashboard')} />}
+        </>
     );
 }
 
