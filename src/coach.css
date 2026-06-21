@@ -276,3 +276,18 @@ body:has(.rn-dark){ background:var(--bg); }
   .rn-dark .g-dims{ grid-template-columns:1fr !important; }
   .rn-dark .g-stats{ grid-template-columns:1fr 1fr !important; }
 }
+
+/* Mobile sticky conversion bar — the single dominant CTA always in thumb reach.
+   Hidden on desktop; fixed to the bottom of the viewport on phones. */
+.rn-dark .lp-stick{ display:none; }
+.rn-dark .lp-foot-pad{ display:none; }
+@media (max-width:640px){
+  .rn-dark .lp-stick{
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:60;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+    background:rgba(10,11,13,0.94); backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);
+  }
+  .rn-dark .lp-stick .btn{ width:100%; }
+  .rn-dark .lp-foot-pad{ display:block; height:74px; }   /* keep footer clear of the bar */
+}
