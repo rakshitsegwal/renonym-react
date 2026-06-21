@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ShieldCheck, Check } from 'lucide-react';
+import { Lock, ShieldCheck, Check, Tag } from 'lucide-react';
 import { Badge } from './primitives.jsx';
 import { AuthModal } from '../AuthModal.jsx';
-import { payAndVerify, createSession, coachMe, loadDraft, clearDraft, getUser } from './api.js';
+import { payAndVerify, createSession, coachMe, loadDraft, clearDraft, getUser, validatePromo } from './api.js';
 import { refreshCachedUser } from '../PaymentModal.jsx';
 
 // S6 — Coach Checkout. Order summary reflects the user's real interview draft.
@@ -10,10 +10,11 @@ import { refreshCachedUser } from '../PaymentModal.jsx';
 // they go straight to session creation. Payment is collected by Razorpay's
 // hosted modal, so no card fields live in app state.
 const PLANS = {
-    unlimited: { id: 'season_1499', name: 'Season Pass', price: '₹1,499', per: '/90 days', note: '6 full interviews (audio + text) · unlimited AI · all templates', tag: 'MOST POPULAR' },
-    pro:       { id: 'pro_2999',    name: 'Placement Pro', price: '₹2,999', per: '/90 days', note: '25 interviews · everything in Season Pass · priority support', tag: '' },
-    session:   { id: 'single_499',  name: 'Single Interview', price: '₹499', per: '', note: 'This one interview (audio or text) + full scored report', tag: '' },
+    unlimited: { id: 'season_1499', name: 'Season Pass', price: '₹1,499', rupees: 1499, per: '/90 days', note: '6 full interviews (audio + text) · unlimited AI · all templates', tag: 'MOST POPULAR' },
+    pro:       { id: 'pro_2999',    name: 'Placement Pro', price: '₹2,999', rupees: 2999, per: '/90 days', note: '25 interviews · everything in Season Pass · priority support', tag: '' },
+    session:   { id: 'single_499',  name: 'Single Interview', price: '₹499', rupees: 499, per: '', note: 'This one interview (audio or text) + full scored report', tag: '' },
 };
+const inr = (n) => '₹' + Number(n).toLocaleString('en-IN');
 
 export default function CoachCheckout({ nav }) {
     // ?plan=session preselects the Session Pass (e.g. the ₹599 CTA on /coach)
@@ -26,7 +27,24 @@ export default function CoachCheckout({ nav }) {
     const [already, setAlready] = useState(false);   // entitled before visiting this page
     const [showAuth, setShowAuth] = useState(false);
     const [draft] = useState(loadDraft);
+    const [coupon, setCoupon] = useState('');
+    const [couponBusy, setCouponBusy] = useState(false);
+    const [couponMsg, setCouponMsg] = useState('');
+    const [promo, setPromo] = useState(null);   // { code, percent }
     const p = PLANS[plan];
+    const payPrice = promo ? inr(Math.round(p.rupees * (100 - promo.percent) / 100)) : p.price;
+
+    async function applyPromo() {
+        const code = coupon.trim();
+        if (!code || couponBusy || promo) return;
+        setCouponBusy(true); setCouponMsg('');
+        try {
+            const r = await validatePromo(code);
+            if (r && r.valid) { setPromo({ code: r.code, percent: r.percent }); setCouponMsg(`✓ ${r.percent}% off applied`); }
+            else { setPromo(null); setCouponMsg("That code isn't valid."); }
+        } catch (e) { setPromo(null); setCouponMsg("Couldn't check that code."); }
+        finally { setCouponBusy(false); }
+    }
 
     // If the signed-in user already has Coach access, never offer payment.
     // A 401 means the stored session is stale — force re-auth instead of letting
@@ -71,7 +89,7 @@ export default function CoachCheckout({ nav }) {
         setError(''); setBusy(true);
         try {
             setStatus('Confirming your payment…');
-            const v = await payAndVerify(p.id, user);                 // Razorpay → grants entitlement
+            const v = await payAndVerify(p.id, user, 'Renonym', promo ? { coupon: promo.code } : {});   // Razorpay → grants entitlement
             console.log('[coach] verify response:', v);
 
             setStatus('Activating your access…');
@@ -173,12 +191,32 @@ export default function CoachCheckout({ nav }) {
                         </div>
                     )}
 
+                    {!already && !paid && (
+                        <div className="card" style={{ padding: '14px 16px', marginBottom: 16, borderColor: promo ? 'var(--green)' : 'var(--gold-line)' }}>
+                            <div className="row ac gap-8" style={{ marginBottom: 10 }}>
+                                <Tag size={15} color={promo ? 'var(--green)' : 'var(--gold)'} />
+                                <span className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>{promo ? `Promo applied — ${promo.percent}% off` : 'Have a promo code?'}</span>
+                            </div>
+                            {!promo ? (
+                                <div className="row gap-8 wrap-f">
+                                    <input className="input fill" style={{ minWidth: 160, textTransform: 'uppercase' }} placeholder="PROMO CODE"
+                                           value={coupon} onChange={(e) => setCoupon(e.target.value)} disabled={couponBusy}
+                                           onKeyDown={(e) => e.key === 'Enter' && applyPromo()} maxLength={24} />
+                                    <button className="btn btn-gold btn-sm none" onClick={applyPromo} disabled={couponBusy || !coupon.trim()}>{couponBusy ? '…' : 'Apply'}</button>
+                                </div>
+                            ) : (
+                                <button className="btn btn-ghost btn-sm none" onClick={() => { setPromo(null); setCoupon(''); setCouponMsg(''); }}>Remove code</button>
+                            )}
+                            {couponMsg && <p className="xs" style={{ marginTop: 8, color: promo ? 'var(--green)' : 'var(--rose)' }}>{couponMsg}</p>}
+                        </div>
+                    )}
+
                     {paid
                         ? <button className="btn btn-gold btn-lg btn-block" onClick={proceed} disabled={busy}>
                             {busy ? (status || 'Working…') : (draftReady ? 'Start my interview →' : 'Set up your interview →')}
                           </button>
                         : <button className="btn btn-gold btn-lg btn-block" onClick={handlePay} disabled={busy}>
-                            {busy ? (status || 'Processing…') : `Pay ${p.price} & start interview`}
+                            {busy ? (status || 'Processing…') : `Pay ${payPrice}${promo ? ` (${promo.percent}% off)` : ''} & start interview`}
                           </button>}
                     {error && (
                         <div className="card" style={{ marginTop: 14, padding: '14px 16px', borderColor: 'var(--rose)', background: 'var(--rose-soft)' }}>
