@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthModal, UserPill } from './AuthModal.jsx';
-import PaymentModal from './PaymentModal.jsx';
 import { FileText, Mic, BarChart3, MessageSquare, BarChart2, Check } from 'lucide-react';
 import { VoiceOrb, Waveform, ScoreRing, Meter, Badge } from './coach/primitives.jsx';
-import { foundingStatus } from './coach/api.js';
 import './coach.css';
 
 // S1 — Landing (dark/gold reskin, recreated from designs/screens/01-landing-desktop.html).
@@ -11,11 +9,8 @@ import './coach.css';
 // points (onGetStarted/onStartAi/onOpenJobMatch) are preserved.
 export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, onLogout, currentUser }) {
     const [showLogin, setShowLogin] = useState(false);
-    const [showFounding, setShowFounding] = useState(false);   // founding coupon redemption modal
-    const [founding, setFounding] = useState(null);   // { total, claimed, remaining, open }
     const go = (p) => () => (onNavigate ? onNavigate(p) : onGetStarted());
 
-    useEffect(() => { foundingStatus().then(setFounding).catch(() => {}); }, []);
     const scrollTo = (id) => (e) => {
         e.preventDefault();
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -34,11 +29,6 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
         <div className="rn-dark">
             {showLogin && <AuthModal reason="continue" onClose={() => setShowLogin(false)}
                 onAuth={(token, user) => { localStorage.setItem('rn-auth-token', token); localStorage.setItem('rn-auth-user', JSON.stringify(user)); setShowLogin(false); onLogin && onLogin(); }} />}
-
-            {/* Founding beta — coupon redemption (free 7-day premium, no payment) */}
-            {showFounding && <PaymentModal reason="founding"
-                onClose={() => setShowFounding(false)}
-                onSuccess={() => { setShowFounding(false); onGoToDashboard && onGoToDashboard(); }} />}
 
             {/* NAV */}
             <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,11,13,0.72)', backdropFilter: 'blur(18px)', borderBottom: '1px solid var(--line)' }}>
@@ -65,33 +55,6 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                     </div>
                 </div>
             </nav>
-
-            {/* FOUNDING USER BETA — launch banner (only while slots remain) */}
-            {founding && founding.open && (
-                <div style={{ background: 'linear-gradient(90deg, rgba(232,201,148,0.14), rgba(232,201,148,0.06))', borderBottom: '1px solid var(--gold-line)' }}>
-                    <div className="wrap-wide" style={{ padding: '14px 48px' }}>
-                        <div className="row ac jsb wrap-f gap-16">
-                            <div className="row ac gap-12 wrap-f" style={{ minWidth: 0 }}>
-                                <span style={{ fontSize: 20 }}>🎉</span>
-                                <div>
-                                    <div className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>
-                                        Founding User Beta — first {founding.total} verified users
-                                    </div>
-                                    <div className="xs" style={{ color: 'var(--text-2)' }}>
-                                        7 days of full premium · 30% off your first paid plan · early access to new features
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="row ac gap-14 wrap-f">
-                                <span className="badge gold" style={{ whiteSpace: 'nowrap' }}>
-                                    {founding.remaining} / {founding.total} slots left
-                                </span>
-                                <button className="btn btn-gold btn-sm none" onClick={() => setShowFounding(true)}>Claim your spot →</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* HERO */}
             <header className="rel" style={{ overflow: 'hidden' }}>

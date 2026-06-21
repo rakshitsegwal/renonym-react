@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Check, Gift } from 'lucide-react';
+import { X, Check, Tag } from 'lucide-react';
 import { AuthModal } from './AuthModal.jsx';
-import { payAndVerify, authMe, getUser, redeemFounding } from './coach/api.js';
+import { payAndVerify, authMe, getUser, validatePromo } from './coach/api.js';
 import { track } from './analytics.js';
 
 // The ladder modal — the single purchase surface for the v14 credit + pass
@@ -53,48 +53,39 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
     const [status, setStatus] = useState('');
     const [error, setError] = useState('');
     const [showAuth, setShowAuth] = useState(false);
-    const [authIntent, setAuthIntent] = useState('pay');   // 'pay' | 'redeem'
     const [coupon, setCoupon] = useState('');
     const [couponBusy, setCouponBusy] = useState(false);
     const [couponMsg, setCouponMsg] = useState('');
+    const [promo, setPromo] = useState(null);   // { code, percent } once validated
 
-    const me = getUser();
-    const founding = me && me.founding;
-    const discount = !!(founding && founding.discountAvailable);   // 30% off first purchase
+    const pct = promo ? promo.percent : 0;
+    const priceOf = (rupees) => promo ? Math.round(rupees * (100 - pct) / 100) : rupees;
 
-    async function redeem() {
+    // Validate the promo code so the discounted price shown matches what the
+    // server will actually charge. The server is authoritative on the amount.
+    async function applyPromo() {
         const code = coupon.trim();
-        if (!code || couponBusy) return;
-        if (!getUser()) { setAuthIntent('redeem'); setShowAuth(true); return; }
+        if (!code || couponBusy || promo) return;
         setCouponBusy(true); setCouponMsg(''); setError('');
         try {
-            await redeemFounding(code);
-            await refreshCachedUser();
-            track('founding_redeemed');
-            setCouponMsg('🎉 You’re a founding member — 7 days of full premium unlocked!');
-            setTimeout(() => { onSuccess ? onSuccess('founding') : onClose(); }, 1500);
-        } catch (e) {
-            setCouponMsg(
-                e.code === 'FULL'         ? 'All 20 founding spots are taken.' :
-                e.code === 'NOT_VERIFIED' ? 'Verify your email first — sign in with Google or the email link.' :
-                e.code === 'NOT_ELIGIBLE' ? 'The founding program is for new accounts created during the beta.' :
-                (e.message || 'That code isn’t valid.'));
-            setCouponBusy(false);
-        }
+            const r = await validatePromo(code);
+            if (r && r.valid) { setPromo({ code: r.code, percent: r.percent }); setCouponMsg(`✓ ${r.percent}% off applied`); }
+            else { setPromo(null); setCouponMsg("That code isn't valid."); }
+        } catch (e) { setPromo(null); setCouponMsg("Couldn't check that code — try again."); }
+        finally { setCouponBusy(false); }
     }
+    function clearPromo() { setPromo(null); setCoupon(''); setCouponMsg(''); }
 
     const titles = {
         credits: "You're out of credits",
         template: 'Unlock all 10 templates',
         interview: 'Keep interviewing',
-        founding: '🎉 Claim your founding spot',
         generic: 'Upgrade your job hunt',
     };
     const subs = {
         credits: 'Top up, or go unlimited for the whole season.',
         template: 'Premium templates are included with any pass.',
         interview: 'Pick the pass that matches your search.',
-        founding: 'Enter your founding code below for 7 days of full premium — free, no payment.',
         generic: 'One-time payments. No subscriptions. No surprises.',
     };
 
@@ -102,10 +93,10 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
         if (busy) return;
         setBusy(true); setError(''); setStatus('Opening secure checkout…');
         try {
-            await payAndVerify(selected, user, LADDER.find(p => p.id === selected)?.name || 'Renonym');
+            await payAndVerify(selected, user, LADDER.find(p => p.id === selected)?.name || 'Renonym', promo ? { coupon: promo.code } : {});
             setStatus('Activating…');
             await refreshCachedUser();
-            track('purchase', { plan: selected, reason });
+            track('purchase', { plan: selected, reason, promo: promo ? promo.code : undefined });
             setStatus('');
             onSuccess ? onSuccess(selected) : onClose();
         } catch (e) {
@@ -130,7 +121,7 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
                         localStorage.setItem('rn-auth-token', token);
                         localStorage.setItem('rn-auth-user', JSON.stringify(user));
                         setShowAuth(false);
-                        if (authIntent === 'redeem') redeem(); else pay(user);
+                        pay(user);
                     }} />
             )}
             <div className="card-2" style={{ width: '100%', maxWidth: 760, maxHeight: '94dvh', overflowY: 'auto', padding: '30px 28px' }}>
@@ -140,36 +131,6 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
                 </div>
                 <p className="sm" style={{ marginBottom: 20 }}>{subs[reason] || subs.generic}</p>
 
-                {/* Founding member — already in. Show the 30%-off perk if unused. */}
-                {founding && (
-                    <div className="card" style={{ padding: '12px 16px', marginBottom: 18, borderColor: 'var(--gold-line)', background: 'var(--gold-soft)' }}>
-                        <p className="sm" style={{ color: 'var(--text)' }}>
-                            <b>★ Founding member #{founding.number}</b>
-                            {founding.trialActive ? ` — ${founding.trialDaysRemaining} day${founding.trialDaysRemaining === 1 ? '' : 's'} of full premium left.` : ' — trial ended.'}
-                            {discount && <> Your <b>30% founding discount</b> is applied below.</>}
-                        </p>
-                    </div>
-                )}
-
-                {/* Founding coupon redemption (only if not yet a founding member). */}
-                {!founding && (
-                    <div className="card" style={{ padding: '14px 16px', marginBottom: 18, borderColor: 'var(--gold-line)' }}>
-                        <div className="row ac gap-8" style={{ marginBottom: 10 }}>
-                            <Gift size={15} color="var(--gold)" />
-                            <span className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>Have a founding code?</span>
-                        </div>
-                        <div className="row gap-8 wrap-f">
-                            <input className="input fill" style={{ minWidth: 160, textTransform: 'uppercase' }} placeholder="FOUNDING CODE"
-                                   value={coupon} onChange={(e) => setCoupon(e.target.value)} disabled={couponBusy}
-                                   onKeyDown={(e) => e.key === 'Enter' && redeem()} maxLength={16} />
-                            <button className="btn btn-gold btn-sm none" onClick={redeem} disabled={couponBusy || !coupon.trim()}>
-                                {couponBusy ? '…' : 'Redeem'}
-                            </button>
-                        </div>
-                        {couponMsg && <p className="xs" style={{ marginTop: 8, color: couponMsg.startsWith('🎉') ? 'var(--green)' : 'var(--rose)' }}>{couponMsg}</p>}
-                    </div>
-                )}
-
                 {reason === 'credits' && (
                     <div className="card" style={{ padding: '12px 16px', marginBottom: 18, borderColor: 'var(--gold-line)', background: 'var(--gold-soft)' }}>
                         <p className="sm" style={{ color: 'var(--text)' }}>
@@ -177,6 +138,27 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
                         </p>
                     </div>
                 )}
+
+                {/* Promo code — applies a flat % off (server-validated). */}
+                <div className="card" style={{ padding: '14px 16px', marginBottom: 18, borderColor: promo ? 'var(--green)' : 'var(--gold-line)' }}>
+                    <div className="row ac gap-8" style={{ marginBottom: 10 }}>
+                        <Tag size={15} color={promo ? 'var(--green)' : 'var(--gold)'} />
+                        <span className="sm" style={{ color: 'var(--text)', fontWeight: 600 }}>{promo ? `Promo applied — ${promo.percent}% off` : 'Have a promo code?'}</span>
+                    </div>
+                    {!promo ? (
+                        <div className="row gap-8 wrap-f">
+                            <input className="input fill" style={{ minWidth: 160, textTransform: 'uppercase' }} placeholder="PROMO CODE"
+                                   value={coupon} onChange={(e) => setCoupon(e.target.value)} disabled={couponBusy}
+                                   onKeyDown={(e) => e.key === 'Enter' && applyPromo()} maxLength={24} />
+                            <button className="btn btn-gold btn-sm none" onClick={applyPromo} disabled={couponBusy || !coupon.trim()}>
+                                {couponBusy ? '…' : 'Apply'}
+                            </button>
+                        </div>
+                    ) : (
+                        <button className="btn btn-ghost btn-sm none" onClick={clearPromo}>Remove code</button>
+                    )}
+                    {couponMsg && <p className="xs" style={{ marginTop: 8, color: promo ? 'var(--green)' : 'var(--rose)' }}>{couponMsg}</p>}
+                </div>
 
                 <div className="grid gap-12 g-3" style={{ gridTemplateColumns: (reason === 'template' || reason === 'interview') ? '1fr 1fr' : '1fr 1fr 1fr', marginBottom: 18, alignItems: 'stretch', paddingTop: 12 }}>
                     {LADDER.filter(p => (reason !== 'template' && reason !== 'interview') || p.id !== 'boost_299').map(p => {
@@ -193,8 +175,8 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
                                     <span className="h5">{p.name}</span>
                                 </div>
                                 <div className="row ae gap-6" style={{ marginBottom: 10 }}>
-                                    {discount && <span className="xs" style={{ textDecoration: 'line-through', color: 'var(--faint)', paddingBottom: 4 }}>{p.price}</span>}
-                                    <span className="h3" style={{ fontSize: 24, color: 'var(--text)' }}>{discount ? inr(Math.round(p.rupees * 0.7)) : p.price}</span>
+                                    {promo && <span className="xs" style={{ textDecoration: 'line-through', color: 'var(--faint)', paddingBottom: 4 }}>{p.price}</span>}
+                                    <span className="h3" style={{ fontSize: 24, color: 'var(--text)' }}>{promo ? inr(priceOf(p.rupees)) : p.price}</span>
                                     <span className="xs" style={{ paddingBottom: 4 }}>{p.per}</span>
                                 </div>
                                 <div className="col gap-6" style={{ flex: 1 }}>
@@ -214,8 +196,8 @@ export default function PaymentModal({ onClose, onSuccess, reason = 'generic', m
                 <button className="btn btn-gold btn-lg btn-block" onClick={handlePay} disabled={busy}>
                     {busy ? (status || 'Processing…') : (() => {
                         const p = LADDER.find(x => x.id === selected);
-                        const price = discount ? inr(Math.round(p.rupees * 0.7)) : p.price;
-                        return `Get ${p?.name} — ${price}${discount ? ' (30% off)' : ''}`;
+                        const price = promo ? inr(priceOf(p.rupees)) : p.price;
+                        return `Get ${p?.name} — ${price}${promo ? ` (${promo.percent}% off)` : ''}`;
                     })()}
                 </button>
                 <p className="xs tc" style={{ marginTop: 12 }}>
