@@ -149,7 +149,7 @@ export default function CoachCheckout({ nav }) {
             )}
             <div className="row ac jsb" style={{ height: 68, borderBottom: '1px solid var(--line)', padding: '0 36px' }}>
                 <div className="row ac gap-16">
-                    <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} onClick={() => nav('/coach/new')}>←</button>
+                    <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} title="Back" onClick={() => { if (window.history.length > 1) window.history.back(); else nav('/coach/new'); }}>←</button>
                     <a href="/" className="brand" onClick={(e) => { e.preventDefault(); nav('/'); }} style={{ cursor: 'pointer' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></a>
                 </div>
                 <div className="row ac gap-10"><Lock size={15} color="var(--green)" /><span className="sm green-t">Secure checkout</span></div>

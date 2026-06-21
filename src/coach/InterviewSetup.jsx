@@ -26,7 +26,12 @@ export default function InterviewSetup({ nav }) {
     const [difficulty, setDifficulty] = useState([35, 66, 90].includes(draft?.difficulty) ? draft.difficulty : 66);
     const [busy, setBusy]       = useState(false);
     const [err, setErr]         = useState('');
-    const [resume, setResume]   = useState(loadSavedResume);   // user's actual résumé (saved or uploaded)
+    // Never silently attach the builder draft — landing here fresh and seeing a
+    // résumé already on the form is confusing. We only restore one the user
+    // attached in THIS flow (survives the checkout round-trip via the draft),
+    // and offer any saved résumé as an explicit one-tap below.
+    const [savedResume] = useState(loadSavedResume);
+    const [resume, setResume]   = useState(() => (draft?.resumeData && draft.resumeData.fullName) ? draft.resumeData : null);
     const [resumeBusy, setResumeBusy] = useState(false);
     const [access, setAccess]   = useState(null);   // { unlimited, passes, has } — entitled users see no pay UI
     const fileRef = useRef(null);
@@ -106,7 +111,7 @@ export default function InterviewSetup({ nav }) {
             {/* top bar */}
             <div className="row ac jsb" style={{ height: 68, borderBottom: '1px solid var(--line)', padding: isMobile ? '0 16px' : '0 36px' }}>
                 <div className="row ac gap-16">
-                    <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} onClick={() => nav('/coach')}>←</button>
+                    <button className="btn btn-ghost btn-sm" style={{ width: 36, padding: 0 }} title="Back" onClick={() => { if (window.history.length > 1) window.history.back(); else nav('/coach'); }}>←</button>
                     <a href="/" className="brand" onClick={(e) => { e.preventDefault(); nav('/'); }} style={{ cursor: 'pointer' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></a>
                 </div>
                 <div className="row ac gap-14">
@@ -149,12 +154,19 @@ export default function InterviewSetup({ nav }) {
                                 <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()} disabled={resumeBusy}>Replace</button>
                             </div>
                         ) : (
-                            <button className="row ac gap-18" onClick={() => fileRef.current?.click()} disabled={resumeBusy}
-                                    style={{ width: '100%', textAlign: 'left', border: '1.5px dashed var(--line-3)', background: 'transparent', borderRadius: 'var(--r-l)', padding: 26, cursor: 'pointer' }}>
-                                <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', color: 'var(--gold)', flex: 'none' }}>{resumeBusy ? <Upload size={18} className="orb" /> : <Upload size={18} />}</div>
-                                <div className="fill"><div className="sm" style={{ color: 'var(--text-2)', fontWeight: 600 }}>{resumeBusy ? 'Reading your résumé…' : 'Upload your résumé'}</div><div className="xs">PDF, DOCX or TXT · up to 5 MB. Or skip — we'll tailor from the role.</div></div>
-                                <span className="btn btn-ghost btn-sm none">Browse</span>
-                            </button>
+                            <>
+                                <button className="row ac gap-18" onClick={() => fileRef.current?.click()} disabled={resumeBusy}
+                                        style={{ width: '100%', textAlign: 'left', border: '1.5px dashed var(--line-3)', background: 'transparent', borderRadius: 'var(--r-l)', padding: 26, cursor: 'pointer' }}>
+                                    <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--surface-3)', display: 'grid', placeItems: 'center', color: 'var(--gold)', flex: 'none' }}>{resumeBusy ? <Upload size={18} className="orb" /> : <Upload size={18} />}</div>
+                                    <div className="fill"><div className="sm" style={{ color: 'var(--text-2)', fontWeight: 600 }}>{resumeBusy ? 'Reading your résumé…' : 'Upload your résumé'}</div><div className="xs">PDF, DOCX or TXT · up to 5 MB. Or skip — we'll tailor from the role.</div></div>
+                                    <span className="btn btn-ghost btn-sm none">Browse</span>
+                                </button>
+                                {savedResume && savedResume.fullName && !resumeBusy && (
+                                    <button className="btn btn-ghost btn-sm" onClick={() => setResume(savedResume)} style={{ marginTop: 12 }}>
+                                        <FileText size={14} style={{ marginRight: 7 }} /> Use my saved résumé — {savedResume.fullName}
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
 

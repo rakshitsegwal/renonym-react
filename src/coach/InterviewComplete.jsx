@@ -112,7 +112,7 @@ function Shell({ nav, children }) {
     return (
         <div className="rn-dark" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 24px', textAlign: 'center' }}>
             <div className="row jsb ac" style={{ width: '100%', maxWidth: 1240, height: 68 }}>
-                <div className="brand"><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
+                <a href="/" className="brand" onClick={(e) => { e.preventDefault(); nav('/'); }} style={{ cursor: 'pointer' }}><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></a>
                 <a href="/" className="sm faint" onClick={(e) => { e.preventDefault(); nav('/'); }}>Close</a>
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', maxWidth: 760, paddingBottom: 60 }}>
