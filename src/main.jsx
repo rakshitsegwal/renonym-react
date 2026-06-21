@@ -16,7 +16,7 @@ import Tracker from './tracker/Tracker.jsx';
 import JobDetail from './tracker/JobDetail.jsx';
 import AdminFounding from './AdminFounding.jsx';
 import { Analytics } from '@vercel/analytics/react';
-import { initClarity, identify, track } from './analytics.js';
+import { initClarity, identify, track, fbqPageView } from './analytics.js';
 import './app.css';
 import './coach.css';
 
@@ -67,6 +67,14 @@ function App() {
     const [currentUser, setCurrentUser] = useState(null);
     const viewRef = useRef(view);
     viewRef.current = view;
+
+    // Meta Pixel PageView on each SPA route change (the base snippet in index.html
+    // already fired the initial load, so skip the first run).
+    const fbFirst = useRef(true);
+    useEffect(() => {
+        if (fbFirst.current) { fbFirst.current = false; return; }
+        fbqPageView();
+    }, [view]);
 
     // Capture a referral code from ?ref= — claimed once after sign-in (give 5 / get 5).
     useEffect(() => {
