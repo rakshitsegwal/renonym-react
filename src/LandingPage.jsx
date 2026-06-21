@@ -7,7 +7,7 @@ import './coach.css';
 // S1 — Landing (dark/gold reskin, recreated from designs/screens/01-landing-desktop.html).
 // Coach-led hero; the résumé builder is the free on-ramp. Existing résumé entry
 // points (onGetStarted/onStartAi/onOpenJobMatch) are preserved.
-export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, onLogout, currentUser }) {
+export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, onLogout, currentUser }) {
     const [showLogin, setShowLogin] = useState(false);
     const go = (p) => () => (onNavigate ? onNavigate(p) : onGetStarted());
 
@@ -50,7 +50,7 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                               </div>
                             : <>
                                 <button className="sm t2" style={{ fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => (onLogin ? setShowLogin(true) : onGetStarted())}>Sign in</button>
-                                <button className="btn btn-gold" onClick={onGetStarted}>Get started</button>
+                                <button className="btn btn-gold" onClick={onShowChooser || onGetStarted}>Get started</button>
                               </>}
                     </div>
                 </div>

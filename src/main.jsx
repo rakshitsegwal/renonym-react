@@ -302,6 +302,7 @@ function App() {
         <>
             <LandingPage
                 onGetStarted={() => goToBuilder('gallery')}
+                onShowChooser={() => setShowChooser(true)}
                 onStartAi={() => goToBuilder('ai')}
                 onOpenJobMatch={() => goToBuilder('jobmatch')}
                 onGoToDashboard={goToDashboard}
