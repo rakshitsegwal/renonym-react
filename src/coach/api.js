@@ -60,6 +60,8 @@ export const claimReferral   = (code) => req('/referral/claim', { method: 'POST'
 export const validatePromo   = (code) => req(`/promo/validate?code=${encodeURIComponent(code)}`);
 export const adminFounding   = () => req('/admin/founding');                                   // email-allowlist gated
 export const createSession  = (cfg) => req('/coach/sessions', { method: 'POST', body: cfg, timeoutMs: 150000 });
+// Landing demo — one anonymous answer → scorecard. No login; the value-first hook.
+export const demoFeedback   = (body) => req('/demo/feedback', { method: 'POST', body, timeoutMs: 30000 });
 
 // ── Audio interview: AI interviewer voice + spoken-answer transcription ──────
 // Both have client-side fallbacks (browser TTS / live SpeechRecognition), so a

@@ -3,6 +3,8 @@ import { AuthModal, UserPill } from './AuthModal.jsx';
 import { FileText, Mic, BarChart3, MessageSquare, BarChart2, Check, ShieldCheck, Lock, ChevronDown } from 'lucide-react';
 import { VoiceOrb, Waveform, ScoreRing, Meter, Badge } from './coach/primitives.jsx';
 import './coach.css';
+import DemoInterview from './DemoInterview.jsx';
+import { track } from './analytics.js';
 
 // S1 — Landing (dark/gold reskin). Rebuilt for conversion of Indian Meta-ad
 // traffic: ONE dominant CTA (free résumé builder, no card), mobile-first,
@@ -17,6 +19,9 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
         try { history.replaceState(null, '', '#' + id); } catch {}   // deep-linkable sections
     };
+
+    // funnel step 1 — a visitor reached the landing (fires once)
+    useEffect(() => { track('landing_view'); }, []);
 
     // deep link: /#pricing etc. scrolls on first load
     useEffect(() => {
@@ -95,6 +100,9 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
                     </div>
                 </div>
             </header>
+
+            {/* INSTANT DEMO — value before signup: answer one question, get scored, no auth */}
+            <DemoInterview onStartFull={go('/coach/new')} />
 
             {/* RISK-REVERSAL STRIP — neutralise the first-timer fears immediately */}
             <div className="wrap-wide" style={{ padding: '0 48px 10px' }}>
