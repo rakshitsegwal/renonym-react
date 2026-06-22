@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ScoreRing, Meter, Badge } from './coach/primitives.jsx';
-import { demoFeedback } from './coach/api.js';
+import { demoFeedback, demoEmailReport } from './coach/api.js';
 import { track } from './analytics.js';
 
 // Value-before-signup hook. A cold visitor answers ONE real interview question
@@ -19,6 +19,10 @@ export default function DemoInterview({ onStartFull }) {
     const [busy, setBusy]       = useState(false);
     const [result, setResult]   = useState(null);
     const [error, setError]     = useState('');
+    const [email, setEmail]         = useState('');
+    const [emailing, setEmailing]   = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
+    const [emailErr, setEmailErr]   = useState('');
     const startedRef            = useRef(false);
 
     async function submit() {
@@ -33,6 +37,25 @@ export default function DemoInterview({ onStartFull }) {
             setError(e.message || 'Could not score that answer. Please try again.');
         } finally {
             setBusy(false);
+        }
+    }
+
+    async function emailReport() {
+        const addr = email.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addr)) { setEmailErr('Please enter a valid email address.'); return; }
+        setEmailing(true); setEmailErr('');
+        try {
+            await demoEmailReport({
+                email: addr, answer: answer.trim(),
+                scores: { communication: result.communication, confidence: result.confidence, specificity: result.specificity, overall: result.overall },
+                verdict: result.verdict, notes: result.notes,
+            });
+            setEmailSent(true);
+            track('email_captured');
+        } catch (e) {
+            setEmailErr(e.message || 'Could not send. Try again, or tap “Start now”.');
+        } finally {
+            setEmailing(false);
         }
     }
 
@@ -112,15 +135,34 @@ export default function DemoInterview({ onStartFull }) {
                                     </div>
                                 )}
 
-                                {/* Phase-2 slot: this becomes the email-capture CTA. For now it routes
-                                    into the full free mock interview. */}
+                                {/* Email capture AFTER value — soft, never a gate. They get the
+                                    report in their inbox even without finishing account creation. */}
                                 <div className="divider" style={{ margin: '24px 0 18px' }} />
-                                <div className="card" style={{ padding: '18px 20px', borderRadius: 'var(--r-l)', background: 'var(--gold-soft)', borderColor: 'var(--gold-line)' }}>
-                                    <p className="body-t" style={{ color: 'var(--text)' }}>That was <b>one</b> question. Get a full mock interview for your <b>exact role</b> — voice or text — with a complete scored report.</p>
-                                    <div className="row ac gap-12 wrap-f" style={{ marginTop: 14 }}>
-                                        <button className="btn btn-gold btn-lg" onClick={onStartFull}>Start my full free interview →</button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setAnswer(''); }}>Try another answer</button>
-                                    </div>
+                                <div className="card" style={{ padding: '20px', borderRadius: 'var(--r-l)', background: 'var(--gold-soft)', borderColor: 'var(--gold-line)' }}>
+                                    {emailSent ? (
+                                        <div className="tc">
+                                            <div style={{ fontSize: 30, marginBottom: 6 }}>✉️</div>
+                                            <p className="h5" style={{ color: 'var(--text)' }}>Check your inbox — your scorecard is on the way.</p>
+                                            <p className="sm" style={{ marginTop: 6 }}>It has a link to start your full free mock interview for your exact role.</p>
+                                            <button className="btn btn-gold btn-lg" style={{ marginTop: 16 }} onClick={onStartFull}>Or start it now →</button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="body-t" style={{ color: 'var(--text)' }}>That was <b>one</b> question. Want the full mock for your <b>exact role</b> + this report saved? We’ll email it.</p>
+                                            <div className="row gap-10 wrap-f" style={{ marginTop: 14 }}>
+                                                <input type="email" inputMode="email" autoComplete="email" className="input fill" placeholder="you@example.com" value={email} style={{ minWidth: 200 }}
+                                                    onChange={(e) => { setEmail(e.target.value); setEmailErr(''); }}
+                                                    onFocus={(e) => { const t = e.target; setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} }, 250); }}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') emailReport(); }} />
+                                                <button className="btn btn-gold" onClick={emailReport} disabled={emailing}>{emailing ? 'Sending…' : 'Email me my report →'}</button>
+                                            </div>
+                                            {emailErr && <div className="sm" style={{ color: 'var(--rose)', marginTop: 10 }}>{emailErr}</div>}
+                                            <div className="row ac gap-16 wrap-f" style={{ marginTop: 14 }}>
+                                                <button className="sm gold" style={{ fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={onStartFull}>Or start my full interview now →</button>
+                                                <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setAnswer(''); }}>Try another answer</button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </>
                         )}

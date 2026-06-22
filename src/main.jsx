@@ -107,7 +107,8 @@ function App() {
         try {
             const u = JSON.parse(localStorage.getItem('rn-auth-user') || 'null');
             if (u && u.created) {
-                track('signup');
+                track('signup');             // → Meta CompleteRegistration
+                track('signup_completed');   // funnel step
                 delete u.created;
                 localStorage.setItem('rn-auth-user', JSON.stringify(u));
                 return true;

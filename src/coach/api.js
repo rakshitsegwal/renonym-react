@@ -62,6 +62,8 @@ export const adminFounding   = () => req('/admin/founding');                    
 export const createSession  = (cfg) => req('/coach/sessions', { method: 'POST', body: cfg, timeoutMs: 150000 });
 // Landing demo — one anonymous answer → scorecard. No login; the value-first hook.
 export const demoFeedback   = (body) => req('/demo/feedback', { method: 'POST', body, timeoutMs: 30000 });
+// Email the scorecard after value (soft capture; no account needed).
+export const demoEmailReport = (body) => req('/demo/email-report', { method: 'POST', body, timeoutMs: 20000 });
 
 // ── Audio interview: AI interviewer voice + spoken-answer transcription ──────
 // Both have client-side fallbacks (browser TTS / live SpeechRecognition), so a
