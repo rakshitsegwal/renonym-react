@@ -15,7 +15,6 @@ import TextInterview from './coach/TextInterview.jsx';
 import Tracker from './tracker/Tracker.jsx';
 import JobDetail from './tracker/JobDetail.jsx';
 import AdminFounding from './AdminFounding.jsx';
-import WelcomeChooser from './WelcomeChooser.jsx';
 import { Analytics } from '@vercel/analytics/react';
 import { initClarity, identify, track, fbqPageView } from './analytics.js';
 import './app.css';
@@ -66,7 +65,6 @@ function App() {
     const [params, setParams]       = useState(() => parseLocation().params);
     const [entryMode, setEntryMode] = useState('gallery');
     const [currentUser, setCurrentUser] = useState(null);
-    const [showChooser, setShowChooser] = useState(false);   // post-login "where to start?" modal
     const viewRef = useRef(view);
     viewRef.current = view;
 
@@ -217,24 +215,18 @@ function App() {
     function handleLogin() {
         const user = localStorage.getItem('rn-auth-user');
         if (user) { try { setCurrentUser(JSON.parse(user)); } catch {} }
-        if (!trackSignupOnce()) track('signin');
+        const isNew = trackSignupOnce();   // true → brand-new account
+        if (!isNew) track('signin');
         tryClaimReferral();
         refreshUserFromServer();   // popup cache is slim — pull referralCode/passType now
-        // Return to wherever sign-in was requested from (e.g. /tracker's gate);
-        // otherwise let them choose where to start instead of dumping them in the builder.
+        // 1) If sign-in was requested from a specific gate, return there.
         let returnTo = null;
         try { returnTo = localStorage.getItem('rn-return-to'); localStorage.removeItem('rn-return-to'); } catch {}
         if (returnTo) { navPath(returnTo); return; }
-        setShowChooser(true);
-    }
-
-    // Welcome chooser routes into each tool's normal flow.
-    function handleChoose(key) {
-        setShowChooser(false);
-        if (key === 'builder')  return goToBuilder('gallery');
-        if (key === 'jobmatch') return goToBuilder('jobmatch');
-        if (key === 'coach')    return navPath('/coach/new');
-        if (key === 'tracker')  return navPath('/tracker');
+        // 2) New users go STRAIGHT into the interview — no 4-way menu. InterviewSetup
+        //    restores any role/JD they already entered, so there's no rework.
+        if (isNew) { navPath('/coach/new'); return; }
+        // 3) Returning users land on their dashboard (which carries the tool nav).
         goToDashboard();
     }
 
@@ -300,21 +292,17 @@ function App() {
     }
 
     return (
-        <>
-            <LandingPage
-                onGetStarted={() => goToBuilder('gallery')}
-                onShowChooser={() => setShowChooser(true)}
-                onStartAi={() => goToBuilder('ai')}
-                onOpenJobMatch={() => goToBuilder('jobmatch')}
-                onGoToDashboard={goToDashboard}
-                onNavigate={navPath}
-                onNavigateLegal={goToLegal}
-                onLogin={handleLogin}
-                onLogout={handleLogout}
-                currentUser={currentUser}
-            />
-            {showChooser && <WelcomeChooser name={currentUser?.name} onPick={handleChoose} onSkip={() => handleChoose('dashboard')} />}
-        </>
+        <LandingPage
+            onGetStarted={() => goToBuilder('gallery')}
+            onStartAi={() => goToBuilder('ai')}
+            onOpenJobMatch={() => goToBuilder('jobmatch')}
+            onGoToDashboard={goToDashboard}
+            onNavigate={navPath}
+            onNavigateLegal={goToLegal}
+            onLogin={handleLogin}
+            onLogout={handleLogout}
+            currentUser={currentUser}
+        />
     );
 }
 

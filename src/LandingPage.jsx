@@ -10,7 +10,7 @@ import { track } from './analytics.js';
 // traffic: ONE dominant CTA (free résumé builder, no card), mobile-first,
 // India-relevant personas/proof, risk reversal + FAQ. The paid Coach is the
 // secondary, de-emphasised path — never the loudest pixel on a cold visit.
-export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, onLogout, currentUser }) {
+export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, onGoToDashboard, onNavigate, onNavigateLegal, onLogin, onLogout, currentUser }) {
     const [showLogin, setShowLogin] = useState(false);
     const go = (p) => () => (onNavigate ? onNavigate(p) : onGetStarted());
 
