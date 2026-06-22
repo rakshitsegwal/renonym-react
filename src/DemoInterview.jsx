@@ -14,7 +14,7 @@ const DIMS = [
     ['specificity', 'Specificity'],
 ];
 
-export default function DemoInterview({ onStartFull }) {
+export default function DemoInterview({ onStartFull, heroMode = false }) {
     const [answer, setAnswer]   = useState('');
     const [busy, setBusy]       = useState(false);
     const [result, setResult]   = useState(null);
@@ -60,41 +60,43 @@ export default function DemoInterview({ onStartFull }) {
     }
 
     return (
-        <section id="demo" style={{ padding: '20px 0 72px' }}>
-            <div className="wrap" style={{ maxWidth: 760 }}>
-                <div className="tc" style={{ marginBottom: 26 }}>
-                    <span className="eyebrow">Try it now · no signup</span>
-                    <h2 className="h1" style={{ marginTop: 14 }}>See what the AI coach tells you — <span className="italic gold">right now</span>.</h2>
-                    <p className="lead" style={{ marginTop: 12 }}>Answer one real interview question. Get a live scorecard on <em>your</em> answer in seconds.</p>
-                </div>
+        <section id="demo" className={heroMode ? 'di-hero' : ''} style={{ padding: heroMode ? '0 0 8px' : '20px 0 72px' }}>
+            <div className="wrap" style={{ maxWidth: heroMode ? 660 : 760 }}>
+                {!heroMode && (
+                    <div className="tc" style={{ marginBottom: 26 }}>
+                        <span className="eyebrow">Try it now · no signup</span>
+                        <h2 className="h1" style={{ marginTop: 14 }}>See what the AI coach tells you — <span className="italic gold">right now</span>.</h2>
+                        <p className="lead" style={{ marginTop: 12 }}>Answer one real interview question. Get a live scorecard on <em>your</em> answer in seconds.</p>
+                    </div>
+                )}
 
                 <div className="card-gold" style={{ borderRadius: 'var(--r-2xl)', overflow: 'hidden', borderColor: 'var(--gold-line)' }}>
                     {/* the question */}
-                    <div style={{ padding: '26px 28px', borderBottom: '1px solid var(--line)' }}>
-                        <div className="row ac gap-10" style={{ marginBottom: 12 }}>
+                    <div style={{ padding: heroMode ? '16px 20px' : '26px 28px', borderBottom: '1px solid var(--line)' }}>
+                        <div className="row ac gap-10" style={{ marginBottom: 10 }}>
                             <Badge variant="gold" dot>Interviewer asks</Badge>
                             <span className="label">Behavioral · Q1 of your mock</span>
                         </div>
-                        <p className="h4" style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 24, lineHeight: 1.35, color: 'var(--text)' }}>“{DEMO_Q}”</p>
+                        <p className="h4 di-q" style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: heroMode ? 20 : 24, lineHeight: 1.35, color: 'var(--text)' }}>“{DEMO_Q}”</p>
                     </div>
 
                     {/* the answer + score */}
-                    <div style={{ padding: 28 }}>
+                    <div style={{ padding: heroMode ? '18px 20px' : 28 }}>
                         {!result ? (
                             <>
-                                <label className="input-lbl" style={{ display: 'block', marginBottom: 10 }}>Your answer</label>
+                                <label className="input-lbl" style={{ display: 'block', marginBottom: 8 }}>Your answer</label>
                                 <textarea
-                                    className="textarea"
-                                    style={{ minHeight: 150 }}
+                                    className="textarea di-textarea"
+                                    style={{ minHeight: heroMode ? 100 : 150 }}
                                     placeholder="Answer like you're in the real interview — a project, your exact role, what you did, and the result…"
                                     value={answer}
                                     onChange={(e) => { setAnswer(e.target.value); setError(''); }}
                                     onFocus={(e) => { const t = e.target; setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} }, 250); }}
                                 />
                                 {error && <div className="sm" style={{ color: 'var(--rose)', marginTop: 10 }}>{error}</div>}
-                                <div className="row ac jsb wrap-f gap-12" style={{ marginTop: 16 }}>
+                                <div className="row ac jsb wrap-f gap-12 di-submit-row" style={{ marginTop: 14 }}>
                                     <span className="xs">{answer.trim().length < 15 ? 'Type a couple of sentences to get scored.' : 'No signup · scored by the same AI as the full coach.'}</span>
-                                    <button className="btn btn-gold btn-lg" onClick={submit} disabled={busy || answer.trim().length < 15}>
+                                    <button className="btn btn-gold btn-lg di-submit" onClick={submit} disabled={busy || answer.trim().length < 15}>
                                         {busy ? 'Scoring your answer…' : 'Get my feedback →'}
                                     </button>
                                 </div>

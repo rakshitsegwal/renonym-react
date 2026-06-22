@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthModal, UserPill } from './AuthModal.jsx';
 import { FileText, Mic, BarChart3, MessageSquare, BarChart2, Check, ShieldCheck, Lock, ChevronDown } from 'lucide-react';
-import { VoiceOrb, Waveform, ScoreRing, Meter, Badge } from './coach/primitives.jsx';
+import { ScoreRing, Meter, Badge } from './coach/primitives.jsx';
 import './coach.css';
 import DemoInterview from './DemoInterview.jsx';
 import { track } from './analytics.js';
@@ -62,47 +62,18 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                 </div>
             </nav>
 
-            {/* HERO — mobile-first: headline, one free CTA, then the demo card */}
+            {/* HERO — the page OPENS AS the interview: pill + one-line instruction, then the LIVE demo above the fold */}
             <header className="rel" style={{ overflow: 'hidden' }}>
                 <div className="glow-gold" style={{ width: 700, height: 520, right: -120, top: -180 }} />
-                <div className="wrap-wide grid lp-hero" style={{ gridTemplateColumns: '1.05fr 0.95fr', gap: 56, alignItems: 'center', padding: '72px 48px 56px' }}>
-                    <div>
-                        <div className="pill" style={{ marginBottom: 24 }}><span className="dot" />AI Interview Coach · Made in India</div>
-                        <h1 className="display">Walk into your interview<br />already knowing<br /><span className="italic gold">exactly what to say.</span></h1>
-                        <p className="lead" style={{ marginTop: 22, maxWidth: '38ch' }}>Practise the real interview for your exact job with an AI coach, then get a scored report on what to fix.</p>
-                        <div className="row ac gap-16 wrap-f" style={{ marginTop: 32 }}>
-                            <button className="btn btn-gold btn-lg" onClick={go('/coach/new')}>Start my free mock interview →</button>
-                        </div>
-                        <p className="sm" style={{ marginTop: 14, color: 'var(--text-2)' }}>First interview free · full scored report · no card needed</p>
-                        <button className="sm gold" style={{ marginTop: 18, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={onGetStarted}>Or build my résumé free →</button>
-                    </div>
-
-                    {/* product demo: voice session (India-relevant role) */}
-                    <div className="card rel" style={{ borderRadius: 'var(--r-xl)', overflow: 'hidden', boxShadow: 'var(--shadow-l)' }}>
-                        <div className="row ac jsb" style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', background: 'var(--bg-1)' }}>
-                            <div className="row ac gap-10"><Badge variant="gold" dot>Live session</Badge><span className="label">Behavioral · Flipkart</span></div>
-                            <Badge variant="blue">Voice</Badge>
-                        </div>
-                        <div style={{ padding: 30 }}>
-                            <div className="label" style={{ marginBottom: 10 }}>Coach asks · Q2 of 6</div>
-                            <p className="h4" style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 25, lineHeight: 1.3 }}>“Walk me through a project from your final year — what was your exact role?”</p>
-                            <div className="col ac" style={{ margin: '34px 0 26px' }}>
-                                <VoiceOrb size={104} state="listening" />
-                                <Waveform bars={11} live height={42} style={{ marginTop: 24 }} />
-                                <div className="pill" style={{ marginTop: 22 }}><span className="dot" />Listening — speak naturally</div>
-                            </div>
-                            <div className="divider" style={{ marginBottom: 16 }} />
-                            <div className="row ac jsb">
-                                <span className="xs">Aarav · SDE-1 · Bengaluru</span>
-                                <div className="row gap-8"><Badge variant="green">Clarity 84</Badge><Badge variant="amber">Add a metric</Badge></div>
-                            </div>
-                        </div>
-                    </div>
+                <div className="wrap tc" style={{ maxWidth: 680, padding: '34px 18px 10px' }}>
+                    <div className="pill" style={{ marginBottom: 16 }}><span className="dot" />AI Interview Coach · Made in India</div>
+                    <h1 style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 'clamp(21px,5.4vw,34px)', lineHeight: 1.25, color: 'var(--text)' }}>
+                        Answer one real interview question.<br /><span className="italic gold">Get your AI scorecard — free, now.</span>
+                    </h1>
                 </div>
+                {/* the LIVE interview — question + answer box above the fold; scores render in place, no navigation */}
+                <DemoInterview heroMode onStartFull={go('/coach/new')} />
             </header>
-
-            {/* INSTANT DEMO — value before signup: answer one question, get scored, no auth */}
-            <DemoInterview onStartFull={go('/coach/new')} />
 
             {/* RISK-REVERSAL STRIP — neutralise the first-timer fears immediately */}
             <div className="wrap-wide" style={{ padding: '0 48px 10px' }}>
@@ -332,7 +303,11 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
             {/* spacer + mobile sticky CTA — keeps the one action in thumb reach */}
             <div className="lp-foot-pad" />
             <div className="lp-stick">
-                <button className="btn btn-gold" onClick={go('/coach/new')}>Start my free mock interview</button>
+                <button className="btn btn-gold" onClick={() => {
+                    const ta = document.querySelector('#demo textarea');
+                    if (ta) { ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => ta.focus(), 300); }
+                    else go('/coach/new')();
+                }}>Answer the question — it's free →</button>
             </div>
         </div>
     );
