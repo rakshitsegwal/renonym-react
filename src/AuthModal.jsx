@@ -153,7 +153,8 @@ export function AuthModal({ onAuth, onClose, reason }) {
     const emailForm = (
         <form className="rn-auth-modal__magic-form" onSubmit={requestCode}>
             <input type="email" inputMode="email" autoComplete="email" className="rn-auth-input"
-                placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} autoFocus={inApp} />
+                placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} autoFocus={inApp}
+                onFocus={e => { const t = e.target; setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} }, 250); }} />
             <button className="rn-auth-btn rn-auth-btn--magic" disabled={sending}>
                 {sending ? 'Sending…' : 'Email me a sign-in code'}
             </button>
@@ -161,7 +162,13 @@ export function AuthModal({ onAuth, onClose, reason }) {
     );
 
     return (
-        <div className="rn-auth-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <div className="rn-auth-overlay" onClick={(e) => {
+                // Only a backdrop tap on the untouched first step closes the modal.
+                // Once they've typed an email / reached the code step / a request
+                // is in flight, an accidental outside tap must NOT discard progress —
+                // only the × closes. (App-switching to read the code keeps state.)
+                if (e.target === e.currentTarget && step === 'choose' && !sending && !verifying && !email.trim()) onClose();
+            }}>
             <div className="rn-auth-modal">
                 <button className="rn-auth-modal__close" onClick={onClose}>×</button>
 
@@ -220,6 +227,7 @@ export function AuthModal({ onAuth, onClose, reason }) {
                         <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
                             className="rn-auth-input rn-auth-input--code" placeholder="••••••" value={code}
                             onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 6); setCode(v); setError(''); }}
+                            onFocus={e => { const t = e.target; setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} }, 250); }}
                             autoFocus />
                         <button className="rn-auth-btn rn-auth-btn--magic" disabled={verifying || code.length !== 6}>
                             {verifying ? 'Verifying…' : 'Verify & continue →'}

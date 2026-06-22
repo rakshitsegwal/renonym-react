@@ -6464,6 +6464,10 @@ html, body, #root {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* scrollable + padded so the modal can move above the mobile keyboard
+       when an input is focused (paired with scrollIntoView on focus) */
+    overflow-y: auto;
+    padding: 20px;
     animation: rn-fade-in 0.15s ease;
 }
 
