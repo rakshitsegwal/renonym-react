@@ -6632,6 +6632,49 @@ html, body, #root {
 .rn-auth-modal__sent p { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #F3F3EF; }
 .rn-auth-modal__sent-sub { font-size: 14px; color: #9296A0; line-height: 1.6; }
 
+/* Email-OTP + in-app-browser additions */
+.rn-auth-note {
+    background: rgba(232,201,148,0.10);
+    border: 1px solid rgba(232,201,148,0.28);
+    color: #C7C9CD;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    text-align: left;
+}
+.rn-auth-note strong { color: #E8C994; }
+.rn-auth-note--steps { margin-top: 4px; margin-bottom: 0; }
+.rn-auth-btn--ghost {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.16);
+    color: #C7C9CD;
+}
+.rn-auth-btn--ghost:hover { border-color: rgba(232,201,148,0.45); color: #F3F3EF; }
+.rn-auth-input--code {
+    text-align: center;
+    font-size: 26px;
+    letter-spacing: 12px;
+    font-weight: 700;
+    padding-left: 12px;   /* offset the trailing letter-spacing so it reads centered */
+}
+.rn-auth-modal__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* The modal renders inside .rn-dark, whose `.rn-dark button` reset
+   (background:none;color:inherit, specificity 0,1,1) outranks the single-class
+   button fills above — which silently flattened the gold/Google buttons to
+   transparent. Re-assert the fills with matching specificity (0,2,0). */
+.rn-auth-modal .rn-auth-btn--google { background: #F3F3EF; color: #17191C; }
+.rn-auth-modal .rn-auth-btn--magic  { background: linear-gradient(168deg, #E8C994, #D4AF73); color: #1A1305; }
+.rn-auth-modal .rn-auth-btn--ghost  { background: transparent; color: #C7C9CD; }
+.rn-auth-modal .rn-auth-back        { color: #7B7F89; }
+
 /* ── Credit options ─────────────────────────────────────────────────────── */
 .rn-credit-options {
     display: flex;
