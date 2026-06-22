@@ -51,7 +51,7 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
                               </div>
                             : <>
                                 <button className="sm t2" style={{ fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => (onLogin ? setShowLogin(true) : onGetStarted())}>Sign in</button>
-                                <button className="btn btn-gold" onClick={onGetStarted}>Start free</button>
+                                <button className="btn btn-gold" onClick={go('/coach/new')}>Start free</button>
                               </>}
                     </div>
                 </div>
@@ -62,14 +62,14 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
                 <div className="glow-gold" style={{ width: 700, height: 520, right: -120, top: -180 }} />
                 <div className="wrap-wide grid lp-hero" style={{ gridTemplateColumns: '1.05fr 0.95fr', gap: 56, alignItems: 'center', padding: '72px 48px 56px' }}>
                     <div>
-                        <div className="pill" style={{ marginBottom: 24 }}><span className="dot" />AI job-prep · Made in India · ₹ pricing</div>
-                        <h1 className="display">Get interview-ready<br />for the job you<br /><span className="italic gold">actually want.</span></h1>
-                        <p className="lead" style={{ marginTop: 22, maxWidth: '36ch' }}>Build a résumé that gets the call — then practise the exact interview, with an AI coach that tells you what to fix.</p>
+                        <div className="pill" style={{ marginBottom: 24 }}><span className="dot" />AI Interview Coach · Made in India</div>
+                        <h1 className="display">Walk into your interview<br />already knowing<br /><span className="italic gold">exactly what to say.</span></h1>
+                        <p className="lead" style={{ marginTop: 22, maxWidth: '38ch' }}>Practise the real interview for your exact job with an AI coach, then get a scored report on what to fix.</p>
                         <div className="row ac gap-16 wrap-f" style={{ marginTop: 32 }}>
-                            <button className="btn btn-gold btn-lg" onClick={onGetStarted}>Build my résumé — free →</button>
+                            <button className="btn btn-gold btn-lg" onClick={go('/coach/new')}>Start my free mock interview →</button>
                         </div>
-                        <p className="sm" style={{ marginTop: 14, color: 'var(--text-2)' }}>No card. No signup to start. Free ATS PDF + unlimited job-match scores.</p>
-                        <button className="sm gold" style={{ marginTop: 18, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={go('/coach/new')}>Or practise a mock interview →</button>
+                        <p className="sm" style={{ marginTop: 14, color: 'var(--text-2)' }}>First interview free · full scored report · no card needed</p>
+                        <button className="sm gold" style={{ marginTop: 18, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={onGetStarted}>Or build my résumé free →</button>
                     </div>
 
                     {/* product demo: voice session (India-relevant role) */}
@@ -150,12 +150,52 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
                 </div>
             </section>
 
-            {/* RÉSUMÉ BUILDER (free on-ramp) */}
+            {/* INTERVIEW COACH — the LEAD section (ads sell the coach; first interview free) */}
+            <section id="coach" style={{ padding: '40px 0 84px' }}>
+                <div className="wrap-wide">
+                    <div className="card-gold rel" style={{ borderRadius: 'var(--r-2xl)', overflow: 'hidden' }}>
+                        <div className="glow-gold" style={{ width: 520, height: 520, right: -120, top: -160 }} />
+                        <div className="grid rel g-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                            <div style={{ padding: 64 }}>
+                                <Badge variant="gold" dot>The Interview Coach</Badge>
+                                <h2 className="h1" style={{ marginTop: 24 }}>Most people lose the offer in the <span className="italic gold">interview</span> — not the résumé.</h2>
+                                <p className="lead" style={{ marginTop: 22, maxWidth: '42ch' }}>You get one shot in the room. Renonym’s AI Coach runs a realistic mock for your exact role, asks the tough follow-ups, and scores every answer — so the real interview isn’t the first time you say it out loud.</p>
+                                <div className="col gap-16" style={{ marginTop: 34 }}>
+                                    {['Adaptive follow-ups that probe like a real interviewer', 'Scored report across clarity, structure, confidence & fit', 'Track every session and watch your score climb'].map(t => (
+                                        <div key={t} className="row ac gap-12"><span style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 18, height: 18 }}><Check size={13} color="var(--green)" /></span><span className="body-t" style={{ color: 'var(--text-2)' }}>{t}</span></div>
+                                    ))}
+                                </div>
+                                <div className="row ac gap-16 wrap-f" style={{ marginTop: 38 }}>
+                                    <button className="btn btn-gold btn-lg" onClick={go('/coach/new')}>Start a free mock interview</button>
+                                    <button className="btn btn-outline btn-lg" onClick={scrollTo('pricing')}>One-time · no subscription</button>
+                                </div>
+                            </div>
+                            <div style={{ padding: '48px 64px 48px 0', display: 'flex', alignItems: 'center' }}>
+                                <div className="card-2" style={{ width: '100%', borderRadius: 'var(--r-xl)', padding: 28, boxShadow: 'var(--shadow-l)' }}>
+                                    <div className="row ac jsb" style={{ marginBottom: 22 }}>
+                                        <div><div className="label">Session report</div><div className="h4" style={{ marginTop: 4 }}>Backend Engineer · Flipkart</div></div>
+                                        <ScoreRing value={72} size={78} stroke={6} label="" />
+                                    </div>
+                                    <div className="col gap-14">
+                                        {[['Communication', 84], ['Structure', 78], ['Specificity', 54]].map(([k, v]) => (
+                                            <div key={k}><div className="row jsb xs" style={{ marginBottom: 6 }}><span style={{ color: 'var(--text-2)' }}>{k}</span><span className={v < 60 ? 'amber-t' : 'gold'}>{v}</span></div><Meter value={v} /></div>
+                                        ))}
+                                    </div>
+                                    <div className="divider" style={{ margin: '20px 0 16px' }} />
+                                    <div className="row ac jsb"><Badge variant="green">▲ +14 vs last rep</Badge><button className="sm gold" style={{ fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }} onClick={go('/coach')}>Open report →</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* RÉSUMÉ BUILDER — secondary free tool */}
             <section id="resume" style={{ padding: '40px 0 84px' }}>
                 <div className="wrap-wide grid lp-split" style={{ gridTemplateColumns: '0.92fr 1.08fr', gap: 64, alignItems: 'center' }}>
                     <div>
-                        <Badge>Free to start</Badge>
-                        <h2 className="h1" style={{ marginTop: 22 }}>A résumé built to clear<br />ATS — and earn the call.</h2>
+                        <Badge>Also free</Badge>
+                        <h2 className="h1" style={{ marginTop: 22 }}>And a résumé built to clear<br />ATS — and earn the call.</h2>
                         <p className="lead" style={{ marginTop: 20, maxWidth: '40ch' }}>10 templates, 4 clean layouts, AI that rewrites weak bullets, and 1-click tailoring to any job description. Export an ATS-friendly PDF free — no design skills needed.</p>
                         <div className="row gap-32 wrap-f" style={{ marginTop: 34 }}>
                             {[['10', 'polished templates'], ['4', 'designer layouts'], ['1-click', 'JD tailoring']].map(([v, l]) => (
@@ -163,7 +203,7 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
                             ))}
                         </div>
                         <div className="row gap-12 wrap-f" style={{ marginTop: 34 }}>
-                            <button className="btn btn-gold btn-lg" onClick={onGetStarted}>Build my résumé — free →</button>
+                            <button className="btn btn-outline btn-lg" onClick={onGetStarted}>Build my résumé — free</button>
                             <button className="btn btn-outline btn-lg" onClick={onOpenJobMatch}>Check my job-match score</button>
                         </div>
                     </div>
@@ -183,46 +223,6 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
                             <div style={{ fontSize: 13, color: '#444', lineHeight: 1.6, marginTop: 7 }}>Cut checkout API latency 38% via caching and query optimisation.</div>
                             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#8a8474', marginTop: 18 }}>Skills</div>
                             <div style={{ fontSize: 13, color: '#444', marginTop: 6 }}>Java · Spring Boot · React · SQL · System Design</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* INTERVIEW COACH — premium, de-emphasised vs the free CTA */}
-            <section id="coach" style={{ padding: '40px 0 84px' }}>
-                <div className="wrap-wide">
-                    <div className="card-gold rel" style={{ borderRadius: 'var(--r-2xl)', overflow: 'hidden' }}>
-                        <div className="glow-gold" style={{ width: 520, height: 520, right: -120, top: -160 }} />
-                        <div className="grid rel g-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                            <div style={{ padding: 64 }}>
-                                <Badge variant="gold" dot>The Interview Coach</Badge>
-                                <h2 className="h1" style={{ marginTop: 24 }}>Most people lose the offer in the <span className="italic gold">interview</span> — not the résumé.</h2>
-                                <p className="lead" style={{ marginTop: 22, maxWidth: '42ch' }}>You get one shot in the room. Renonym’s AI Coach runs a realistic mock for your exact role, asks the tough follow-ups, and scores every answer — so the real interview isn’t the first time you say it out loud.</p>
-                                <div className="col gap-16" style={{ marginTop: 34 }}>
-                                    {['Adaptive follow-ups that probe like a real interviewer', 'Scored report across clarity, structure, confidence & fit', 'Track every session and watch your score climb'].map(t => (
-                                        <div key={t} className="row ac gap-12"><span style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 18, height: 18 }}><Check size={13} color="var(--green)" /></span><span className="body-t" style={{ color: 'var(--text-2)' }}>{t}</span></div>
-                                    ))}
-                                </div>
-                                <div className="row ac gap-16 wrap-f" style={{ marginTop: 38 }}>
-                                    <button className="btn btn-gold btn-lg" onClick={go('/coach/new')}>Try a mock interview</button>
-                                    <button className="btn btn-outline btn-lg" onClick={scrollTo('pricing')}>One-time · no subscription</button>
-                                </div>
-                            </div>
-                            <div style={{ padding: '48px 64px 48px 0', display: 'flex', alignItems: 'center' }}>
-                                <div className="card-2" style={{ width: '100%', borderRadius: 'var(--r-xl)', padding: 28, boxShadow: 'var(--shadow-l)' }}>
-                                    <div className="row ac jsb" style={{ marginBottom: 22 }}>
-                                        <div><div className="label">Session report</div><div className="h4" style={{ marginTop: 4 }}>Backend Engineer · Flipkart</div></div>
-                                        <ScoreRing value={72} size={78} stroke={6} label="" />
-                                    </div>
-                                    <div className="col gap-14">
-                                        {[['Communication', 84], ['Structure', 78], ['Specificity', 54]].map(([k, v]) => (
-                                            <div key={k}><div className="row jsb xs" style={{ marginBottom: 6 }}><span style={{ color: 'var(--text-2)' }}>{k}</span><span className={v < 60 ? 'amber-t' : 'gold'}>{v}</span></div><Meter value={v} /></div>
-                                        ))}
-                                    </div>
-                                    <div className="divider" style={{ margin: '20px 0 16px' }} />
-                                    <div className="row ac jsb"><Badge variant="green">▲ +14 vs last rep</Badge><button className="sm gold" style={{ fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }} onClick={go('/coach')}>Open report →</button></div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -298,11 +298,11 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
             {/* FINAL CTA */}
             <section style={{ padding: '20px 0 84px' }}>
                 <div className="wrap tc" style={{ maxWidth: 720 }}>
-                    <h2 className="h1">Placement season is here.<br />Walk in <span className="italic gold">ready</span>.</h2>
+                    <h2 className="h1">Walk in already knowing<br />what they'll <span className="italic gold">ask</span>.</h2>
                     <div className="row jc" style={{ marginTop: 28 }}>
-                        <button className="btn btn-gold btn-lg" onClick={onGetStarted}>Build my résumé — free →</button>
+                        <button className="btn btn-gold btn-lg" onClick={go('/coach/new')}>Start my free mock interview</button>
                     </div>
-                    <p className="sm" style={{ marginTop: 14 }}>No card needed. Start in seconds.</p>
+                    <p className="sm" style={{ marginTop: 14 }}>First interview free · no card needed.</p>
                 </div>
             </section>
 
@@ -324,7 +324,7 @@ export default function LandingPage({ onGetStarted, onShowChooser, onStartAi, on
             {/* spacer + mobile sticky CTA — keeps the one action in thumb reach */}
             <div className="lp-foot-pad" />
             <div className="lp-stick">
-                <button className="btn btn-gold" onClick={onGetStarted}>Build my résumé — free →</button>
+                <button className="btn btn-gold" onClick={go('/coach/new')}>Start my free mock interview</button>
             </div>
         </div>
     );
