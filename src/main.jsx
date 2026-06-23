@@ -1,24 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
-import LandingPage from './LandingPage.jsx';
-import ResumeBuilder from './ResumeBuilder.jsx';
-import Dashboard from './Dashboard.jsx';
-import LegalPage from './LegalPage.jsx';
-import CoachLanding from './coach/CoachLanding.jsx';
-import InterviewSetup from './coach/InterviewSetup.jsx';
-import CoachCheckout from './coach/CoachCheckout.jsx';
-import InterviewReport from './coach/InterviewReport.jsx';
-import InterviewComplete from './coach/InterviewComplete.jsx';
-import InterviewHistory from './coach/InterviewHistory.jsx';
-import VoiceInterview from './coach/VoiceInterview.jsx';
-import TextInterview from './coach/TextInterview.jsx';
-import Tracker from './tracker/Tracker.jsx';
-import JobDetail from './tracker/JobDetail.jsx';
-import AdminFounding from './AdminFounding.jsx';
+import LandingPage from './LandingPage.jsx';   // eager — it's the first paint (99% of traffic)
 import { Analytics } from '@vercel/analytics/react';
 import { initClarity, identify, track, fbqPageView } from './analytics.js';
 import './app.css';
 import './coach.css';
+
+// Heavy, non-landing views are code-split so the landing ships a SMALL chunk —
+// critical for first paint inside a low-end Android in-app WebView on 4G (the
+// landing previously dragged the whole 4.3k-line résumé builder + all coach
+// screens into one bundle before anything could paint).
+const ResumeBuilder     = lazy(() => import('./ResumeBuilder.jsx'));
+const Dashboard         = lazy(() => import('./Dashboard.jsx'));
+const LegalPage         = lazy(() => import('./LegalPage.jsx'));
+const CoachLanding      = lazy(() => import('./coach/CoachLanding.jsx'));
+const InterviewSetup    = lazy(() => import('./coach/InterviewSetup.jsx'));
+const CoachCheckout     = lazy(() => import('./coach/CoachCheckout.jsx'));
+const InterviewReport   = lazy(() => import('./coach/InterviewReport.jsx'));
+const InterviewComplete = lazy(() => import('./coach/InterviewComplete.jsx'));
+const InterviewHistory  = lazy(() => import('./coach/InterviewHistory.jsx'));
+const VoiceInterview    = lazy(() => import('./coach/VoiceInterview.jsx'));
+const TextInterview     = lazy(() => import('./coach/TextInterview.jsx'));
+const Tracker           = lazy(() => import('./tracker/Tracker.jsx'));
+const JobDetail         = lazy(() => import('./tracker/JobDetail.jsx'));
+const AdminFounding     = lazy(() => import('./AdminFounding.jsx'));
 
 initClarity();   // session replay + heatmaps (Microsoft Clarity), if VITE_CLARITY_ID is set
 
@@ -306,9 +311,21 @@ function App() {
     );
 }
 
+// Shown only while a lazily-loaded view's chunk downloads (never on the eager
+// landing). Branded, so a route switch isn't a blank flash.
+function RouteFallback() {
+    return (
+        <div className="rn-dark" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg)' }}>
+            <div className="brand"><div className="mark">R</div><div className="wm">Re<b>nonym</b></div></div>
+        </div>
+    );
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
     <>
-        <App />
+        <Suspense fallback={<RouteFallback />}>
+            <App />
+        </Suspense>
         <Analytics />   {/* Vercel Web Analytics — auto-tracks pageviews incl. SPA route changes */}
     </>
 );
