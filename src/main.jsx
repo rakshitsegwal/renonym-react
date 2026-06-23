@@ -29,6 +29,31 @@ const AdminFounding     = lazy(() => import('./AdminFounding.jsx'));
 
 initClarity();   // session replay + heatmaps (Microsoft Clarity), if VITE_CLARITY_ID is set
 
+// Capture client JS errors — especially the Android-in-app-WebView ones we can't
+// reproduce locally — so the REAL messages flow into analytics from production
+// traffic. Capped per session so a render loop can't flood. Cross-origin
+// third-party failures arrive as a detail-less "Script error." (that itself is a
+// useful signal: it means the error is a blocked 3rd-party script, not our code).
+if (typeof window !== 'undefined') {
+    let _errN = 0;
+    const reportErr = (msg, src, ln, col) => {
+        if (_errN++ >= 6) return;
+        try {
+            track('js_error', {
+                msg: String(msg || '').slice(0, 200),
+                src: String(src || '').slice(0, 140),
+                ln: ln || 0,
+                ua: (navigator.userAgent || '').slice(0, 140),
+            });
+        } catch (_) {}
+    };
+    window.addEventListener('error', (e) => reportErr(e.message, e.filename, e.lineno, e.colno));
+    window.addEventListener('unhandledrejection', (e) => {
+        const r = e && e.reason;
+        reportErr('unhandledrejection: ' + (r && (r.message || r)), '', 0, 0);
+    });
+}
+
 // ── Lightweight routing ─────────────────────────────────────────────────────
 // Legal pages get real paths (so they're shareable / SEO-able and survive a
 // hard refresh — see vercel.json rewrites). The app views (landing / builder /

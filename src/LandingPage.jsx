@@ -70,6 +70,9 @@ export default function LandingPage({ onGetStarted, onStartAi, onOpenJobMatch, o
                     <h1 style={{ fontFamily: 'var(--rn-serif)', fontWeight: 400, fontSize: 'clamp(21px,5.4vw,34px)', lineHeight: 1.25, color: 'var(--text)' }}>
                         Answer one real interview question.<br /><span className="italic gold">Get your AI scorecard — free, now.</span>
                     </h1>
+                    <p className="xs" style={{ marginTop: 10, color: 'var(--text-2)' }}>
+                        Real, specific feedback — like <span className="gold">“Strong story; now quantify the impact with one metric.”</span>
+                    </p>
                 </div>
                 {/* the LIVE interview — question + answer box above the fold; scores render in place, no navigation */}
                 <DemoInterview heroMode onStartFull={go('/coach/new')} />
