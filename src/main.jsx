@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import LandingPage from './LandingPage.jsx';   // eager — it's the first paint (99% of traffic)
+import PracticeLanding from './landings/PracticeLanding.jsx';   // eager — ad landing, must paint fast
+import TrackLanding from './landings/TrackLanding.jsx';         // eager — ad landing, must paint fast
 import { Analytics } from '@vercel/analytics/react';
 import { initClarity, identify, track, fbqPageView } from './analytics.js';
 import './app.css';
@@ -54,6 +56,8 @@ function matchCoach(path) {
 function parseLocation() {
     const path = window.location.pathname;
     if (LEGAL_PATHS[path]) return { view: LEGAL_PATHS[path], params: {} };
+    if (path === '/practice')  return { view: 'practice-landing', params: {} };   // interview ad
+    if (path === '/track')     return { view: 'track-landing',    params: {} };   // tracker ad
     if (path === '/dashboard') return { view: 'dashboard', params: {} };
     if (path === '/admin')     return { view: 'admin',     params: {} };
     if (path === '/builder')   return { view: 'builder',   params: { mode: new URLSearchParams(window.location.search).get('mode') || undefined } };
@@ -245,6 +249,9 @@ function App() {
     if (view === 'privacy' || view === 'terms' || view === 'about') {
         return <LegalPage page={view} onHome={goToLanding} />;
     }
+
+    if (view === 'practice-landing') return <PracticeLanding nav={navPath} />;
+    if (view === 'track-landing')    return <TrackLanding nav={navPath} />;
 
     if (view === 'coach-landing') {
         return <CoachLanding nav={navPath} currentUser={currentUser} onLogout={handleLogout} />;
