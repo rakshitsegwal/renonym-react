@@ -22,7 +22,7 @@ export default function InterviewSetup({ nav }) {
     const [jd, setJd]           = useState(draft?.jobDescription || '');
     const [type, setType]       = useState(TYPES.includes(draft?.interviewType) ? draft.interviewType : 'Behavioral');
     const [length, setLength]   = useState([5, 6, 10].includes(draft?.length) ? draft.length : 6);
-    const [mode, setMode]       = useState(draft?.mode === 'text' ? 'text' : 'voice');
+    const [mode, setMode]       = useState(draft?.mode === 'voice' ? 'voice' : 'text');   // default to the FREE mode — the first interview is free in text; voice needs a pass/credit
     const [difficulty, setDifficulty] = useState([35, 66, 90].includes(draft?.difficulty) ? draft.difficulty : 66);
     const [busy, setBusy]       = useState(false);
     const [err, setErr]         = useState('');

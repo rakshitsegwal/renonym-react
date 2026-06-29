@@ -141,7 +141,11 @@ export default function CoachCheckout({ nav }) {
                         coachMe()
                             .then(me => {
                                 setBusy(false);
-                                if (me && me.has) { setAlready(true); setPaid(true); proceed(); } else { pay(user); }
+                                if (me && me.has) { setAlready(true); setPaid(true); proceed(); }
+                                // Honor the FREE first interview (text) — don't show a pay prompt to a
+                                // user who hasn't used it yet. Voice / out-of-free users still pay.
+                                else if (me && me.freeInterviewAvailable && draft && draft.mode === 'text') { proceed(); }
+                                else { pay(user); }
                             })
                             .catch(() => {
                                 setBusy(false);

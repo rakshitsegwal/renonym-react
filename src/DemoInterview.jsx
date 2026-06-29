@@ -8,6 +8,10 @@ import { track } from './analytics.js';
 // full mock (exact role + complete report) is the upsell after they feel value.
 const DEMO_Q = 'Tell me about a project you’re proud of — what was your role, and what was the impact?';
 
+// Lowest-friction entry for cold ad traffic: never gate the submit behind length.
+// Below this we show inline guidance — never a disabled button, never a silent no-op.
+const MIN_WORDS = 3;
+
 const DIMS = [
     ['communication', 'Communication'],
     ['confidence', 'Confidence'],
@@ -24,9 +28,19 @@ export default function DemoInterview({ onStartFull, heroMode = false }) {
     const [emailSent, setEmailSent] = useState(false);
     const [emailErr, setEmailErr]   = useState('');
     const startedRef            = useRef(false);
+    const taRef                 = useRef(null);
+    const wordCount = answer.trim() ? answer.trim().split(/\s+/).length : 0;
 
     async function submit() {
-        if (answer.trim().length < 15 || busy) return;
+        if (busy) return;   // already scoring — the button shows "Scoring…", not a silent no-op
+        // Never a silent no-op: short input gets visible inline guidance + keeps focus.
+        // TODO (separate backend change, out of scope here): when an answer is very
+        // short, have the AI ask a follow-up question instead of scoring it.
+        if (wordCount < MIN_WORDS) {
+            setError('Add a sentence or two so the AI can give you real feedback.');
+            taRef.current?.focus();
+            return;
+        }
         if (!startedRef.current) { startedRef.current = true; track('demo_started'); }
         setBusy(true); setError('');
         try {
@@ -86,17 +100,18 @@ export default function DemoInterview({ onStartFull, heroMode = false }) {
                             <>
                                 <label className="input-lbl" style={{ display: 'block', marginBottom: 8 }}>Your answer</label>
                                 <textarea
+                                    ref={taRef}
                                     className="textarea di-textarea"
                                     style={{ minHeight: heroMode ? 100 : 150 }}
-                                    placeholder="Answer like you're in the real interview — a project, your exact role, what you did, and the result…"
+                                    placeholder="e.g. I led our checkout redesign — cut it from 6 steps to 2, ran an A/B test, and lifted conversion ~18% in a month, working across design, backend and QA."
                                     value={answer}
                                     onChange={(e) => { setAnswer(e.target.value); setError(''); }}
                                     onFocus={(e) => { const t = e.target; setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} }, 250); }}
                                 />
                                 {error && <div className="sm" style={{ color: 'var(--rose)', marginTop: 10 }}>{error}</div>}
                                 <div className="row ac jsb wrap-f gap-12 di-submit-row" style={{ marginTop: 14 }}>
-                                    <span className="xs">{answer.trim().length < 15 ? 'Type a couple of sentences to get scored.' : 'No signup · scored by the same AI as the full coach.'}</span>
-                                    <button className="btn btn-gold btn-lg di-submit" onClick={submit} disabled={busy || answer.trim().length < 15}>
+                                    <span className="xs">{wordCount} word{wordCount === 1 ? '' : 's'} · no signup, real AI feedback</span>
+                                    <button className="btn btn-gold btn-lg di-submit" onClick={submit}>
                                         {busy ? 'Scoring your answer…' : 'Get my feedback →'}
                                     </button>
                                 </div>
